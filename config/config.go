@@ -23,7 +23,7 @@ func GetenvDefault(name string, def string) string {
 
 func init() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("Could not load .env file: %v", err)
+		log.Printf("Did not find .env file: %v", err)
 	}
 	GoogleClientID = os.Getenv("GOOGLE_CLIENT_ID")
 	GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
