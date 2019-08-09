@@ -160,7 +160,7 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 	svc.fetchErr = nil
 
 	for _, item := range items {
-		ext := filepath.Ext(item.Filename.String)
+		ext := strings.ToLower(filepath.Ext(item.Filename.String))
 		if !strings.HasPrefix(ext, ".") {
 			log.Println("Could not parse filename extension: " + item.Filename.String)
 			continue
