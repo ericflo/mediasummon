@@ -16,8 +16,22 @@ const defaultFormat = "2006/January/02-15_04_05"
 const defaultNumFetchers = 6
 const defaultMaxPages = 0
 
-var serviceMap map[string]services.ServiceCreator = map[string]services.ServiceCreator{
+var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.ServiceCreator{
 	"google": services.NewGoogleService,
+}
+var serviceMap = map[string]services.SyncService{}
+
+func populateServiceMap(serviceConfig *services.ServiceConfig) {
+	for serviceName, svcCreator := range serviceCreatorMap {
+		var svc services.SyncService
+		if s, err := svcCreator(serviceConfig); err != nil {
+			log.Println("Error setting up", serviceName, err, "...skipping.")
+			continue
+		} else {
+			svc = s
+		}
+		serviceMap[serviceName] = svc
+	}
 }
 
 func serviceOptions() []string {
@@ -45,6 +59,8 @@ func RunSync() {
 	flag.IntVar(&serviceConfig.MaxPages, "m", defaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
 	flag.Parse()
 
+	populateServiceMap(serviceConfig)
+
 	if serviceName == "all" {
 		runSyncList(serviceConfig)
 	} else {
@@ -53,15 +69,9 @@ func RunSync() {
 }
 
 func runSyncList(serviceConfig *services.ServiceConfig) {
+	// TODO: Spawn http server with service handlers mapped to appropriate
 	svcs := map[string]services.SyncService{}
-	for serviceName, svcCreator := range serviceMap {
-		var svc services.SyncService
-		if s, err := svcCreator(serviceConfig); err != nil {
-			log.Println("Error setting up", serviceName, err, "...skipping.")
-			continue
-		} else {
-			svc = s
-		}
+	for serviceName, svc := range serviceMap {
 		if svc.NeedsCredentials() {
 			log.Println("Service", serviceName, "needs credentials...skipping.")
 			continue
@@ -71,25 +81,22 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
-		svc.Sync()
+		if err := svc.Sync(); err != nil {
+			log.Println("Error syncing", serviceName, err)
+			return
+		}
 		i++
 	}
 }
 
 func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
-	var svc services.SyncService
-	var err error
-	if svcCreator, exists := serviceMap[serviceName]; exists {
-		if svc, err = svcCreator(serviceConfig); err != nil {
-			log.Println("Error creating service", serviceName, err)
-			return
-		}
-	} else {
+	svc, exists := serviceMap[serviceName]
+	if !exists {
 		log.Println("Could not find service: " + serviceName)
+		return
 	}
 	go http.ListenAndServe(":"+config.WebPort, svc)
-	if err = svc.Sync(); err != nil {
+	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
-		return
 	}
 }
