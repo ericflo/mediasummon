@@ -19,6 +19,7 @@ const defaultMaxPages = 0
 var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.ServiceCreator{
 	"google":    services.NewGoogleService,
 	"instagram": services.NewInstagramService,
+	"facebook":  services.NewFacebookService,
 }
 var serviceMap = map[string]services.SyncService{}
 

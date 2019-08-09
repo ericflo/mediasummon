@@ -155,14 +155,6 @@ func (svc *instagramService) Sync() error {
 		}
 		defer resp.Body.Close()
 
-		/*
-			if r, err := ioutil.ReadAll(resp.Body); err != nil {
-				return err
-			} else {
-				log.Println("Resp", string(r))
-			}
-		*/
-
 		// Parse the response
 		var data instagramDataResponse
 		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
@@ -188,7 +180,7 @@ func (svc *instagramService) Sync() error {
 	return nil
 }
 
-// syncMediaItems syncs a batch of media items
+// syncDataItems syncs a batch of instagramDataItem items
 func (svc *instagramService) syncDataItems(items []*instagramDataItem) error {
 	ctx := context.TODO()
 

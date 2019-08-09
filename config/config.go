@@ -19,6 +19,12 @@ var InstagramClientID string
 // InstagramClientSecret is the secret of the account that will be used with the Instagram API
 var InstagramClientSecret string
 
+// FacebookClientID is the ID of the account that will be used with the Facebook API
+var FacebookClientID string
+
+// FacebookClientSecret is the secret of the account that will be used with the Facebook API
+var FacebookClientSecret string
+
 // WebPort is the port that the web server should start on
 var WebPort string
 
@@ -42,6 +48,8 @@ func init() {
 	GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
 	InstagramClientID = os.Getenv("INSTAGRAM_CLIENT_ID")
 	InstagramClientSecret = os.Getenv("INSTAGRAM_CLIENT_SECRET")
+	FacebookClientID = os.Getenv("FACEBOOK_CLIENT_ID")
+	FacebookClientSecret = os.Getenv("FACEBOOK_CLIENT_SECRET")
 	WebPort = GetenvDefault("WEB_PORT", "5000")
 	FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+WebPort)
 }
