@@ -99,8 +99,8 @@ func (svc *googleService) Setup() error {
 		Endpoint: google.Endpoint,
 	}
 	if tok, err := svc.loadAuthData(); err != nil {
-		log.Println("Found no auth data to build client from: " + err.Error())
-		return err
+		log.Println("Found no Google Photos auth data to build client from: " + err.Error())
+		svc.client = nil
 	} else if tok != nil {
 		svc.client = svc.conf.Client(oauth2.NoContext, tok)
 	}
