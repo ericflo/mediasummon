@@ -169,13 +169,13 @@ func (svc *facebookService) Sync() error {
 		// Parse the response
 		var data facebookDataResponse
 		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			log.Println("Error decoding Instagram JSON response " + err.Error())
+			log.Println("Error decoding Facebook JSON response " + err.Error())
 			return err
 		}
 
 		// Sync the individual media items in this page
 		if err = svc.syncDataItems(data.Data); err != nil {
-			log.Println("Error syncing Instagram data items: " + err.Error())
+			log.Println("Error syncing Facebook data items: " + err.Error())
 			return err
 		}
 
@@ -204,7 +204,7 @@ func getMaxSizeImage(images []*facebookImage) *facebookImage {
 	return currentMax
 }
 
-// syncDataItems syncs a batch of instagramDataItem items
+// syncDataItems syncs a batch of facebookDataItem items
 func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 	ctx := context.TODO()
 
