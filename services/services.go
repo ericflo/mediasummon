@@ -7,6 +7,6 @@ type SyncService interface {
 	Setup()
 	NeedsCredentials() bool
 	CredentialRedirectURL() string
-	Sync() error
+	Sync(maxPages int) error
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }

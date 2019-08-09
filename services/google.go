@@ -208,7 +208,7 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 	return svc.fetchErr
 }
 
-func (svc *googleService) Sync() error {
+func (svc *googleService) Sync(maxPages int) error {
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials() {
@@ -232,7 +232,7 @@ func (svc *googleService) Sync() error {
 	}
 
 	// Keep pulling down pages with a cap just to prevent runaway fetch loops I guess
-	for i := 1; i <= 100000; i++ {
+	for i := 1; i <= maxPages; i++ {
 		log.Println("Fetching page", i)
 		// Fetch a page from Google Photos
 		resp, err := svc.client.Get(makeURL())
@@ -281,9 +281,8 @@ func (svc *googleService) Sync() error {
 		// Extract page token for the next round of the loop
 		pageToken = data.NextPageToken.ValueOrZero()
 
-		// Bail out of the loop under one conditions: no next page token
+		// Bail out of the loop under one condition: no next page token
 		if pageToken == "" {
-			log.Println("No more next page token, bailing...")
 			break
 		}
 	}
@@ -348,10 +347,21 @@ func (svc *googleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // SyncGoogle performs a sync with Google Photos into a directory
-func SyncGoogle(directory, format string, numFetchers int64) {
+func SyncGoogle(directory, format string, numFetchers int64, maxPages int) {
 	svc := NewGoogleService(directory, format, numFetchers)
 	go http.ListenAndServe(":"+config.WebPort, svc)
-	svc.Sync()
+	// maxPages being zero means figure it out automatically
+	if maxPages == 0 {
+		if svc.NeedsCredentials() {
+			// First time we sync the whole thing
+			maxPages = 100000
+		} else {
+			// After that we just sync the latest page
+			maxPages = 1
+		}
+	}
+
+	svc.Sync(maxPages)
 }
 
 func displayErrorPage(w http.ResponseWriter, msg string) {
