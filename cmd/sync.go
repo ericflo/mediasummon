@@ -17,7 +17,8 @@ const defaultNumFetchers = 6
 const defaultMaxPages = 0
 
 var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.ServiceCreator{
-	"google": services.NewGoogleService,
+	"google":    services.NewGoogleService,
+	"instagram": services.NewInstagramService,
 }
 var serviceMap = map[string]services.SyncService{}
 

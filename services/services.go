@@ -1,6 +1,14 @@
 package services
 
-import "net/http"
+import (
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+)
 
 const maxAllowablePages = 1000000
 
@@ -39,4 +47,44 @@ func applyMaxPagesHeuristic(svc SyncService, serviceConfig *ServiceConfig) {
 			serviceConfig.MaxPages = 1
 		}
 	}
+}
+
+// displayErrorPage writes a basic text error message to the http response
+func displayErrorPage(w http.ResponseWriter, msg string) {
+	w.Write([]byte("Error: " + msg))
+}
+
+// downloadURLToPath downloads the given url to the specified path, using a temporary
+// file and renaming in the end in an idempotent way
+func downloadURLToPath(url, path string) error {
+	log.Println("Downloading item", path)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	tmpFile, err := ioutil.TempFile(filepath.Dir(path), ".tmpdownload-")
+	if err != nil {
+		defer os.Remove(tmpFile.Name())
+		log.Println("Could not create temporary file:", err)
+		return fmt.Errorf("Could not create temporary file: %v", err)
+	}
+
+	_, err = io.Copy(tmpFile, resp.Body)
+	if err != nil {
+		defer os.Remove(tmpFile.Name())
+		log.Println("Error downloading file:", err)
+		return fmt.Errorf("Error downloading file: %v", err)
+	}
+
+	err = tmpFile.Close()
+	if err != nil {
+		defer os.Remove(tmpFile.Name())
+		log.Println("Could not close temporary file:", err)
+		return fmt.Errorf("Could not close temporary file: %v", err)
+	}
+
+	return os.Rename(tmpFile.Name(), path)
 }

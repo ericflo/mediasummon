@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,6 +19,8 @@ import (
 	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/config"
 )
+
+const googleRequestSize = 100
 
 type googleService struct {
 	serviceConfig *ServiceConfig
@@ -118,45 +119,89 @@ func (svc *googleService) CredentialRedirectURL() string {
 	return svc.conf.AuthCodeURL("state")
 }
 
-// downloadMediaItem downloads the given media item to the specified path
-func (svc *googleService) downloadMediaItem(item *googleMediaItem, path string) error {
-	log.Println("Downloading item", path)
-
-	url := item.BaseURL
-	if strings.HasPrefix(item.MimeType.String, "video") {
-		url += "=dv"
-	} else {
-		url += "=d"
+func (svc *googleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		displayErrorPage(w, "Could not parse Google's response")
+		return
+	}
+	code := r.URL.Query().Get("code")
+	if len(code) == 0 {
+		displayErrorPage(w, "Invalid authentication code from Google")
+		return
 	}
 
-	resp, err := http.Get(url)
+	tok, err := svc.conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	tmpFile, err := ioutil.TempFile(filepath.Dir(path), ".tmpdownload-")
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Could not create temporary file:", err)
-		return fmt.Errorf("Could not create temporary file: %v", err)
+		displayErrorPage(w, "Could not complete token exchange with Google. "+err.Error())
+		return
 	}
 
-	_, err = io.Copy(tmpFile, resp.Body)
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Error downloading file:", err)
-		return fmt.Errorf("Error downloading file: %v", err)
+	if err = svc.saveAuthData(tok); err != nil {
+		displayErrorPage(w, err.Error())
+		return
 	}
 
-	err = tmpFile.Close()
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Could not close temporary file:", err)
-		return fmt.Errorf("Could not close temporary file: %v", err)
+	svc.client = svc.conf.Client(oauth2.NoContext, tok)
+
+	w.Write([]byte("Connected! You can now close this browser window."))
+}
+
+func (svc *googleService) Sync() error {
+	// Wait until we have a client set up, requesting credentials if needed
+	hasRequested := false
+	for svc.NeedsCredentials() {
+		if !hasRequested {
+			if err := browser.OpenURL(svc.CredentialRedirectURL()); err != nil {
+				fmt.Fprintf(os.Stderr, "Could not open browser: %v", err)
+				return err
+			}
+			hasRequested = true
+		}
+		time.Sleep(time.Second)
 	}
 
-	return os.Rename(tmpFile.Name(), path)
+	pageToken := ""
+	makeURL := func() string {
+		base := fmt.Sprintf("https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=%s", googleRequestSize)
+		if pageToken == "" {
+			return base
+		}
+		return base + "&pageToken=" + pageToken
+	}
+
+	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
+		log.Println("Fetching Google Photos library page", i)
+		// Fetch a page from Google Photos
+		resp, err := svc.client.Get(makeURL())
+		if err != nil {
+			log.Println("Error fetching Google Photos directory page: " + err.Error())
+			return err
+		}
+		defer resp.Body.Close()
+
+		// Parse the response
+		var data googleMediaItemsResponse
+		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			log.Println("Error decoding Google Photos JSON response " + err.Error())
+			return err
+		}
+
+		// Sync the individual media items in this page
+		if err = svc.syncMediaItems(data.MediaItems); err != nil {
+			log.Println("Error syncing Google Photos media items: " + err.Error())
+			return err
+		}
+
+		// Bail out of the loop under one condition: no next page token
+		if pageToken == "" {
+			break
+		}
+
+		// Extract page token for the next round of the loop
+		pageToken = data.NextPageToken.ValueOrZero()
+	}
+
+	return nil
 }
 
 // syncMediaItems syncs a batch of media items
@@ -196,7 +241,13 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 					if svc.fetchErr != nil {
 						return
 					}
-					svc.fetchErr = svc.downloadMediaItem(i, p)
+					url := i.BaseURL
+					if strings.HasPrefix(i.MimeType.String, "video") {
+						url += "=dv"
+					} else {
+						url += "=d"
+					}
+					svc.fetchErr = downloadURLToPath(url, p)
 				}(item, path)
 			} else {
 				log.Println("Error calling stat on file: "+path, info, err)
@@ -212,64 +263,6 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 	svc.fetchSem.Release(svc.serviceConfig.NumFetchers)
 
 	return svc.fetchErr
-}
-
-func (svc *googleService) Sync() error {
-	// Wait until we have a client set up, requesting credentials if needed
-	hasRequested := false
-	for svc.NeedsCredentials() {
-		if !hasRequested {
-			if err := browser.OpenURL(svc.CredentialRedirectURL()); err != nil {
-				fmt.Fprintf(os.Stderr, "Could not open browser: %v", err)
-				return err
-			}
-			hasRequested = true
-		}
-		time.Sleep(time.Second)
-	}
-
-	pageToken := ""
-	makeURL := func() string {
-		base := "https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100"
-		if pageToken == "" {
-			return base
-		}
-		return base + "&pageToken=" + pageToken
-	}
-
-	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
-		log.Println("Fetching Google Photos library page", i)
-		// Fetch a page from Google Photos
-		resp, err := svc.client.Get(makeURL())
-		if err != nil {
-			log.Println("Error fetching Google Photos directory page: " + err.Error())
-			return err
-		}
-		defer resp.Body.Close()
-
-		// Parse the response
-		var data googleMediaItemsResponse
-		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			log.Println("Error decoding Google Photos JSON response " + err.Error())
-			return err
-		}
-
-		// Sync the individual media items in this page
-		if err = svc.syncMediaItems(data.MediaItems); err != nil {
-			log.Println("Error syncing Google Photos media items: " + err.Error())
-			return err
-		}
-
-		// Extract page token for the next round of the loop
-		pageToken = data.NextPageToken.ValueOrZero()
-
-		// Bail out of the loop under one condition: no next page token
-		if pageToken == "" {
-			break
-		}
-	}
-
-	return nil
 }
 
 func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
@@ -299,35 +292,4 @@ func (svc *googleService) loadAuthData() (*oauth2.Token, error) {
 		return nil, err
 	}
 	return tok, nil
-}
-
-func (svc *googleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		displayErrorPage(w, "Could not parse Google's response")
-		return
-	}
-	code := r.URL.Query().Get("code")
-	if len(code) == 0 {
-		displayErrorPage(w, "Invalid authentication code from Google")
-		return
-	}
-
-	tok, err := svc.conf.Exchange(oauth2.NoContext, code)
-	if err != nil {
-		displayErrorPage(w, "Could not complete token exchange with Google. "+err.Error())
-		return
-	}
-
-	if err = svc.saveAuthData(tok); err != nil {
-		displayErrorPage(w, err.Error())
-		return
-	}
-
-	svc.client = svc.conf.Client(oauth2.NoContext, tok)
-
-	w.Write([]byte("Connected! You can now close this browser window."))
-}
-
-func displayErrorPage(w http.ResponseWriter, msg string) {
-	w.Write([]byte("Error: " + msg))
 }

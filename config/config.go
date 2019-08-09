@@ -13,6 +13,12 @@ var GoogleClientID string
 // GoogleClientSecret is the secret of the account that will be used with the Google Photos API
 var GoogleClientSecret string
 
+// InstagramClientID is the ID of the account that will be used with the Instagram API
+var InstagramClientID string
+
+// InstagramClientSecret is the secret of the account that will be used with the Instagram API
+var InstagramClientSecret string
+
 // WebPort is the port that the web server should start on
 var WebPort string
 
@@ -34,6 +40,8 @@ func init() {
 	}
 	GoogleClientID = os.Getenv("GOOGLE_CLIENT_ID")
 	GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
+	InstagramClientID = os.Getenv("INSTAGRAM_CLIENT_ID")
+	InstagramClientSecret = os.Getenv("INSTAGRAM_CLIENT_SECRET")
 	WebPort = GetenvDefault("WEB_PORT", "5000")
 	FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+WebPort)
 }
