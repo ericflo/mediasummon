@@ -242,33 +242,10 @@ func (svc *googleService) Sync(maxPages int) error {
 		}
 		defer resp.Body.Close()
 
-		// Read the response
-		encodedJSON, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("Error reading response from Google Photos directory listing: " + err.Error())
-			return err
-		}
-
 		// Parse the response
 		var data googleMediaItemsResponse
-		if err = json.Unmarshal(encodedJSON, &data); err != nil {
+		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			log.Println("Error decoding Google Photos JSON response " + err.Error())
-			return err
-		}
-
-		// Determine and create data directory for the raw JSON
-		datadir := filepath.Join(svc.directory, ".meta", "google")
-		if err = os.MkdirAll(datadir, 0644); err != nil {
-			log.Println("Could not create metadata directory: ", err)
-			return fmt.Errorf("Could not create metadata directory: %v", err)
-		}
-
-		// Determine full filepath for the raw json
-		path := filepath.Join(datadir, fmt.Sprintf("data-%d.json", i))
-
-		// Write it out
-		if err = ioutil.WriteFile(path, encodedJSON, 0644); err != nil {
-			log.Println("Error writing JSON file to disk " + err.Error())
 			return err
 		}
 
@@ -350,7 +327,7 @@ func (svc *googleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func SyncGoogle(directory, format string, numFetchers int64, maxPages int) {
 	svc := NewGoogleService(directory, format, numFetchers)
 	go http.ListenAndServe(":"+config.WebPort, svc)
-	// maxPages being zero means figure it out automatically
+	// maxPages being zero means we should try to figure it out automatically
 	if maxPages == 0 {
 		if svc.NeedsCredentials() {
 			// First time we sync the whole thing
