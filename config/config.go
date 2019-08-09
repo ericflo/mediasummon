@@ -7,9 +7,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// GoogleClientID is the ID of the account that will be used with the Google Photos API
 var GoogleClientID string
+
+// GoogleClientSecret is the secret of the account that will be used with the Google Photos API
 var GoogleClientSecret string
+
+// WebPort is the port that the web server should start on
 var WebPort string
+
+// FrontendURL is the URL to access the web port from the perspective of the end-user
 var FrontendURL string
 
 // GetenvDefault gets an environment, but defaults to the parameter given if none is found
