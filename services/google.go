@@ -22,13 +22,11 @@ import (
 )
 
 type googleService struct {
-	directory   string
-	format      string
-	conf        *oauth2.Config
-	client      *http.Client
-	numFetchers int64
-	fetchSem    *semaphore.Weighted
-	fetchErr    error
+	serviceConfig *ServiceConfig
+	conf          *oauth2.Config
+	client        *http.Client
+	fetchSem      *semaphore.Weighted
+	fetchErr      error
 }
 
 type googlePhoto struct {
@@ -75,19 +73,22 @@ type googleMediaItemsResponse struct {
 }
 
 // NewGoogleService creates a new service that can be used to sync with Google Photos
-func NewGoogleService(directory, format string, numFetchers int64) SyncService {
+func NewGoogleService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &googleService{
-		directory:   directory,
-		format:      format,
-		numFetchers: numFetchers,
-		fetchSem:    semaphore.NewWeighted(numFetchers),
+		serviceConfig: serviceConfig,
+		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
 	}
-	svc.Setup()
-	return svc
+	if err := svc.Setup(); err != nil {
+		return nil, err
+	}
+	return svc, nil
 }
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
-func (svc *googleService) Setup() {
+func (svc *googleService) Setup() error {
+	if config.GoogleClientID == "" || config.GoogleClientSecret == "" {
+		return fmt.Errorf("Found empty Google Photos auth client id or client secret, check environment variables")
+	}
 	svc.conf = &oauth2.Config{
 		ClientID:     config.GoogleClientID,
 		ClientSecret: config.GoogleClientSecret,
@@ -97,12 +98,14 @@ func (svc *googleService) Setup() {
 		},
 		Endpoint: google.Endpoint,
 	}
-	tok, err := svc.loadAuthData()
-	if err != nil {
+	if tok, err := svc.loadAuthData(); err != nil {
 		log.Println("Found no auth data to build client from: " + err.Error())
+		return err
 	} else if tok != nil {
 		svc.client = svc.conf.Client(oauth2.NoContext, tok)
 	}
+	applyMaxPagesHeuristic(svc, svc.serviceConfig)
+	return nil
 }
 
 // NeedsCredentials reports whether credentials are needed for this user
@@ -132,20 +135,23 @@ func (svc *googleService) downloadMediaItem(item *googleMediaItem, path string) 
 	}
 	defer resp.Body.Close()
 
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "google-download-")
+	tmpFile, err := ioutil.TempFile(filepath.Dir(path), ".tmpdownload-")
 	if err != nil {
+		defer os.Remove(tmpFile.Name())
 		log.Println("Could not create temporary file:", err)
 		return fmt.Errorf("Could not create temporary file: %v", err)
 	}
 
 	_, err = io.Copy(tmpFile, resp.Body)
 	if err != nil {
+		defer os.Remove(tmpFile.Name())
 		log.Println("Error downloading file:", err)
 		return fmt.Errorf("Error downloading file: %v", err)
 	}
 
 	err = tmpFile.Close()
 	if err != nil {
+		defer os.Remove(tmpFile.Name())
 		log.Println("Could not close temporary file:", err)
 		return fmt.Errorf("Could not close temporary file: %v", err)
 	}
@@ -169,9 +175,9 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 			log.Println("Didn't parse a valid CreationTime, can't determine filename.")
 			continue
 		}
-		formatted := item.MediaMetadata.CreationTime.Time.Format(svc.format)
+		formatted := item.MediaMetadata.CreationTime.Time.Format(svc.serviceConfig.Format)
 
-		dir := filepath.Join(svc.directory, filepath.Dir(formatted))
+		dir := filepath.Join(svc.serviceConfig.Directory, filepath.Dir(formatted))
 		if err := os.MkdirAll(dir, 0644); err != nil {
 			log.Println("Could not create directory ("+dir+"): ", err)
 			return fmt.Errorf("Could not create directory (%s): %v", dir, err)
@@ -199,16 +205,16 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 		}
 	}
 
-	if err := svc.fetchSem.Acquire(ctx, svc.numFetchers); err != nil {
+	if err := svc.fetchSem.Acquire(ctx, svc.serviceConfig.NumFetchers); err != nil {
 		log.Printf("Failed to acquire semaphore after loop: %v", err)
 		return err
 	}
-	svc.fetchSem.Release(svc.numFetchers)
+	svc.fetchSem.Release(svc.serviceConfig.NumFetchers)
 
 	return svc.fetchErr
 }
 
-func (svc *googleService) Sync(maxPages int) error {
+func (svc *googleService) Sync() error {
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials() {
@@ -231,7 +237,7 @@ func (svc *googleService) Sync(maxPages int) error {
 		return base + "&pageToken=" + pageToken
 	}
 
-	for i := 1; i <= maxPages; i++ {
+	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
 		log.Println("Fetching Google Photos library page", i)
 		// Fetch a page from Google Photos
 		resp, err := svc.client.Get(makeURL())
@@ -271,7 +277,7 @@ func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
 	if err != nil {
 		return fmt.Errorf("Could not encode Google Photos authentication token to save: %v", err)
 	}
-	authdir := filepath.Join(svc.directory, ".meta", "google")
+	authdir := filepath.Join(svc.serviceConfig.Directory, ".meta", "google")
 	if err = os.MkdirAll(authdir, 0644); err != nil {
 		return fmt.Errorf("Could not create auth metadata directory: %v", err)
 	}
@@ -283,7 +289,7 @@ func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
 }
 
 func (svc *googleService) loadAuthData() (*oauth2.Token, error) {
-	path := filepath.Join(svc.directory, ".meta", "google", "auth.json")
+	path := filepath.Join(svc.serviceConfig.Directory, ".meta", "google", "auth.json")
 	encodedTok, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
