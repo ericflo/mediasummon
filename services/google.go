@@ -327,10 +327,12 @@ func SyncGoogle(directory, format string, numFetchers int64, maxPages int) {
 	svc := NewGoogleService(directory, format, numFetchers)
 	go http.ListenAndServe(":"+config.WebPort, svc)
 	// maxPages being zero means we should try to figure it out automatically
-	if maxPages == 0 {
+	if maxPages < 0 {
+		maxPages = 1000000
+	} else if maxPages == 0 {
 		if svc.NeedsCredentials() {
 			// First time we sync the whole thing
-			maxPages = 100000
+			maxPages = 1000000
 		} else {
 			// After that we just sync the latest page
 			maxPages = 1
