@@ -21,6 +21,8 @@ var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.S
 }
 var serviceMap = map[string]services.SyncService{}
 
+// populateServiceMap populates the service map with the initialized SyncService given the
+// provided ServiceConfig
 func populateServiceMap(serviceConfig *services.ServiceConfig) {
 	for serviceName, svcCreator := range serviceCreatorMap {
 		var svc services.SyncService
@@ -34,6 +36,7 @@ func populateServiceMap(serviceConfig *services.ServiceConfig) {
 	}
 }
 
+// serviceOptions gets a slice of all the keys in the serviceMap, plus the "all" option
 func serviceOptions() []string {
 	serviceOptionList := []string{"all"}
 	for name := range serviceMap {
@@ -68,6 +71,7 @@ func RunSync() {
 	}
 }
 
+// runSyncList runs sync on all the services that have credentials
 func runSyncList(serviceConfig *services.ServiceConfig) {
 	// TODO: Spawn http server with service handlers mapped to appropriate
 	svcs := map[string]services.SyncService{}
@@ -89,6 +93,7 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 	}
 }
 
+// runSyncService runs sync for an individual service, requesting credentials from the user if needed
 func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 	svc, exists := serviceMap[serviceName]
 	if !exists {
