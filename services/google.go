@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
-	"maxint.co/photoboomerang/config"
+	"maxint.co/mediasummon/config"
 )
 
 type googleService struct {

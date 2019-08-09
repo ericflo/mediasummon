@@ -1,4 +1,4 @@
-module maxint.co/photoboomerang
+module maxint.co/mediasummon
 
 go 1.12
 

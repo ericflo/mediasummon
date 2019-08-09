@@ -14,5 +14,5 @@
 # Dotenv
 .env
 
-# Synced photo data in default location
-photos/*
+# Synced media data in default location
+media/*

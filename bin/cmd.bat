@@ -1,3 +1,3 @@
 cd "%~dp0/.."
 
-go build -o .\bin\photoboomerang.exe maxint.co/photoboomerang && .\bin\photoboomerang.exe %*
+go build -o .\bin\mediasummon.exe maxint.co/mediasummon && .\bin\mediasummon.exe %*

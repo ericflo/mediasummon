@@ -1,7 +1,7 @@
 package main
 
 import (
-	"maxint.co/photoboomerang/cmd"
+	"maxint.co/mediasummon/cmd"
 )
 
 func main() {

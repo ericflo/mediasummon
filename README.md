@@ -1,2 +1,2 @@
-# PhotoBoomerang
-## All your photos should come back to you
+# MediaSummon
+## Summon your photos and videos back to you

@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"os"
 
-	"maxint.co/photoboomerang/config"
-	"maxint.co/photoboomerang/services"
+	"maxint.co/mediasummon/config"
+	"maxint.co/mediasummon/services"
 )
 
 const maxAllowablePages = 1000000
 
 const defaultServiceName = "google"
-const defaultDirectory = "photos"
+const defaultDirectory = "media"
 const defaultFormat = "2006/January/02-15_04_05"
 const defaultNumFetchers = 6
 const defaultMaxPages = 0
@@ -29,8 +29,8 @@ func RunSync() {
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync [shorthand]")
 	flag.StringVar(&directory, "directory", defaultDirectory, "which directory to sync to")
 	flag.StringVar(&directory, "d", defaultDirectory, "which directory to sync to [shorthand]")
-	flag.StringVar(&format, "format", defaultFormat, "format for how to name and place photos")
-	flag.StringVar(&format, "f", defaultFormat, "format for how to name and place photos [shorthand]")
+	flag.StringVar(&format, "format", defaultFormat, "format for how to name and place media")
+	flag.StringVar(&format, "f", defaultFormat, "format for how to name and place media [shorthand]")
 	flag.Int64Var(&numFetchers, "num-fetchers", defaultNumFetchers, "number of fetchers to run to download content")
 	flag.Int64Var(&numFetchers, "n", defaultNumFetchers, "number of fetchers to run to download content [shorthand]")
 	flag.IntVar(&maxPages, "max-pages", defaultMaxPages, "max pages to fetch, zero meaning auto")
