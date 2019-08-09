@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/oauth2"
 )
 
 const maxAllowablePages = 1000000
@@ -87,4 +90,33 @@ func downloadURLToPath(url, path string) error {
 	}
 
 	return os.Rename(tmpFile.Name(), path)
+}
+
+func saveOAuthData(tok *oauth2.Token, baseDir, serviceName string) error {
+	encodedTok, err := json.Marshal(tok)
+	if err != nil {
+		return fmt.Errorf("Could not encode Facebook authentication token to save: %v", err)
+	}
+	authdir := filepath.Join(baseDir, ".meta", serviceName)
+	if err = os.MkdirAll(authdir, 0644); err != nil {
+		return fmt.Errorf("Could not create auth metadata directory: %v", err)
+	}
+	path := filepath.Join(authdir, "auth.json")
+	if err = ioutil.WriteFile(path, encodedTok, 0644); err != nil {
+		return fmt.Errorf("Could not write Facebook auth data to disk: %v", err)
+	}
+	return nil
+}
+
+func loadOAuthData(baseDir, serviceName string) (*oauth2.Token, error) {
+	path := filepath.Join(baseDir, ".meta", serviceName, "auth.json")
+	encodedTok, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var tok *oauth2.Token
+	if err = json.Unmarshal(encodedTok, &tok); err != nil {
+		return nil, err
+	}
+	return tok, nil
 }

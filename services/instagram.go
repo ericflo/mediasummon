@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -258,30 +257,9 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 }
 
 func (svc *instagramService) saveAuthData(tok *oauth2.Token) error {
-	encodedTok, err := json.Marshal(tok)
-	if err != nil {
-		return fmt.Errorf("Could not encode Instagram authentication token to save: %v", err)
-	}
-	authdir := filepath.Join(svc.serviceConfig.Directory, ".meta", "instagram")
-	if err = os.MkdirAll(authdir, 0644); err != nil {
-		return fmt.Errorf("Could not create auth metadata directory: %v", err)
-	}
-	path := filepath.Join(authdir, "auth.json")
-	if err = ioutil.WriteFile(path, encodedTok, 0644); err != nil {
-		return fmt.Errorf("Could not write Instagram auth data to disk: %v", err)
-	}
-	return nil
+	return saveOAuthData(tok, svc.serviceConfig.Directory, "instagram")
 }
 
 func (svc *instagramService) loadAuthData() (*oauth2.Token, error) {
-	path := filepath.Join(svc.serviceConfig.Directory, ".meta", "instagram", "auth.json")
-	encodedTok, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var tok *oauth2.Token
-	if err = json.Unmarshal(encodedTok, &tok); err != nil {
-		return nil, err
-	}
-	return tok, nil
+	return loadOAuthData(svc.serviceConfig.Directory, "instagram")
 }
