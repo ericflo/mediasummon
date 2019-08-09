@@ -162,7 +162,7 @@ func (svc *googleService) Sync() error {
 
 	pageToken := ""
 	makeURL := func() string {
-		base := fmt.Sprintf("https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=%s", googleRequestSize)
+		base := fmt.Sprintf("https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=%d", googleRequestSize)
 		if pageToken == "" {
 			return base
 		}
