@@ -231,9 +231,8 @@ func (svc *googleService) Sync(maxPages int) error {
 		return base + "&pageToken=" + pageToken
 	}
 
-	// Keep pulling down pages with a cap just to prevent runaway fetch loops I guess
 	for i := 1; i <= maxPages; i++ {
-		log.Println("Fetching page", i)
+		log.Println("Fetching Google Photos library page", i)
 		// Fetch a page from Google Photos
 		resp, err := svc.client.Get(makeURL())
 		if err != nil {
@@ -251,7 +250,7 @@ func (svc *googleService) Sync(maxPages int) error {
 
 		// Sync the individual media items in this page
 		if err = svc.syncMediaItems(data.MediaItems); err != nil {
-			log.Println("Error syncing media items: " + err.Error())
+			log.Println("Error syncing Google Photos media items: " + err.Error())
 			return err
 		}
 
@@ -270,7 +269,7 @@ func (svc *googleService) Sync(maxPages int) error {
 func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
 	encodedTok, err := json.Marshal(tok)
 	if err != nil {
-		return fmt.Errorf("Could not encode authentication token to save: %v", err)
+		return fmt.Errorf("Could not encode Google Photos authentication token to save: %v", err)
 	}
 	authdir := filepath.Join(svc.directory, ".meta", "google")
 	if err = os.MkdirAll(authdir, 0644); err != nil {
@@ -278,7 +277,7 @@ func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
 	}
 	path := filepath.Join(authdir, "auth.json")
 	if err = ioutil.WriteFile(path, encodedTok, 0644); err != nil {
-		return fmt.Errorf("Could not write auth data to disk: %v", err)
+		return fmt.Errorf("Could not write Google Photos auth data to disk: %v", err)
 	}
 	return nil
 }
