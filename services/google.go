@@ -191,13 +191,13 @@ func (svc *googleService) Sync() error {
 			return err
 		}
 
+		// Extract page token for the next round of the loop
+		pageToken = data.NextPageToken.ValueOrZero()
+
 		// Bail out of the loop under one condition: no next page token
 		if pageToken == "" {
 			break
 		}
-
-		// Extract page token for the next round of the loop
-		pageToken = data.NextPageToken.ValueOrZero()
 	}
 
 	return nil
