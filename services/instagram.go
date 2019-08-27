@@ -17,7 +17,6 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/instagram"
 	"golang.org/x/sync/semaphore"
-	"maxint.co/mediasummon/config"
 )
 
 const instagramRequestSize = 100
@@ -62,13 +61,19 @@ func NewInstagramService(serviceConfig *ServiceConfig) (SyncService, error) {
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
 func (svc *instagramService) Setup() error {
-	if config.InstagramClientID == "" || config.InstagramClientSecret == "" {
+	secret, ok := svc.serviceConfig.Secrets["instagram"]
+	if !ok {
+		return fmt.Errorf("Invalid setup detected: environment variables not loaded by the time Instagram setup ran")
+	}
+	clientID, cidOK := secret["ClientID"]
+	clientSecret, csOK := secret["ClientSecret"]
+	if !cidOK || !csOK || strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
 		return fmt.Errorf("Found empty Instagram auth client id or client secret, check environment variables")
 	}
 	svc.conf = &oauth2.Config{
-		ClientID:     config.InstagramClientID,
-		ClientSecret: config.InstagramClientSecret,
-		RedirectURL:  config.FrontendURL + "/auth/instagram/return",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/instagram/return",
 		Endpoint:     instagram.Endpoint,
 	}
 	if tok, err := svc.loadAuthData(); err != nil {

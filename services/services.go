@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 )
 
@@ -30,6 +31,32 @@ type ServiceConfig struct {
 	Format      string
 	NumFetchers int64
 	MaxPages    int
+	WebPort     string
+	FrontendURL string
+	Secrets     map[string]map[string]string
+}
+
+// LoadFromEnv loads any properties and secrets it can from the environment
+func (config *ServiceConfig) LoadFromEnv() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("Did not find .env file: %v", err)
+	}
+	config.WebPort = GetenvDefault("WEB_PORT", "5000")
+	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
+	config.Secrets = map[string]map[string]string{
+		"google": map[string]string{
+			"ClientID":     os.Getenv("GOOGLE_CLIENT_ID"),
+			"ClientSecret": os.Getenv("GOOGLE_CLIENT_SECRET"),
+		},
+		"instagram": map[string]string{
+			"ClientID":     os.Getenv("INSTAGRAM_CLIENT_ID"),
+			"ClientSecret": os.Getenv("INSTAGRAM_CLIENT_ID"),
+		},
+		"facebook": map[string]string{
+			"ClientID":     os.Getenv("FACEBOOK_CLIENT_ID"),
+			"ClientSecret": os.Getenv("FACEBOOK_CLIENT_SECRET"),
+		},
+	}
 }
 
 // ServiceCreator is a function that can create a sync service
@@ -119,4 +146,13 @@ func loadOAuthData(baseDir, serviceName string) (*oauth2.Token, error) {
 		return nil, err
 	}
 	return tok, nil
+}
+
+// GetenvDefault gets an environment, but defaults to the parameter given if none is found
+func GetenvDefault(name string, def string) string {
+	ret := os.Getenv(name)
+	if ret == "" {
+		return def
+	}
+	return ret
 }

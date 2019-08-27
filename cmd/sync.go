@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"maxint.co/mediasummon/config"
 	"maxint.co/mediasummon/services"
 )
 
@@ -52,6 +51,7 @@ func RunSync() {
 	serviceOptions := strings.Join(serviceOptions(), ", ")
 	var serviceName string
 	serviceConfig := &services.ServiceConfig{}
+	serviceConfig.LoadFromEnv()
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
 	flag.StringVar(&serviceConfig.Directory, "directory", defaultDirectory, "which directory to sync to")
@@ -87,7 +87,7 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 			mux.HandleFunc(key, handler)
 		}
 	}
-	go http.ListenAndServe(":"+config.WebPort, mux)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, mux)
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
@@ -112,7 +112,7 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 		mux.HandleFunc(key, handler)
 	}
 
-	go http.ListenAndServe(":"+config.WebPort, mux)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, mux)
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
 	}

@@ -16,7 +16,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
-	"maxint.co/mediasummon/config"
 )
 
 const googleRequestSize = 100
@@ -86,13 +85,19 @@ func NewGoogleService(serviceConfig *ServiceConfig) (SyncService, error) {
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
 func (svc *googleService) Setup() error {
-	if config.GoogleClientID == "" || config.GoogleClientSecret == "" {
+	secret, ok := svc.serviceConfig.Secrets["google"]
+	if !ok {
+		return fmt.Errorf("Invalid setup detected: environment variables not loaded by the time Google setup ran")
+	}
+	clientID, cidOK := secret["ClientID"]
+	clientSecret, csOK := secret["ClientSecret"]
+	if !cidOK || !csOK || strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
 		return fmt.Errorf("Found empty Google Photos auth client id or client secret, check environment variables")
 	}
 	svc.conf = &oauth2.Config{
-		ClientID:     config.GoogleClientID,
-		ClientSecret: config.GoogleClientSecret,
-		RedirectURL:  config.FrontendURL + "/auth/google/return",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/google/return",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/photoslibrary.readonly",
 		},

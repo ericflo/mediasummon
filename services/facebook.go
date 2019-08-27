@@ -17,7 +17,6 @@ import (
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
-	"maxint.co/mediasummon/config"
 )
 
 const facebookRequestSize = 100
@@ -73,13 +72,19 @@ func NewFacebookService(serviceConfig *ServiceConfig) (SyncService, error) {
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
 func (svc *facebookService) Setup() error {
-	if config.FacebookClientID == "" || config.FacebookClientSecret == "" {
+	secret, ok := svc.serviceConfig.Secrets["facebook"]
+	if !ok {
+		return fmt.Errorf("Invalid setup detected: environment variables not loaded by the time Facebook setup ran")
+	}
+	clientID, cidOK := secret["ClientID"]
+	clientSecret, csOK := secret["ClientSecret"]
+	if !cidOK || !csOK || strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
 		return fmt.Errorf("Found empty Facebook auth client id or client secret, check environment variables")
 	}
 	svc.conf = &oauth2.Config{
-		ClientID:     config.FacebookClientID,
-		ClientSecret: config.FacebookClientSecret,
-		RedirectURL:  config.FrontendURL + "/auth/facebook/return",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/facebook/return",
 		Scopes:       []string{"user_photos"},
 		Endpoint:     facebook.Endpoint,
 	}
