@@ -76,7 +76,7 @@ func (svc *instagramService) Setup() error {
 		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/instagram/return",
 		Endpoint:     instagram.Endpoint,
 	}
-	if tok, err := svc.loadAuthData(); err != nil {
+	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "instagram"); err != nil {
 		log.Println("Found no Instagram auth data to build client from: " + err.Error())
 		svc.accessToken = nil
 		svc.client = nil
@@ -121,7 +121,7 @@ func (svc *instagramService) HandleInstagramReturn(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err = svc.saveAuthData(tok); err != nil {
+	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "instagram"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -265,12 +265,4 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 		}
 	}
 	return nil
-}
-
-func (svc *instagramService) saveAuthData(tok *oauth2.Token) error {
-	return saveOAuthData(tok, svc.serviceConfig.Directory, "instagram")
-}
-
-func (svc *instagramService) loadAuthData() (*oauth2.Token, error) {
-	return loadOAuthData(svc.serviceConfig.Directory, "instagram")
 }

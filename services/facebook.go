@@ -88,7 +88,7 @@ func (svc *facebookService) Setup() error {
 		Scopes:       []string{"user_photos"},
 		Endpoint:     facebook.Endpoint,
 	}
-	if tok, err := svc.loadAuthData(); err != nil {
+	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "facebook"); err != nil {
 		log.Println("Found no Facebook auth data to build client from: " + err.Error())
 		svc.accessToken = nil
 		svc.client = nil
@@ -133,7 +133,7 @@ func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err = svc.saveAuthData(tok); err != nil {
+	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "facebook"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -272,12 +272,4 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 	svc.fetchSem.Release(svc.serviceConfig.NumFetchers)
 
 	return svc.fetchErr
-}
-
-func (svc *facebookService) saveAuthData(tok *oauth2.Token) error {
-	return saveOAuthData(tok, svc.serviceConfig.Directory, "facebook")
-}
-
-func (svc *facebookService) loadAuthData() (*oauth2.Token, error) {
-	return loadOAuthData(svc.serviceConfig.Directory, "facebook")
 }

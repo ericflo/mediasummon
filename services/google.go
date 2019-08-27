@@ -103,7 +103,7 @@ func (svc *googleService) Setup() error {
 		},
 		Endpoint: google.Endpoint,
 	}
-	if tok, err := svc.loadAuthData(); err != nil {
+	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "google"); err != nil {
 		log.Println("Found no Google Photos auth data to build client from: " + err.Error())
 		svc.client = nil
 	} else if tok != nil {
@@ -146,7 +146,7 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = svc.saveAuthData(tok); err != nil {
+	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "google"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -273,12 +273,4 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 	svc.fetchSem.Release(svc.serviceConfig.NumFetchers)
 
 	return svc.fetchErr
-}
-
-func (svc *googleService) saveAuthData(tok *oauth2.Token) error {
-	return saveOAuthData(tok, svc.serviceConfig.Directory, "google")
-}
-
-func (svc *googleService) loadAuthData() (*oauth2.Token, error) {
-	return loadOAuthData(svc.serviceConfig.Directory, "google")
 }
