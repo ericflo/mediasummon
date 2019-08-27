@@ -38,8 +38,12 @@ type ServiceConfig struct {
 
 // LoadFromEnv loads any properties and secrets it can from the environment
 func (config *ServiceConfig) LoadFromEnv() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("Did not find .env file: %v", err)
+	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
+		log.Printf("Could not load .env file in current directory %v", err)
+	}
+	dirEnv := filepath.Join(config.Directory, ".meta", ".env")
+	if err := godotenv.Load(dirEnv); err != nil && !os.IsNotExist(err) {
+		log.Printf("Could not load .env file in target directory %v", err)
 	}
 	config.WebPort = GetenvDefault("WEB_PORT", "5000")
 	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
