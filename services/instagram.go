@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,12 +18,14 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/instagram"
 	"golang.org/x/sync/semaphore"
+	"maxint.co/mediasummon/storage"
 )
 
 const instagramRequestSize = 100
 
 type instagramService struct {
 	serviceConfig *ServiceConfig
+	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
 	accessToken   *oauth2.Token
@@ -51,6 +54,7 @@ type instagramDataResponse struct {
 func NewInstagramService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &instagramService{
 		serviceConfig: serviceConfig,
+		storage:       serviceConfig.Storage,
 		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
 	}
 	if err := svc.Setup(); err != nil {
@@ -76,7 +80,7 @@ func (svc *instagramService) Setup() error {
 		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/instagram/return",
 		Endpoint:     instagram.Endpoint,
 	}
-	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "instagram"); err != nil {
+	if tok, err := loadOAuthData(svc.storage, "instagram"); err != nil {
 		log.Println("Found no Instagram auth data to build client from: " + err.Error())
 		svc.accessToken = nil
 		svc.client = nil
@@ -121,7 +125,7 @@ func (svc *instagramService) HandleInstagramReturn(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "instagram"); err != nil {
+	if err = saveOAuthData(svc.storage, tok, "instagram"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -238,31 +242,24 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 	createdTime := time.Unix(createdTimestamp, 0)
 	formatted := createdTime.Format(svc.serviceConfig.Format)
 
-	dir := filepath.Join(svc.serviceConfig.Directory, filepath.Dir(formatted))
-	if err := os.MkdirAll(dir, 0644); err != nil {
-		log.Println("Could not create directory ("+dir+"): ", err)
-		return fmt.Errorf("Could not create directory (%s): %v", dir, err)
+	if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
+		return err
 	}
-
-	path := filepath.Join(dir, filepath.Base(formatted)+ext)
-	info, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
-				log.Printf("Failed to acquire semaphore during loop: %v", err)
-				return err
-			}
-			go func(m *instagramMedia, p string) {
-				defer svc.fetchSem.Release(1)
-				if svc.fetchErr != nil {
-					return
-				}
-				svc.fetchErr = downloadURLToPath(m.URL, p)
-			}(media, path)
-		} else {
-			log.Println("Error calling stat on file: "+path, info, err)
+	filePath := path.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
+	if exists, err := svc.storage.Exists(filePath); err != nil {
+		return err
+	} else if !exists {
+		if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
+			log.Printf("Failed to acquire semaphore during loop: %v", err)
 			return err
 		}
+		go func(m *instagramMedia, p string) {
+			defer svc.fetchSem.Release(1)
+			if svc.fetchErr != nil {
+				return
+			}
+			svc.fetchErr = svc.storage.DownloadFromURL(m.URL, p)
+		}(media, filePath)
 	}
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,12 +17,14 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/storage"
 )
 
 const googleRequestSize = 100
 
 type googleService struct {
 	serviceConfig *ServiceConfig
+	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
 	fetchSem      *semaphore.Weighted
@@ -75,6 +78,7 @@ type googleMediaItemsResponse struct {
 func NewGoogleService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &googleService{
 		serviceConfig: serviceConfig,
+		storage:       serviceConfig.Storage,
 		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
 	}
 	if err := svc.Setup(); err != nil {
@@ -103,7 +107,7 @@ func (svc *googleService) Setup() error {
 		},
 		Endpoint: google.Endpoint,
 	}
-	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "google"); err != nil {
+	if tok, err := loadOAuthData(svc.storage, "google"); err != nil {
 		log.Println("Found no Google Photos auth data to build client from: " + err.Error())
 		svc.client = nil
 	} else if tok != nil {
@@ -146,7 +150,7 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "google"); err != nil {
+	if err = saveOAuthData(svc.storage, tok, "google"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -232,37 +236,30 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 		}
 		formatted := item.MediaMetadata.CreationTime.Time.Format(svc.serviceConfig.Format)
 
-		dir := filepath.Join(svc.serviceConfig.Directory, filepath.Dir(formatted))
-		if err := os.MkdirAll(dir, 0644); err != nil {
-			log.Println("Could not create directory ("+dir+"): ", err)
-			return fmt.Errorf("Could not create directory (%s): %v", dir, err)
+		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
+			return err
 		}
-
-		path := filepath.Join(dir, filepath.Base(formatted)+ext)
-		info, err := os.Stat(path)
-		if err != nil {
-			if os.IsNotExist(err) {
-				if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
-					log.Printf("Failed to acquire semaphore during loop: %v", err)
-					return err
-				}
-				go func(i *googleMediaItem, p string) {
-					defer svc.fetchSem.Release(1)
-					if svc.fetchErr != nil {
-						return
-					}
-					url := i.BaseURL
-					if strings.HasPrefix(i.MimeType.String, "video") {
-						url += "=dv"
-					} else {
-						url += "=d"
-					}
-					svc.fetchErr = downloadURLToPath(url, p)
-				}(item, path)
-			} else {
-				log.Println("Error calling stat on file: "+path, info, err)
+		filePath := path.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
+		if exists, err := svc.storage.Exists(filePath); err != nil {
+			return err
+		} else if !exists {
+			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
+				log.Printf("Failed to acquire semaphore during loop: %v", err)
 				return err
 			}
+			go func(i *googleMediaItem, p string) {
+				defer svc.fetchSem.Release(1)
+				if svc.fetchErr != nil {
+					return
+				}
+				url := i.BaseURL
+				if strings.HasPrefix(i.MimeType.String, "video") {
+					url += "=dv"
+				} else {
+					url += "=d"
+				}
+				svc.fetchErr = svc.storage.DownloadFromURL(url, p)
+			}(item, filePath)
 		}
 	}
 

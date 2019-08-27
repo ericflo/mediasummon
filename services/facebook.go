@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/storage"
 )
 
 const facebookRequestSize = 100
@@ -24,6 +26,7 @@ const facebookTimestampFormat = "2006-01-02T15:04:05-0700"
 
 type facebookService struct {
 	serviceConfig *ServiceConfig
+	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
 	accessToken   *oauth2.Token
@@ -62,6 +65,7 @@ type facebookDataResponse struct {
 func NewFacebookService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &facebookService{
 		serviceConfig: serviceConfig,
+		storage:       serviceConfig.Storage,
 		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
 	}
 	if err := svc.Setup(); err != nil {
@@ -88,7 +92,7 @@ func (svc *facebookService) Setup() error {
 		Scopes:       []string{"user_photos"},
 		Endpoint:     facebook.Endpoint,
 	}
-	if tok, err := loadOAuthData(svc.serviceConfig.Directory, "facebook"); err != nil {
+	if tok, err := loadOAuthData(svc.storage, "facebook"); err != nil {
 		log.Println("Found no Facebook auth data to build client from: " + err.Error())
 		svc.accessToken = nil
 		svc.client = nil
@@ -133,7 +137,7 @@ func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err = saveOAuthData(tok, svc.serviceConfig.Directory, "facebook"); err != nil {
+	if err = saveOAuthData(svc.storage, tok, "facebook"); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
@@ -237,31 +241,24 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 		}
 		formatted := createdTimestamp.Format(svc.serviceConfig.Format)
 
-		dir := filepath.Join(svc.serviceConfig.Directory, filepath.Dir(formatted))
-		if err := os.MkdirAll(dir, 0644); err != nil {
-			log.Println("Could not create directory ("+dir+"): ", err)
-			return fmt.Errorf("Could not create directory (%s): %v", dir, err)
+		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
+			return err
 		}
-
-		path := filepath.Join(dir, filepath.Base(formatted)+ext)
-		info, err := os.Stat(path)
-		if err != nil {
-			if os.IsNotExist(err) {
-				if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
-					log.Printf("Failed to acquire semaphore during loop: %v", err)
-					return err
-				}
-				go func(i *facebookImage, p string) {
-					defer svc.fetchSem.Release(1)
-					if svc.fetchErr != nil {
-						return
-					}
-					svc.fetchErr = downloadURLToPath(i.Source, p)
-				}(image, path)
-			} else {
-				log.Println("Error calling stat on file: "+path, info, err)
+		filePath := path.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
+		if exists, err := svc.storage.Exists(filePath); err != nil {
+			return err
+		} else if !exists {
+			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
+				log.Printf("Failed to acquire semaphore during loop: %v", err)
 				return err
 			}
+			go func(i *facebookImage, p string) {
+				defer svc.fetchSem.Release(1)
+				if svc.fetchErr != nil {
+					return
+				}
+				svc.fetchErr = svc.storage.DownloadFromURL(i.Source, p)
+			}(image, filePath)
 		}
 	}
 

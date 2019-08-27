@@ -4,9 +4,11 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"maxint.co/mediasummon/services"
+	"maxint.co/mediasummon/storage"
 )
 
 const defaultServiceName = "all"
@@ -51,18 +53,29 @@ func RunSync() {
 	serviceOptions := strings.Join(serviceOptions(), ", ")
 	var serviceName string
 	serviceConfig := &services.ServiceConfig{}
-	serviceConfig.LoadFromEnv()
+
+	format := strings.ReplaceAll(defaultFormat, "/", string(os.PathSeparator))
+
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
 	flag.StringVar(&serviceConfig.Directory, "directory", defaultDirectory, "which directory to sync to")
 	flag.StringVar(&serviceConfig.Directory, "d", defaultDirectory, "which directory to sync to [shorthand]")
-	flag.StringVar(&serviceConfig.Format, "format", defaultFormat, "format for how to name and place media")
-	flag.StringVar(&serviceConfig.Format, "f", defaultFormat, "format for how to name and place media [shorthand]")
+	flag.StringVar(&serviceConfig.Format, "format", format, "format for how to name and place media")
+	flag.StringVar(&serviceConfig.Format, "f", format, "format for how to name and place media [shorthand]")
 	flag.Int64Var(&serviceConfig.NumFetchers, "num-fetchers", defaultNumFetchers, "number of fetchers to run to download content")
 	flag.Int64Var(&serviceConfig.NumFetchers, "n", defaultNumFetchers, "number of fetchers to run to download content [shorthand]")
 	flag.IntVar(&serviceConfig.MaxPages, "max-pages", defaultMaxPages, "max pages to fetch, zero meaning auto")
 	flag.IntVar(&serviceConfig.MaxPages, "m", defaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
 	flag.Parse()
+
+	store, err := storage.NewStorage(serviceConfig.Directory)
+	if err != nil || store == nil {
+		log.Println("FATAL: Could not initialize storage driver", err)
+		return
+	}
+	serviceConfig.Storage = store
+
+	serviceConfig.LoadFromEnv()
 
 	populateServiceMap(serviceConfig)
 

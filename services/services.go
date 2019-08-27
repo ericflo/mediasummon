@@ -3,8 +3,6 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
+	"maxint.co/mediasummon/storage"
 )
 
 const maxAllowablePages = 1000000
@@ -34,6 +33,7 @@ type ServiceConfig struct {
 	WebPort     string
 	FrontendURL string
 	Secrets     map[string]map[string]string
+	Storage     storage.Storage
 }
 
 // LoadFromEnv loads any properties and secrets it can from the environment
@@ -88,60 +88,30 @@ func displayErrorPage(w http.ResponseWriter, msg string) {
 	w.Write([]byte("Error: " + msg))
 }
 
-// downloadURLToPath downloads the given url to the specified path, using a temporary
-// file and renaming in the end in an idempotent way
-func downloadURLToPath(url, path string) error {
-	log.Println("Downloading item", path)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	tmpFile, err := ioutil.TempFile(filepath.Dir(path), ".tmpdownload-")
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Could not create temporary file:", err)
-		return fmt.Errorf("Could not create temporary file: %v", err)
-	}
-
-	_, err = io.Copy(tmpFile, resp.Body)
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Error downloading file:", err)
-		return fmt.Errorf("Error downloading file: %v", err)
-	}
-
-	err = tmpFile.Close()
-	if err != nil {
-		defer os.Remove(tmpFile.Name())
-		log.Println("Could not close temporary file:", err)
-		return fmt.Errorf("Could not close temporary file: %v", err)
-	}
-
-	return os.Rename(tmpFile.Name(), path)
-}
-
-func saveOAuthData(tok *oauth2.Token, baseDir, serviceName string) error {
+func saveOAuthData(store storage.Storage, tok *oauth2.Token, serviceName string) error {
 	encodedTok, err := json.Marshal(tok)
 	if err != nil {
 		return fmt.Errorf("Could not encode Facebook authentication token to save: %v", err)
 	}
-	authdir := filepath.Join(baseDir, ".meta", serviceName)
-	if err = os.MkdirAll(authdir, 0644); err != nil {
+	authdir := filepath.Join(".meta", serviceName)
+	if err = store.EnsureDirectoryExists(authdir); err != nil {
 		return fmt.Errorf("Could not create auth metadata directory: %v", err)
 	}
 	path := filepath.Join(authdir, "auth.json")
-	if err = ioutil.WriteFile(path, encodedTok, 0644); err != nil {
+	if err = store.WriteBlob(path, encodedTok); err != nil {
 		return fmt.Errorf("Could not write Facebook auth data to disk: %v", err)
 	}
 	return nil
 }
 
-func loadOAuthData(baseDir, serviceName string) (*oauth2.Token, error) {
-	path := filepath.Join(baseDir, ".meta", serviceName, "auth.json")
-	encodedTok, err := ioutil.ReadFile(path)
+func loadOAuthData(store storage.Storage, serviceName string) (*oauth2.Token, error) {
+	path := filepath.Join(".meta", serviceName, "auth.json")
+	if exists, err := store.Exists(path); err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, nil
+	}
+	encodedTok, err := store.ReadBlob(path)
 	if err != nil {
 		return nil, err
 	}
