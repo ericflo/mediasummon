@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -244,7 +243,7 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
 			return err
 		}
-		filePath := path.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
+		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
 		if exists, err := svc.storage.Exists(filePath); err != nil {
 			return err
 		} else if !exists {

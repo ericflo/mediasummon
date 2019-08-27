@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -239,7 +238,7 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
 			return err
 		}
-		filePath := path.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
+		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
 		if exists, err := svc.storage.Exists(filePath); err != nil {
 			return err
 		} else if !exists {
