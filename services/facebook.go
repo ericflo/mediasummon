@@ -105,7 +105,13 @@ func (svc *facebookService) CredentialRedirectURL() string {
 	return svc.conf.AuthCodeURL("state")
 }
 
-func (svc *facebookService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (svc *facebookService) HTTPHandlers() map[string]http.HandlerFunc {
+	return map[string]http.HandlerFunc{
+		"/auth/facebook/return": svc.HandleFacebookReturn,
+	}
+}
+
+func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		displayErrorPage(w, "Could not parse Facebook's response")
 		return

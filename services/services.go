@@ -21,7 +21,7 @@ type SyncService interface {
 	NeedsCredentials() bool
 	CredentialRedirectURL() string
 	Sync() error
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	HTTPHandlers() map[string]http.HandlerFunc
 }
 
 // ServiceConfig is a struct that can configure a service

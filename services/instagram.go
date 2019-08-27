@@ -93,7 +93,13 @@ func (svc *instagramService) CredentialRedirectURL() string {
 	return svc.conf.AuthCodeURL("state")
 }
 
-func (svc *instagramService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (svc *instagramService) HTTPHandlers() map[string]http.HandlerFunc {
+	return map[string]http.HandlerFunc{
+		"/auth/instagram/return": svc.HandleInstagramReturn,
+	}
+}
+
+func (svc *instagramService) HandleInstagramReturn(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		displayErrorPage(w, "Could not parse Instagram's response")
 		return

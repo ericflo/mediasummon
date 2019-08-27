@@ -118,7 +118,13 @@ func (svc *googleService) CredentialRedirectURL() string {
 	return svc.conf.AuthCodeURL("state")
 }
 
-func (svc *googleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (svc *googleService) HTTPHandlers() map[string]http.HandlerFunc {
+	return map[string]http.HandlerFunc{
+		"/auth/google/return": svc.HandleGoogleReturn,
+	}
+}
+
+func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		displayErrorPage(w, "Could not parse Google's response")
 		return

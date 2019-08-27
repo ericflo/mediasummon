@@ -75,15 +75,19 @@ func RunSync() {
 
 // runSyncList runs sync on all the services that have credentials
 func runSyncList(serviceConfig *services.ServiceConfig) {
-	// TODO: Spawn http server with service handlers mapped to appropriate
 	svcs := map[string]services.SyncService{}
+	mux := http.NewServeMux()
 	for serviceName, svc := range serviceMap {
 		if svc.NeedsCredentials() {
 			log.Println("Service", serviceName, "needs credentials...skipping.")
 			continue
 		}
 		svcs[serviceName] = svc
+		for key, handler := range svc.HTTPHandlers() {
+			mux.HandleFunc(key, handler)
+		}
 	}
+	go http.ListenAndServe(":"+config.WebPort, mux)
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
@@ -102,7 +106,13 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 		log.Println("Could not find service: " + serviceName)
 		return
 	}
-	go http.ListenAndServe(":"+config.WebPort, svc)
+
+	mux := http.NewServeMux()
+	for key, handler := range svc.HTTPHandlers() {
+		mux.HandleFunc(key, handler)
+	}
+
+	go http.ListenAndServe(":"+config.WebPort, mux)
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
 	}
