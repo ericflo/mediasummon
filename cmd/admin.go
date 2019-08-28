@@ -78,11 +78,11 @@ func renderJSONError(w http.ResponseWriter, err error, code int) {
 
 // handleAdminServiceMapRequest handles http requests for the service map
 func handleAdminServiceMapRequest(w http.ResponseWriter, r *http.Request) {
-	serviceNames := make([]string, 0, len(serviceMap))
-	for serviceName := range serviceMap {
-		serviceNames = append(serviceNames, serviceName)
+	svcs := make([]*services.ServiceMetadata, 0, len(serviceMap))
+	for _, svc := range serviceMap {
+		svcs = append(svcs, svc.Metadata())
 	}
-	data, err := json.Marshal(serviceNames)
+	data, err := json.Marshal(svcs)
 	if err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
 	}

@@ -34,9 +34,16 @@ const DefaultMaxPages = 0
 // DefaultWebPort is the default web port for the admin http server
 const DefaultWebPort = "5000"
 
+// ServiceMetadata is metadata that a service provides about itself
+type ServiceMetadata struct {
+	ID   string `json:"ID"`
+	Name string `json:"name"`
+}
+
 // SyncService represents a service that can be synchronized to a directory
 type SyncService interface {
 	Setup() error
+	Metadata() *ServiceMetadata
 	NeedsCredentials() bool
 	CredentialRedirectURL() string
 	Sync() error

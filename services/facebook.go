@@ -103,6 +103,13 @@ func (svc *facebookService) Setup() error {
 	return nil
 }
 
+func (svc *facebookService) Metadata() *ServiceMetadata {
+	return &ServiceMetadata{
+		ID:   "facebook",
+		Name: "Facebook Photos",
+	}
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *facebookService) NeedsCredentials() bool {
 	return svc.client == nil || svc.accessToken == nil

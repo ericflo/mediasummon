@@ -116,6 +116,13 @@ func (svc *googleService) Setup() error {
 	return nil
 }
 
+func (svc *googleService) Metadata() *ServiceMetadata {
+	return &ServiceMetadata{
+		ID:   "google",
+		Name: "Google Photos",
+	}
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *googleService) NeedsCredentials() bool {
 	return svc.client == nil

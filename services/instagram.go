@@ -91,6 +91,13 @@ func (svc *instagramService) Setup() error {
 	return nil
 }
 
+func (svc *instagramService) Metadata() *ServiceMetadata {
+	return &ServiceMetadata{
+		ID:   "instagram",
+		Name: "Instagram (Classic API)",
+	}
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *instagramService) NeedsCredentials() bool {
 	return svc.client == nil || svc.accessToken == nil
