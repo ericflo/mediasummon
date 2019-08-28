@@ -1,0 +1,19 @@
+{
+  "name": "mediasummon-admin",
+  "version": "0.0.1",
+  "description": "Mediasummon admin website",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start",
+    "export": "npm run build && next export"
+  },
+  "author": "Eric Florenzano",
+  "license": "MIT",
+  "dependencies": {
+    "next": "^9.0.5",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0"
+  }
+}

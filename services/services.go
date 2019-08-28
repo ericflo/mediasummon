@@ -32,6 +32,7 @@ type ServiceConfig struct {
 	MaxPages    int
 	WebPort     string
 	FrontendURL string
+	AdminPath   string
 	Secrets     map[string]map[string]string
 	Storage     storage.Storage
 }

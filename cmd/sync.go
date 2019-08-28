@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"maxint.co/mediasummon/services"
@@ -13,6 +14,7 @@ import (
 
 const defaultServiceName = "all"
 const defaultDirectory = "media"
+const defaultAdminPath = "admin"
 const defaultFormat = "2006/January/02-15_04_05"
 const defaultNumFetchers = 6
 const defaultMaxPages = 0
@@ -66,6 +68,8 @@ func RunSync() {
 	flag.Int64Var(&serviceConfig.NumFetchers, "n", defaultNumFetchers, "number of fetchers to run to download content [shorthand]")
 	flag.IntVar(&serviceConfig.MaxPages, "max-pages", defaultMaxPages, "max pages to fetch, zero meaning auto")
 	flag.IntVar(&serviceConfig.MaxPages, "m", defaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
+	flag.StringVar(&serviceConfig.AdminPath, "admin", defaultAdminPath, "path to admin static site")
+	flag.StringVar(&serviceConfig.AdminPath, "a", defaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
 	store, err := storage.NewStorage(serviceConfig.Directory)
@@ -90,6 +94,7 @@ func RunSync() {
 func runSyncList(serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
 	for serviceName, svc := range serviceMap {
 		if svc.NeedsCredentials() {
 			log.Println("Service", serviceName, "needs credentials...skipping.")
@@ -121,6 +126,7 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 	}
 
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
 	for key, handler := range svc.HTTPHandlers() {
 		mux.HandleFunc(key, handler)
 	}
