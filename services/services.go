@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -14,6 +15,24 @@ import (
 )
 
 const maxAllowablePages = 1000000
+
+// DefaultDirectory is the default target directory to download all media into
+const DefaultDirectory = "media"
+
+// DefaultAdminPath is the default path to the admin website
+const DefaultAdminPath = "admin"
+
+// DefaultFormat is the default format string specifying how to organize your media
+var DefaultFormat = strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator))
+
+// DefaultNumFetchers is the default maximum number of concurrent downloads each service can make
+const DefaultNumFetchers = 6
+
+// DefaultMaxPages is the default max number of pages of archive history to fetch, with 0 being auto
+const DefaultMaxPages = 0
+
+// DefaultWebPort is the default web port for the admin http server
+const DefaultWebPort = "5000"
 
 // SyncService represents a service that can be synchronized to a directory
 type SyncService interface {
@@ -46,7 +65,7 @@ func (config *ServiceConfig) LoadFromEnv() {
 	if err := godotenv.Load(dirEnv); err != nil && !os.IsNotExist(err) {
 		log.Printf("Could not load .env file in target directory %v", err)
 	}
-	config.WebPort = GetenvDefault("WEB_PORT", "5000")
+	config.WebPort = GetenvDefault("WEB_PORT", DefaultWebPort)
 	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
 	config.Secrets = map[string]map[string]string{
 		"google": map[string]string{

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -13,33 +12,6 @@ import (
 )
 
 const defaultServiceName = "all"
-const defaultDirectory = "media"
-const defaultAdminPath = "admin"
-const defaultFormat = "2006/January/02-15_04_05"
-const defaultNumFetchers = 6
-const defaultMaxPages = 0
-
-var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.ServiceCreator{
-	"google":    services.NewGoogleService,
-	"instagram": services.NewInstagramService,
-	"facebook":  services.NewFacebookService,
-}
-var serviceMap = map[string]services.SyncService{}
-
-// populateServiceMap populates the service map with the initialized SyncService given the
-// provided ServiceConfig
-func populateServiceMap(serviceConfig *services.ServiceConfig) {
-	for serviceName, svcCreator := range serviceCreatorMap {
-		var svc services.SyncService
-		if s, err := svcCreator(serviceConfig); err != nil {
-			log.Println("Error setting up", serviceName, err, "...skipping.")
-			continue
-		} else {
-			svc = s
-		}
-		serviceMap[serviceName] = svc
-	}
-}
 
 // serviceOptions gets a slice of all the keys in the serviceMap, plus the "all" option
 func serviceOptions() []string {
@@ -56,20 +28,18 @@ func RunSync() {
 	var serviceName string
 	serviceConfig := &services.ServiceConfig{}
 
-	format := strings.ReplaceAll(defaultFormat, "/", string(os.PathSeparator))
-
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
-	flag.StringVar(&serviceConfig.Directory, "directory", defaultDirectory, "which directory to sync to")
-	flag.StringVar(&serviceConfig.Directory, "d", defaultDirectory, "which directory to sync to [shorthand]")
-	flag.StringVar(&serviceConfig.Format, "format", format, "format for how to name and place media")
-	flag.StringVar(&serviceConfig.Format, "f", format, "format for how to name and place media [shorthand]")
-	flag.Int64Var(&serviceConfig.NumFetchers, "num-fetchers", defaultNumFetchers, "number of fetchers to run to download content")
-	flag.Int64Var(&serviceConfig.NumFetchers, "n", defaultNumFetchers, "number of fetchers to run to download content [shorthand]")
-	flag.IntVar(&serviceConfig.MaxPages, "max-pages", defaultMaxPages, "max pages to fetch, zero meaning auto")
-	flag.IntVar(&serviceConfig.MaxPages, "m", defaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
-	flag.StringVar(&serviceConfig.AdminPath, "admin", defaultAdminPath, "path to admin static site")
-	flag.StringVar(&serviceConfig.AdminPath, "a", defaultAdminPath, "path to admin static site [shorthand]")
+	flag.StringVar(&serviceConfig.Directory, "directory", services.DefaultDirectory, "which directory to sync to")
+	flag.StringVar(&serviceConfig.Directory, "d", services.DefaultDirectory, "which directory to sync to [shorthand]")
+	flag.StringVar(&serviceConfig.Format, "format", services.DefaultFormat, "format for how to name and place media")
+	flag.StringVar(&serviceConfig.Format, "f", services.DefaultFormat, "format for how to name and place media [shorthand]")
+	flag.Int64Var(&serviceConfig.NumFetchers, "num-fetchers", services.DefaultNumFetchers, "number of fetchers to run to download content")
+	flag.Int64Var(&serviceConfig.NumFetchers, "n", services.DefaultNumFetchers, "number of fetchers to run to download content [shorthand]")
+	flag.IntVar(&serviceConfig.MaxPages, "max-pages", services.DefaultMaxPages, "max pages to fetch, zero meaning auto")
+	flag.IntVar(&serviceConfig.MaxPages, "m", services.DefaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
+	flag.StringVar(&serviceConfig.AdminPath, "admin", services.DefaultAdminPath, "path to admin static site")
+	flag.StringVar(&serviceConfig.AdminPath, "a", services.DefaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
 	store, err := storage.NewStorage(serviceConfig.Directory)
