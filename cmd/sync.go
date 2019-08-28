@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 
 	"maxint.co/mediasummon/services"
@@ -64,7 +63,7 @@ func RunSync() {
 func runSyncList(serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
+	attachAdminHTTPHandlers(mux, serviceConfig)
 	for serviceName, svc := range serviceMap {
 		if svc.NeedsCredentials() {
 			log.Println("Service", serviceName, "needs credentials...skipping.")
@@ -75,7 +74,8 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 			mux.HandleFunc(key, handler)
 		}
 	}
-	go http.ListenAndServe(":"+serviceConfig.WebPort, mux)
+	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
@@ -96,12 +96,13 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
+	attachAdminHTTPHandlers(mux, serviceConfig)
 	for key, handler := range svc.HTTPHandlers() {
 		mux.HandleFunc(key, handler)
 	}
 
-	go http.ListenAndServe(":"+serviceConfig.WebPort, mux)
+	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
 	}

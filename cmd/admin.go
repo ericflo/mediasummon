@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
+	"github.com/rs/cors"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 )
@@ -41,6 +45,48 @@ func RunAdmin() {
 	populateServiceMap(serviceConfig)
 
 	mux := http.NewServeMux()
+	for _, svc := range serviceMap {
+		for key, handler := range svc.HTTPHandlers() {
+			mux.HandleFunc(key, handler)
+		}
+	}
+
+	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+}
+
+func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) http.Handler {
 	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
-	http.ListenAndServe(":"+serviceConfig.WebPort, mux)
+	mux.HandleFunc("/resources/services.json", handleAdminServiceMapRequest)
+	return cors.Default().Handler(mux)
+}
+
+func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
+	// Doing it this way because we can verify using Go's type system that it won't
+	// encode improperly as long as it contains no quotes (which we ensure) and then
+	// we don't have to branch and check for errors here when there cannot be any
+	quoteless := strings.ReplaceAll(message, "\"", "")
+	encoded := []byte(fmt.Sprintf("{\"error\":\"%s\"}", quoteless))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(encoded)
+}
+
+func renderJSONError(w http.ResponseWriter, err error, code int) {
+	renderJSONErrorMessage(w, err.Error(), code)
+}
+
+// handleAdminServiceMapRequest handles http requests for the service map
+func handleAdminServiceMapRequest(w http.ResponseWriter, r *http.Request) {
+	serviceNames := make([]string, 0, len(serviceMap))
+	for serviceName := range serviceMap {
+		serviceNames = append(serviceNames, serviceName)
+	}
+	data, err := json.Marshal(serviceNames)
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import httpFetch from '../fetch';
+import config from '../config';
 
 export default function Home() {
   const [services, setServices] = useState([]);
@@ -7,7 +8,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const result = await httpFetch('https://random.dog/woof.json');
+        const result = await httpFetch(config.apiPrefix + '/resources/services.json');
         if (result.ok) {
           setServices([await result.text()]);
         } else {
