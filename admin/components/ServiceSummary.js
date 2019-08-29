@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function ServiceSummary({service}) {
   return (
-    <div className="uk-card uk-card-default uk-margin">
+    <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
         <div className="uk-grid-small uk-flex-middle" uk-grid="true">
           <div className="uk-width-auto">

@@ -26,7 +26,7 @@ export default function Home() {
     fetchData();
   }, []);
   return (
-    <div>
+    <div className="uk-container">
       <Head>
         <title>Your Mediasummon Dashboard</title>
       </Head>
@@ -36,13 +36,11 @@ export default function Home() {
           <a className="uk-alert-close" uk-close="true"></a>
           <p><span uk-icon="warning" /> {errorMessage}</p>
         </div> : null}
-      <div className="uk-section uk-section-default">
-        <div className="container">
-          <h3>Services to sync</h3>
-          {services.map(service => {
-            return <ServiceSummary key={service.id} service={service} />;
-          })}
-        </div>
+      <div className="uk-section uk-section-default uk-padding-remove">
+        <h3>Services to sync</h3>
+        {services.map(service => {
+          return <ServiceSummary key={service.id} service={service} />;
+        })}
       </div>
     </div>
   );
