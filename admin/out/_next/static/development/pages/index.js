@@ -18,7 +18,7 @@ var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 function ServiceSummary(_ref) {
   var service = _ref.service;
   return __jsx("div", {
-    className: "uk-card uk-card-default uk-margin",
+    className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
       lineNumber: 5
@@ -18193,6 +18193,7 @@ function Home() {
     fetchData();
   }, []);
   return __jsx("div", {
+    className: "uk-container",
     __source: {
       fileName: _jsxFileName,
       lineNumber: 29
@@ -18246,23 +18247,16 @@ function Home() {
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
-    className: "uk-section uk-section-default",
+    className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
       lineNumber: 39
     },
     __self: this
-  }, __jsx("div", {
-    className: "container",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 40
-    },
-    __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 41
+      lineNumber: 40
     },
     __self: this
   }, "Services to sync"), services.map(function (service) {
@@ -18271,11 +18265,11 @@ function Home() {
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 43
+        lineNumber: 42
       },
       __self: this
     });
-  }))));
+  })));
 }
 
 /***/ }),
