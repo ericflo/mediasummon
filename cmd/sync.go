@@ -63,7 +63,6 @@ func RunSync() {
 func runSyncList(serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
-	attachAdminHTTPHandlers(mux, serviceConfig)
 	for serviceName, svc := range serviceMap {
 		if svc.NeedsCredentials() {
 			log.Println("Service", serviceName, "needs credentials...skipping.")
@@ -96,7 +95,6 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 	}
 
 	mux := http.NewServeMux()
-	attachAdminHTTPHandlers(mux, serviceConfig)
 	for key, handler := range svc.HTTPHandlers() {
 		mux.HandleFunc(key, handler)
 	}
