@@ -12,8 +12,10 @@
   "author": "Eric Florenzano",
   "license": "MIT",
   "dependencies": {
+    "@zeit/next-css": "^1.0.1",
     "next": "^9.0.5",
     "react": "^16.9.0",
-    "react-dom": "^16.9.0"
+    "react-dom": "^16.9.0",
+    "uikit": "^3.1.8"
   }
 }

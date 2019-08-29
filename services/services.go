@@ -36,7 +36,7 @@ const DefaultWebPort = "5000"
 
 // ServiceMetadata is metadata that a service provides about itself
 type ServiceMetadata struct {
-	ID   string `json:"ID"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
