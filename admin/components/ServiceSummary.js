@@ -18,7 +18,6 @@ export default function ServiceSummary({service}) {
       </div>
       <div className="uk-card-footer">
         <a href="#" className="uk-button uk-button-text">View details</a>
-        
       </div>
     </div>
   )
