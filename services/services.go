@@ -8,9 +8,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
+	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/storage"
 )
 
@@ -38,6 +40,26 @@ const DefaultWebPort = "5000"
 type ServiceMetadata struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// ServiceSystemData is metadata about a service that the system provides
+type ServiceSystemData struct {
+	LastSync  null.Time `json:"last_sync"`
+	SyncCount int       `json:"sync_count"`
+	ItemCount int       `json:"item_count"`
+	FailCount int       `json:"fail_count"`
+}
+
+// ServiceSyncData is data about a single sync session performed by a service
+type ServiceSyncData struct {
+	Started     time.Time `json:"start"`
+	Ended       null.Time `json:"end"`
+	PageCurrent null.Int  `json:"page_current"`
+	PageMax     null.Int  `json:"page_max"`
+	SkipCount   null.Int  `json:"skip_count"`
+	ItemCount   null.Int  `json:"item_count"`
+	FailCount   null.Int  `json:"fail_count"`
+	FetchCount  null.Int  `json:"fetch_count"`
 }
 
 // SyncService represents a service that can be synchronized to a directory
