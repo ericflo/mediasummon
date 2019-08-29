@@ -1,4 +1,5 @@
+const isProduction = process.env.NODE_ENV === 'production';
 export default {
-  //apiPrefix: 'http://localhost:5000'
-  apiPrefix: ''
+  isProduction,
+  apiPrefix: isProduction ? '' : 'http://localhost:5000',
 };
