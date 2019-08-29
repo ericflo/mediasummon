@@ -12,7 +12,7 @@ export default function Home() {
         if (result.ok) {
           setServices([await result.text()]);
         } else {
-          setErrorMessage('Completed fetch but got bad status from resource: ' + err);
+          setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
         }
       } catch (err) {
         setErrorMessage('Could not complete fetch: ' + err);
