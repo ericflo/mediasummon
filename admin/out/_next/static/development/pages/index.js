@@ -9,9 +9,10 @@
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+var isProduction = "development" === 'production';
 /* harmony default export */ __webpack_exports__["default"] = ({
-  //apiPrefix: 'http://localhost:5000'
-  apiPrefix: ''
+  isProduction: isProduction,
+  apiPrefix: isProduction ? '' : 'http://localhost:5000'
 });
 
 /***/ }),
@@ -2958,7 +2959,7 @@ function Home() {
                 break;
 
               case 13:
-                setErrorMessage('Completed fetch but got bad status from resource: ' + err);
+                setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
 
               case 14:
                 _context.next = 19;
