@@ -18568,6 +18568,7 @@ function ensureInstalled() {
   req.addEventListener('load', function () {
     installedCSRF = req.getResponseHeader('x-csrf-token');
   });
+  req.open('HEAD', _config__WEBPACK_IMPORTED_MODULE_0__["default"].apiPrefix, true);
   req.send(null);
   installed = true;
 }
