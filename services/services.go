@@ -107,7 +107,7 @@ func (config *ServiceConfig) LoadFromEnv() {
 		},
 		"instagram": map[string]string{
 			"ClientID":     os.Getenv("INSTAGRAM_CLIENT_ID"),
-			"ClientSecret": os.Getenv("INSTAGRAM_CLIENT_ID"),
+			"ClientSecret": os.Getenv("INSTAGRAM_CLIENT_SECRET"),
 		},
 		"facebook": map[string]string{
 			"ClientID":     os.Getenv("FACEBOOK_CLIENT_ID"),
