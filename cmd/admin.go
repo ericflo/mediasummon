@@ -86,7 +86,8 @@ type AdminServiceDescription struct {
 func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
-		for serviceName, svc := range serviceMap {
+		for _, serviceName := range sortedServiceNames() {
+			svc := serviceMap[serviceName]
 			lastSync, err := services.GetLatestServiceSyncData(store, serviceName)
 			if err != nil {
 				log.Println("Error getting latest service sync data", err)

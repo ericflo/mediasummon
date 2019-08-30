@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"sort"
 
 	"maxint.co/mediasummon/services"
 )
@@ -26,4 +27,14 @@ func populateServiceMap(serviceConfig *services.ServiceConfig) {
 		}
 		serviceMap[serviceName] = svc
 	}
+}
+
+// sortedServiceNames returns a sorted list of the service names registered to the serviceMap
+func sortedServiceNames() []string {
+	serviceNames := make([]string, 0, len(serviceMap))
+	for serviceName := range serviceMap {
+		serviceNames = append(serviceNames, serviceName)
+	}
+	sort.Strings(serviceNames)
+	return serviceNames
 }
