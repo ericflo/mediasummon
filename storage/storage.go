@@ -24,11 +24,19 @@ func NewStorage(url string) (Storage, error) {
 	// If it's a single-letter scheme, it's Windows and a drive letter, so just pass the whole
 	// url as the base path to the underlying file storage layer
 	if len(parsedURL.Scheme) == 1 {
-		return NewFileStorage(url)
+		store, err := NewFileStorage(url)
+		if err != nil {
+			return nil, err
+		}
+		return &Multi{Stores: []Storage{store}}, nil
 	}
 	switch parsedURL.Scheme {
 	case "file", "":
-		return NewFileStorage(parsedURL.Path)
+		store, err := NewFileStorage(parsedURL.Path)
+		if err != nil {
+			return nil, err
+		}
+		return &Multi{Stores: []Storage{store}}, nil
 	}
 	return nil, fmt.Errorf("Could not load storage for scheme: %v (%v)", parsedURL.Scheme, url)
 }

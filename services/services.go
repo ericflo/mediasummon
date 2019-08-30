@@ -144,30 +144,30 @@ func displayErrorPage(w http.ResponseWriter, msg string) {
 	w.Write([]byte("Error: " + msg))
 }
 
-func saveOAuthData(store storage.Storage, tok *oauth2.Token, serviceName string) error {
+func saveOAuthData(serviceConfig *ServiceConfig, tok *oauth2.Token, serviceName string) error {
 	encodedTok, err := json.Marshal(tok)
 	if err != nil {
 		return fmt.Errorf("Could not encode authentication token to save: %v", err)
 	}
 	authdir := filepath.Join(".meta", serviceName)
-	if err = store.EnsureDirectoryExists(authdir); err != nil {
+	if err = serviceConfig.Storage.EnsureDirectoryExists(authdir); err != nil {
 		return fmt.Errorf("Could not create auth metadata directory: %v", err)
 	}
 	path := filepath.Join(authdir, "auth.json")
-	if err = store.WriteBlob(path, encodedTok); err != nil {
+	if err = serviceConfig.Storage.WriteBlob(path, encodedTok); err != nil {
 		return fmt.Errorf("Could not write auth data to disk: %v", err)
 	}
 	return nil
 }
 
-func loadOAuthData(store storage.Storage, serviceName string) (*oauth2.Token, error) {
+func loadOAuthData(serviceConfig *ServiceConfig, serviceName string) (*oauth2.Token, error) {
 	path := filepath.Join(".meta", serviceName, "auth.json")
-	if exists, err := store.Exists(path); err != nil {
+	if exists, err := serviceConfig.Storage.Exists(path); err != nil {
 		return nil, err
 	} else if !exists {
 		return nil, nil
 	}
-	encodedTok, err := store.ReadBlob(path)
+	encodedTok, err := serviceConfig.Storage.ReadBlob(path)
 	if err != nil {
 		return nil, err
 	}
@@ -178,38 +178,38 @@ func loadOAuthData(store storage.Storage, serviceName string) (*oauth2.Token, er
 	return tok, nil
 }
 
-func persistSyncData(store storage.Storage, serviceName string, syncData *ServiceSyncData) error {
+func persistSyncData(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData) error {
 	encoded, err := json.Marshal(syncData)
 	if err != nil {
 		log.Printf("Error: Could not encode data to save: %v", err)
 		return fmt.Errorf("Could not encode data to save: %v", err)
 	}
 	datadir := filepath.Join(".meta", serviceName, "syncdata")
-	if err = store.EnsureDirectoryExists(datadir); err != nil {
+	if err = serviceConfig.Storage.EnsureDirectoryExists(datadir); err != nil {
 		log.Printf("Error: Could not create syncdata directory: %v", err)
 		return fmt.Errorf("Could not create syncdata directory: %v", err)
 	}
 	path := filepath.Join(datadir, fmt.Sprintf("%d.json", syncData.Started.UnixNano()))
-	if err = store.WriteBlob(path, encoded); err != nil {
+	if err = serviceConfig.Storage.WriteBlob(path, encoded); err != nil {
 		log.Printf("Error: Could not write sync data to disk: %v", err)
 		return fmt.Errorf("Could not write sync data to disk: %v", err)
 	}
 	return nil
 }
 
-func handleSyncError(store storage.Storage, serviceName string, syncData *ServiceSyncData, count int) error {
+func handleSyncError(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData, count int) error {
 	syncData.FailCount = incrementOrSet(syncData.FailCount, count)
-	return persistSyncData(store, serviceName, syncData)
+	return persistSyncData(serviceConfig, serviceName, syncData)
 }
 
-func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncData *ServiceSyncData, fetchErr error, filePath, hash string) {
+func persistSyncDataPostFetch(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData, fetchErr error, filePath, hash string) {
 	if fetchErr == nil {
 		syncData.FetchCount = incrementOrSet(syncData.FetchCount, 1)
 		syncData.Hashes[filePath] = hash
-		persistSyncData(store, serviceName, syncData)
+		persistSyncData(serviceConfig, serviceName, syncData)
 	} else {
 		syncData.FailCount = incrementOrSet(syncData.FailCount, 1)
-		persistSyncData(store, serviceName, syncData)
+		persistSyncData(serviceConfig, serviceName, syncData)
 	}
 }
 
