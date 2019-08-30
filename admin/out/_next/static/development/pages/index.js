@@ -18566,10 +18566,8 @@ function ensureInstalled() {
   dayjs.extend(relativetime);
   var req = new XMLHttpRequest();
   req.addEventListener('load', function () {
-    console.log('loaded', req.getResponseHeader('x-csrf-token'));
     installedCSRF = req.getResponseHeader('x-csrf-token');
   });
-  req.open('HEAD', _config__WEBPACK_IMPORTED_MODULE_0__["default"].apiPrefix, true);
   req.send(null);
   installed = true;
 }
