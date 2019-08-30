@@ -78,8 +78,10 @@ func renderJSONError(w http.ResponseWriter, err error, code int) {
 
 // AdminServiceDescription is the response that the admin gives when talking about a service
 type AdminServiceDescription struct {
-	Metadata *services.ServiceMetadata `json:"metadata"`
-	LastSync *services.ServiceSyncData `json:"last_sync"`
+	Metadata              *services.ServiceMetadata `json:"metadata"`
+	NeedsCredentials      bool                      `json:"needs_credentials"`
+	CredentialRedirectURL string                    `json:"credential_redirect_url"`
+	LastSync              *services.ServiceSyncData `json:"last_sync"`
 }
 
 // handleAdminServiceMapRequest handles http requests for the service map
@@ -93,8 +95,10 @@ func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 				log.Println("Error getting latest service sync data", err)
 			}
 			svcs = append(svcs, &AdminServiceDescription{
-				Metadata: svc.Metadata(),
-				LastSync: lastSync,
+				Metadata:              svc.Metadata(),
+				NeedsCredentials:      svc.NeedsCredentials(),
+				CredentialRedirectURL: svc.CredentialRedirectURL(),
+				LastSync:              lastSync,
 			})
 		}
 		data, err := json.Marshal(svcs)
