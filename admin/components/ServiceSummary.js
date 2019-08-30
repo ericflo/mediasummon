@@ -42,7 +42,7 @@ export default function ServiceSummary({service}) {
       <div className="uk-card-footer">
         <a href="#" className="uk-button uk-button-text">View details</a>
         <p className="uk-align-right">
-          {service.current_sync ? null :
+          {service.current_sync || service.needs_credentials ? null :
             <a className="uk-button uk-button-primary" href="#" onClick={handleSyncClick.bind(this, service)}>Sync now</a>}
         </p>
       </div>

@@ -237,7 +237,7 @@ function ServiceSummary(_ref) {
       lineNumber: 44
     },
     __self: this
-  }, service.current_sync ? null : __jsx("a", {
+  }, service.current_sync || service.needs_credentials ? null : __jsx("a", {
     className: "uk-button uk-button-primary",
     href: "#",
     onClick: handleSyncClick.bind(this, service),
