@@ -73,8 +73,13 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 			mux.HandleFunc(key, handler)
 		}
 	}
-	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+
+	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	if err != nil {
+		log.Println("Error: Could not attach admin HTTP handlers", err)
+	}
 	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
@@ -99,8 +104,12 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 		mux.HandleFunc(key, handler)
 	}
 
-	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	if err != nil {
+		log.Println("Error: Could not attach admin HTTP handlers", err)
+	}
 	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
 	}

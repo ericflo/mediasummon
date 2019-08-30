@@ -124,7 +124,11 @@ func (store *fileStorage) ReadBlob(path string) ([]byte, error) {
 		return nil, err
 	}
 	defer store.sem.Release(1)
-	return ioutil.ReadFile(filepath.Join(store.directory, path))
+	resp, err := ioutil.ReadFile(filepath.Join(store.directory, path))
+	if err != nil && os.IsNotExist(err) {
+		return nil, nil
+	}
+	return resp, err
 }
 
 // WriteBlob takes the given slice of bytes and writes it to the given path

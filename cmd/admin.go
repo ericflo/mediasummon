@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gorilla/csrf"
 	"github.com/rs/cors"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
@@ -51,14 +52,24 @@ func RunAdmin() {
 		}
 	}
 
-	handler := attachAdminHTTPHandlers(mux, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	if err != nil {
+		log.Println("Error: Could not attach Admin HTTP Handlers", err)
+		return
+	}
+
 	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 }
 
-func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) http.Handler {
-	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
+func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) (http.Handler, error) {
+	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
 	mux.HandleFunc("/resources/services.json", makeAdminServiceMapRequest(serviceConfig.Storage))
-	return cors.Default().Handler(mux)
+	csrfSecret, err := ensureCSRFSecret(serviceConfig.Storage)
+	if err != nil {
+		return nil, err
+	}
+	csrfMiddleware := csrf.Protect([]byte(csrfSecret))
+	return csrfMiddleware(cors.Default().Handler(mux)), nil
 }
 
 func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {

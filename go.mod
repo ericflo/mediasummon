@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
+	github.com/gorilla/csrf v1.6.1
 	github.com/joho/godotenv v1.3.0
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/rs/cors v1.7.0
