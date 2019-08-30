@@ -21,6 +21,7 @@ export function ensureInstalled() {
   req.addEventListener('load', function() {
     installedCSRF = req.getResponseHeader('x-csrf-token');
   });
+  req.open('HEAD', config.apiPrefix, true);
   req.send(null);
 
   installed = true;
