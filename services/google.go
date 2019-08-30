@@ -164,7 +164,7 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 
 	svc.client = svc.conf.Client(oauth2.NoContext, tok)
 
-	w.Write([]byte("Connected! You can now close this browser window."))
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (svc *googleService) Sync() error {

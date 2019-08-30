@@ -152,7 +152,7 @@ func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.
 	svc.accessToken = tok
 	svc.client = svc.conf.Client(oauth2.NoContext, tok)
 
-	w.Write([]byte("Connected! You can now close this browser window."))
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (svc *facebookService) Sync() error {

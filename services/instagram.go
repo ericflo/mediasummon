@@ -141,7 +141,7 @@ func (svc *instagramService) HandleInstagramReturn(w http.ResponseWriter, r *htt
 	svc.accessToken = tok
 	svc.client = svc.conf.Client(oauth2.NoContext, tok)
 
-	w.Write([]byte("Connected! You can now close this browser window."))
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (svc *instagramService) Sync() error {
