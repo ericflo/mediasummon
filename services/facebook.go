@@ -156,13 +156,17 @@ func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.
 	svc.accessToken = tok
 	svc.client = svc.conf.Client(oauth2.NoContext, tok)
 
+	if svc.syncData == nil {
+		go svc.Sync()
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (svc *facebookService) Sync() error {
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
-	for svc.NeedsCredentials() {
+	if svc.NeedsCredentials() {
 		if !hasRequested {
 			if err := browser.OpenURL(svc.CredentialRedirectURL()); err != nil {
 				fmt.Fprintf(os.Stderr, "Could not open browser: %v", err)

@@ -168,6 +168,10 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 
 	svc.client = svc.conf.Client(oauth2.NoContext, tok)
 
+	if svc.syncData == nil {
+		go svc.Sync()
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
