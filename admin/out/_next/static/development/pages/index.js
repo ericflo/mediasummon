@@ -1,5 +1,54 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["static\\development\\pages\\index.js"],{
 
+/***/ "./components/Header.js":
+/*!******************************!*\
+  !*** ./components/Header.js ***!
+  \******************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Header; });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! next/head */ "./node_modules/next-server/dist/lib/head.js");
+/* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(next_head__WEBPACK_IMPORTED_MODULE_1__);
+var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\Header.js";
+var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
+
+
+function Header(_ref) {
+  var title = _ref.title;
+  return __jsx(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 6
+    },
+    __self: this
+  }, __jsx(next_head__WEBPACK_IMPORTED_MODULE_1___default.a, {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 7
+    },
+    __self: this
+  }, __jsx("title", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 8
+    },
+    __self: this
+  }, title || 'Mediasummon')), title ? __jsx("h2", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 11
+    },
+    __self: this
+  }, title) : null);
+}
+
+/***/ }),
+
 /***/ "./components/ServiceSummary.js":
 /*!**************************************!*\
   !*** ./components/ServiceSummary.js ***!
@@ -12,23 +61,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ServiceSummary; });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dayjs */ "./node_modules/dayjs/dayjs.min.js");
+/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(dayjs__WEBPACK_IMPORTED_MODULE_1__);
 var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
+
 function ServiceSummary(_ref) {
   var service = _ref.service;
+  var sync = service.last_sync;
+  var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_1___default()(sync.start).fromNow() : 'Never';
+  var startString = sync ? sync.startString : null;
   return __jsx("div", {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 5
+      lineNumber: 9
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 6
+      lineNumber: 10
     },
     __self: this
   }, __jsx("div", {
@@ -36,59 +91,94 @@ function ServiceSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 7
+      lineNumber: 11
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 8
+      lineNumber: 12
     },
     __self: this
   }, __jsx("img", {
     className: "uk-border",
     width: "40",
     height: "40",
-    src: '/static/images/logo-' + service.id + '.png',
+    src: '/static/images/logo-' + service.metadata.id + '.png',
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 9
+      lineNumber: 13
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 11
+      lineNumber: 15
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 12
+      lineNumber: 16
     },
     __self: this
-  }, service.name), __jsx("p", {
+  }, service.metadata.name), __jsx("p", {
     className: "uk-text-meta uk-margin-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 13
+      lineNumber: 17
     },
     __self: this
   }, "Last synced: ", __jsx("time", {
-    dateTime: "2016-04-01T19:00",
+    dateTime: startString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 14
+      lineNumber: 18
     },
     __self: this
-  }, "April 01, 2016"))))), __jsx("div", {
+  }, start), sync ? ' (' + (sync.fetch_count || 0) + ' downloaded)' : null)))), service.needs_credentials ? __jsx("div", {
+    className: "uk-card-body uk-padding-remove-vertical uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 25
+    },
+    __self: this
+  }, __jsx("div", {
+    className: "uk-alert-warning",
+    "uk-alert": "true",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 26
+    },
+    __self: this
+  }, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 27
+    },
+    __self: this
+  }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 28
+    },
+    __self: this
+  }, __jsx("a", {
+    href: service.credential_redirect_url,
+    className: "uk-button uk-button-primary",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 29
+    },
+    __self: this
+  }, "Grant Permission")))) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 33
     },
     __self: this
   }, __jsx("a", {
@@ -96,7 +186,7 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 34
     },
     __self: this
   }, "View details")));
@@ -141,6 +231,116 @@ function httpFetch() {
   } else {
     return _babel_runtime_corejs2_core_js_promise__WEBPACK_IMPORTED_MODULE_0___default.a.reject("fetch() is not implemented in this JavaScript environment");
   }
+}
+
+/***/ }),
+
+/***/ "./fetchers/services.js":
+/*!******************************!*\
+  !*** ./fetchers/services.js ***!
+  \******************************/
+/*! exports provided: fetchServices */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchServices", function() { return fetchServices; });
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _fetch__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../fetch */ "./fetch.js");
+/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../config */ "./config.js");
+
+
+
+
+function fetchServices(_x, _x2) {
+  return _fetchServices.apply(this, arguments);
+}
+
+function _fetchServices() {
+  _fetchServices = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(setServices, setErrorMessage) {
+    var result, services, i, service, sync;
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.prev = 0;
+            _context.next = 3;
+            return Object(_fetch__WEBPACK_IMPORTED_MODULE_2__["default"])(_config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/services.json');
+
+          case 3:
+            result = _context.sent;
+
+            if (!result.ok) {
+              _context.next = 23;
+              break;
+            }
+
+            _context.next = 7;
+            return result.json();
+
+          case 7:
+            services = _context.sent;
+            i = 0;
+
+          case 9:
+            if (!(i < services.length)) {
+              _context.next = 20;
+              break;
+            }
+
+            service = services[i];
+            sync = service.last_sync;
+
+            if (sync) {
+              _context.next = 14;
+              break;
+            }
+
+            return _context.abrupt("continue", 17);
+
+          case 14:
+            sync.startString = sync.start;
+            sync.start = Date.parse(sync.start);
+
+            if (sync.end) {
+              sync.endString = sync.end;
+              sync.end = Date.parse(sync.end);
+            }
+
+          case 17:
+            ++i;
+            _context.next = 9;
+            break;
+
+          case 20:
+            setServices(services);
+            _context.next = 24;
+            break;
+
+          case 23:
+            setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
+
+          case 24:
+            _context.next = 29;
+            break;
+
+          case 26:
+            _context.prev = 26;
+            _context.t0 = _context["catch"](0);
+            setErrorMessage('Could not complete fetch: ' + _context.t0);
+
+          case 29:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee, null, [[0, 26]]);
+  }));
+  return _fetchServices.apply(this, arguments);
 }
 
 /***/ }),
@@ -4000,6 +4200,30 @@ for (var i = 0; i < DOMIterables.length; i++) {
   if (proto && !proto[TO_STRING_TAG]) hide(proto, TO_STRING_TAG, NAME);
   Iterators[NAME] = Iterators.Array;
 }
+
+
+/***/ }),
+
+/***/ "./node_modules/dayjs/dayjs.min.js":
+/*!*****************************************!*\
+  !*** ./node_modules/dayjs/dayjs.min.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+!function(t,n){ true?module.exports=n():undefined}(this,function(){"use strict";var t="millisecond",n="second",e="minute",r="hour",i="day",s="week",u="month",a="quarter",o="year",h=/^(\d{4})-?(\d{1,2})-?(\d{0,2})[^0-9]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?.?(\d{1,3})?$/,f=/\[([^\]]+)]|Y{2,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g,c=function(t,n,e){var r=String(t);return!r||r.length>=n?t:""+Array(n+1-r.length).join(e)+t},d={s:c,z:function(t){var n=-t.utcOffset(),e=Math.abs(n),r=Math.floor(e/60),i=e%60;return(n<=0?"+":"-")+c(r,2,"0")+":"+c(i,2,"0")},m:function(t,n){var e=12*(n.year()-t.year())+(n.month()-t.month()),r=t.clone().add(e,u),i=n-r<0,s=t.clone().add(e+(i?-1:1),u);return Number(-(e+(n-r)/(i?r-s:s-r))||0)},a:function(t){return t<0?Math.ceil(t)||0:Math.floor(t)},p:function(h){return{M:u,y:o,w:s,d:i,h:r,m:e,s:n,ms:t,Q:a}[h]||String(h||"").toLowerCase().replace(/s$/,"")},u:function(t){return void 0===t}},$={name:"en",weekdays:"Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday".split("_"),months:"January_February_March_April_May_June_July_August_September_October_November_December".split("_")},l="en",m={};m[l]=$;var y=function(t){return t instanceof v},M=function(t,n,e){var r;if(!t)return l;if("string"==typeof t)m[t]&&(r=t),n&&(m[t]=n,r=t);else{var i=t.name;m[i]=t,r=i}return e||(l=r),r},g=function(t,n,e){if(y(t))return t.clone();var r=n?"string"==typeof n?{format:n,pl:e}:n:{};return r.date=t,new v(r)},D=d;D.l=M,D.i=y,D.w=function(t,n){return g(t,{locale:n.$L,utc:n.$u})};var v=function(){function c(t){this.$L=this.$L||M(t.locale,null,!0),this.parse(t)}var d=c.prototype;return d.parse=function(t){this.$d=function(t){var n=t.date,e=t.utc;if(null===n)return new Date(NaN);if(D.u(n))return new Date;if(n instanceof Date)return new Date(n);if("string"==typeof n&&!/Z$/i.test(n)){var r=n.match(h);if(r)return e?new Date(Date.UTC(r[1],r[2]-1,r[3]||1,r[4]||0,r[5]||0,r[6]||0,r[7]||0)):new Date(r[1],r[2]-1,r[3]||1,r[4]||0,r[5]||0,r[6]||0,r[7]||0)}return new Date(n)}(t),this.init()},d.init=function(){var t=this.$d;this.$y=t.getFullYear(),this.$M=t.getMonth(),this.$D=t.getDate(),this.$W=t.getDay(),this.$H=t.getHours(),this.$m=t.getMinutes(),this.$s=t.getSeconds(),this.$ms=t.getMilliseconds()},d.$utils=function(){return D},d.isValid=function(){return!("Invalid Date"===this.$d.toString())},d.isSame=function(t,n){var e=g(t);return this.startOf(n)<=e&&e<=this.endOf(n)},d.isAfter=function(t,n){return g(t)<this.startOf(n)},d.isBefore=function(t,n){return this.endOf(n)<g(t)},d.$g=function(t,n,e){return D.u(t)?this[n]:this.set(e,t)},d.year=function(t){return this.$g(t,"$y",o)},d.month=function(t){return this.$g(t,"$M",u)},d.day=function(t){return this.$g(t,"$W",i)},d.date=function(t){return this.$g(t,"$D","date")},d.hour=function(t){return this.$g(t,"$H",r)},d.minute=function(t){return this.$g(t,"$m",e)},d.second=function(t){return this.$g(t,"$s",n)},d.millisecond=function(n){return this.$g(n,"$ms",t)},d.unix=function(){return Math.floor(this.valueOf()/1e3)},d.valueOf=function(){return this.$d.getTime()},d.startOf=function(t,a){var h=this,f=!!D.u(a)||a,c=D.p(t),d=function(t,n){var e=D.w(h.$u?Date.UTC(h.$y,n,t):new Date(h.$y,n,t),h);return f?e:e.endOf(i)},$=function(t,n){return D.w(h.toDate()[t].apply(h.toDate(),(f?[0,0,0,0]:[23,59,59,999]).slice(n)),h)},l=this.$W,m=this.$M,y=this.$D,M="set"+(this.$u?"UTC":"");switch(c){case o:return f?d(1,0):d(31,11);case u:return f?d(1,m):d(0,m+1);case s:var g=this.$locale().weekStart||0,v=(l<g?l+7:l)-g;return d(f?y-v:y+(6-v),m);case i:case"date":return $(M+"Hours",0);case r:return $(M+"Minutes",1);case e:return $(M+"Seconds",2);case n:return $(M+"Milliseconds",3);default:return this.clone()}},d.endOf=function(t){return this.startOf(t,!1)},d.$set=function(s,a){var h,f=D.p(s),c="set"+(this.$u?"UTC":""),d=(h={},h[i]=c+"Date",h.date=c+"Date",h[u]=c+"Month",h[o]=c+"FullYear",h[r]=c+"Hours",h[e]=c+"Minutes",h[n]=c+"Seconds",h[t]=c+"Milliseconds",h)[f],$=f===i?this.$D+(a-this.$W):a;if(f===u||f===o){var l=this.clone().set("date",1);l.$d[d]($),l.init(),this.$d=l.set("date",Math.min(this.$D,l.daysInMonth())).toDate()}else d&&this.$d[d]($);return this.init(),this},d.set=function(t,n){return this.clone().$set(t,n)},d.get=function(t){return this[D.p(t)]()},d.add=function(t,a){var h,f=this;t=Number(t);var c=D.p(a),d=function(n){var e=g(f);return D.w(e.date(e.date()+Math.round(n*t)),f)};if(c===u)return this.set(u,this.$M+t);if(c===o)return this.set(o,this.$y+t);if(c===i)return d(1);if(c===s)return d(7);var $=(h={},h[e]=6e4,h[r]=36e5,h[n]=1e3,h)[c]||1,l=this.valueOf()+t*$;return D.w(l,this)},d.subtract=function(t,n){return this.add(-1*t,n)},d.format=function(t){var n=this;if(!this.isValid())return"Invalid Date";var e=t||"YYYY-MM-DDTHH:mm:ssZ",r=D.z(this),i=this.$locale(),s=this.$H,u=this.$m,a=this.$M,o=i.weekdays,h=i.months,c=function(t,r,i,s){return t&&(t[r]||t(n,e))||i[r].substr(0,s)},d=function(t){return D.s(s%12||12,t,"0")},$=i.meridiem||function(t,n,e){var r=t<12?"AM":"PM";return e?r.toLowerCase():r},l={YY:String(this.$y).slice(-2),YYYY:this.$y,M:a+1,MM:D.s(a+1,2,"0"),MMM:c(i.monthsShort,a,h,3),MMMM:h[a]||h(this,e),D:this.$D,DD:D.s(this.$D,2,"0"),d:String(this.$W),dd:c(i.weekdaysMin,this.$W,o,2),ddd:c(i.weekdaysShort,this.$W,o,3),dddd:o[this.$W],H:String(s),HH:D.s(s,2,"0"),h:d(1),hh:d(2),a:$(s,u,!0),A:$(s,u,!1),m:String(u),mm:D.s(u,2,"0"),s:String(this.$s),ss:D.s(this.$s,2,"0"),SSS:D.s(this.$ms,3,"0"),Z:r};return e.replace(f,function(t,n){return n||l[t]||r.replace(":","")})},d.utcOffset=function(){return 15*-Math.round(this.$d.getTimezoneOffset()/15)},d.diff=function(t,h,f){var c,d=D.p(h),$=g(t),l=6e4*($.utcOffset()-this.utcOffset()),m=this-$,y=D.m(this,$);return y=(c={},c[o]=y/12,c[u]=y,c[a]=y/3,c[s]=(m-l)/6048e5,c[i]=(m-l)/864e5,c[r]=m/36e5,c[e]=m/6e4,c[n]=m/1e3,c)[d]||m,f?y:D.a(y)},d.daysInMonth=function(){return this.endOf(u).$D},d.$locale=function(){return m[this.$L]},d.locale=function(t,n){if(!t)return this.$L;var e=this.clone();return e.$L=M(t,n,!0),e},d.clone=function(){return D.w(this.toDate(),this)},d.toDate=function(){return new Date(this.$d)},d.toJSON=function(){return this.isValid()?this.toISOString():null},d.toISOString=function(){return this.$d.toISOString()},d.toString=function(){return this.$d.toUTCString()},c}();return g.prototype=v.prototype,g.extend=function(t,n){return t(n,v,g),g},g.locale=M,g.isDayjs=y,g.unix=function(t){return g(1e3*t)},g.en=m[l],g.Ls=m,g});
+
+
+/***/ }),
+
+/***/ "./node_modules/dayjs/plugin/relativeTime.js":
+/*!***************************************************!*\
+  !*** ./node_modules/dayjs/plugin/relativeTime.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+!function(r,t){ true?module.exports=t():undefined}(this,function(){"use strict";return function(r,t,e){var n=t.prototype;e.en.relativeTime={future:"in %s",past:"%s ago",s:"a few seconds",m:"a minute",mm:"%d minutes",h:"an hour",hh:"%d hours",d:"a day",dd:"%d days",M:"a month",MM:"%d months",y:"a year",yy:"%d years"};var o=function(r,t,n,o){for(var d,i,u=n.$locale().relativeTime,a=[{l:"s",r:44,d:"second"},{l:"m",r:89},{l:"mm",r:44,d:"minute"},{l:"h",r:89},{l:"hh",r:21,d:"hour"},{l:"d",r:35},{l:"dd",r:25,d:"day"},{l:"M",r:45},{l:"MM",r:10,d:"month"},{l:"y",r:17},{l:"yy",d:"year"}],f=a.length,s=0;s<f;s+=1){var l=a[s];l.d&&(d=o?e(r).diff(n,l.d,!0):n.diff(r,l.d,!0));var h=Math.round(Math.abs(d));if(h<=l.r||!l.r){1===h&&s>0&&(l=a[s-1]),i=u[l.l].replace("%d",h);break}}return t?i:(d>0?u.future:u.past).replace("%s",i)};n.to=function(r,t){return o(r,t,this,!0)},n.from=function(r,t){return o(r,t,this)};var d=function(r){return r.$u?e.utc():e()};n.toNow=function(r){return this.to(d(this),r)},n.fromNow=function(r){return this.from(d(this),r)}}});
 
 
 /***/ }),
@@ -18096,25 +18320,17 @@ module.exports = g;
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Home; });
-/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
-/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../node_modules/uikit/dist/css/uikit.min.css */ "./node_modules/uikit/dist/css/uikit.min.css");
-/* harmony import */ var _node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! next/head */ "./node_modules/next-server/dist/lib/head.js");
-/* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(next_head__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _fetch__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../fetch */ "./fetch.js");
-/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../config */ "./config.js");
-/* harmony import */ var _setup__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../setup */ "./setup.js");
-/* harmony import */ var _components_ServiceSummary__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../components/ServiceSummary */ "./components/ServiceSummary.js");
-
-
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../node_modules/uikit/dist/css/uikit.min.css */ "./node_modules/uikit/dist/css/uikit.min.css");
+/* harmony import */ var _node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_uikit_dist_css_uikit_min_css__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _setup__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../setup */ "./setup.js");
+/* harmony import */ var _fetchers_services__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../fetchers/services */ "./fetchers/services.js");
+/* harmony import */ var _components_ServiceSummary__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../components/ServiceSummary */ "./components/ServiceSummary.js");
+/* harmony import */ var _components_Header__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../components/Header */ "./components/Header.js");
 var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\pages\\index.js";
 
-var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
-
+var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
 
 
@@ -18122,107 +18338,38 @@ var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
 
 function Home() {
-  var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])([]),
+  var _useState = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])([]),
       services = _useState[0],
       setServices = _useState[1];
 
-  var _useState2 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(null),
+  var _useState2 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(null),
       errorMessage = _useState2[0],
       setErrorMessage = _useState2[1];
 
-  Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
-    Object(_setup__WEBPACK_IMPORTED_MODULE_7__["ensureUIKitInstalled"])();
-
-    function fetchData() {
-      return _fetchData.apply(this, arguments);
-    }
-
-    function _fetchData() {
-      _fetchData = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
-      /*#__PURE__*/
-      _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
-        var result;
-        return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                _context.prev = 0;
-                _context.next = 3;
-                return Object(_fetch__WEBPACK_IMPORTED_MODULE_5__["default"])(_config__WEBPACK_IMPORTED_MODULE_6__["default"].apiPrefix + '/resources/services.json');
-
-              case 3:
-                result = _context.sent;
-
-                if (!result.ok) {
-                  _context.next = 12;
-                  break;
-                }
-
-                _context.t0 = setServices;
-                _context.next = 8;
-                return result.json();
-
-              case 8:
-                _context.t1 = _context.sent;
-                (0, _context.t0)(_context.t1);
-                _context.next = 13;
-                break;
-
-              case 12:
-                setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
-
-              case 13:
-                _context.next = 18;
-                break;
-
-              case 15:
-                _context.prev = 15;
-                _context.t2 = _context["catch"](0);
-                setErrorMessage('Could not complete fetch: ' + _context.t2);
-
-              case 18:
-              case "end":
-                return _context.stop();
-            }
-          }
-        }, _callee, null, [[0, 15]]);
-      }));
-      return _fetchData.apply(this, arguments);
-    }
-
-    fetchData();
+  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(function () {
+    Object(_setup__WEBPACK_IMPORTED_MODULE_2__["ensureInstalled"])();
+    Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_3__["fetchServices"])(setServices, setErrorMessage);
   }, []);
   return __jsx("div", {
     className: "uk-container",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 29
+      lineNumber: 16
     },
     __self: this
-  }, __jsx(next_head__WEBPACK_IMPORTED_MODULE_4___default.a, {
+  }, __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    title: "Your Mediasummon Dashboard",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 30
+      lineNumber: 17
     },
     __self: this
-  }, __jsx("title", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 31
-    },
-    __self: this
-  }, "Your Mediasummon Dashboard")), __jsx("h2", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 33
-    },
-    __self: this
-  }, "Your Mediasummon Dashboard"), errorMessage ? __jsx("div", {
+  }), errorMessage ? __jsx("div", {
     className: "uk-alert-danger",
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 35
+      lineNumber: 19
     },
     __self: this
   }, __jsx("a", {
@@ -18230,42 +18377,42 @@ function Home() {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 36
+      lineNumber: 20
     },
     __self: this
   }), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 37
+      lineNumber: 21
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 37
+      lineNumber: 21
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 39
+      lineNumber: 23
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 40
+      lineNumber: 24
     },
     __self: this
   }, "Services to sync"), services.map(function (service) {
-    return __jsx(_components_ServiceSummary__WEBPACK_IMPORTED_MODULE_8__["default"], {
-      key: service.id,
+    return __jsx(_components_ServiceSummary__WEBPACK_IMPORTED_MODULE_4__["default"], {
+      key: service.metadata.id,
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 42
+        lineNumber: 26
       },
       __self: this
     });
@@ -18278,14 +18425,14 @@ function Home() {
 /*!******************!*\
   !*** ./setup.js ***!
   \******************/
-/*! exports provided: ensureUIKitInstalled */
+/*! exports provided: ensureInstalled */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ensureUIKitInstalled", function() { return ensureUIKitInstalled; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ensureInstalled", function() { return ensureInstalled; });
 var installed = false;
-function ensureUIKitInstalled() {
+function ensureInstalled() {
   if (installed) {
     return;
   } // Load UIKit and tell it to use its 'Icons' plugin
@@ -18296,6 +18443,12 @@ function ensureUIKitInstalled() {
   var Icons = __webpack_require__(/*! uikit/dist/js/uikit-icons */ "./node_modules/uikit/dist/js/uikit-icons.js");
 
   UIKit.use(Icons);
+
+  var dayjs = __webpack_require__(/*! dayjs */ "./node_modules/dayjs/dayjs.min.js");
+
+  var relativetime = __webpack_require__(/*! dayjs/plugin/relativeTime */ "./node_modules/dayjs/plugin/relativeTime.js");
+
+  dayjs.extend(relativetime);
   installed = true;
 }
 
