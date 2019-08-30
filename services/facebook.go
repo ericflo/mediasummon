@@ -172,6 +172,7 @@ func (svc *facebookService) Sync() error {
 	svc.syncData = &ServiceSyncData{
 		Started: time.Now().UTC(),
 		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+		Hashes:  map[string]string{},
 	}
 	if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
 		return sdErr
@@ -296,8 +297,9 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 				if svc.fetchErr != nil {
 					return
 				}
-				svc.fetchErr = svc.storage.DownloadFromURL(i.Source, p)
-				persistSyncDataPostFetch(svc.storage, "facebook", svc.syncData, svc.fetchErr)
+				var hash string
+				hash, svc.fetchErr = svc.storage.DownloadFromURL(i.Source, p)
+				persistSyncDataPostFetch(svc.storage, "facebook", svc.syncData, svc.fetchErr, filePath, hash)
 			}(image, filePath)
 		}
 	}

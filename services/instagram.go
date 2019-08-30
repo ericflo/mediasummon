@@ -161,6 +161,7 @@ func (svc *instagramService) Sync() error {
 	svc.syncData = &ServiceSyncData{
 		Started: time.Now().UTC(),
 		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+		Hashes:  map[string]string{},
 	}
 	if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
 		return sdErr
@@ -296,8 +297,9 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 			if svc.fetchErr != nil {
 				return
 			}
-			svc.fetchErr = svc.storage.DownloadFromURL(m.URL, p)
-			persistSyncDataPostFetch(svc.storage, "instagram", svc.syncData, svc.fetchErr)
+			var hash string
+			hash, svc.fetchErr = svc.storage.DownloadFromURL(m.URL, p)
+			persistSyncDataPostFetch(svc.storage, "instagram", svc.syncData, svc.fetchErr, filePath, hash)
 		}(media, filePath)
 	}
 	return nil

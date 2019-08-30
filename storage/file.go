@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/sync/semaphore"
 )
@@ -64,17 +67,17 @@ func (store *fileStorage) EnsureDirectoryExists(path string) error {
 
 // DownloadFromURL downloads the contents of the given URL and saves it to the given path
 // on the local filesystem, using a temporary file and renaming in the end in an idempotent way
-func (store *fileStorage) DownloadFromURL(url, path string) error {
+func (store *fileStorage) DownloadFromURL(url, path string) (string, error) {
 	// Allow the download to happen on any thread because its going into a temporary file
 	log.Println("Downloading item", path)
 
 	if err := store.EnsureDirectoryExists(filepath.Dir(path)); err != nil {
-		return err
+		return "", err
 	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -84,32 +87,34 @@ func (store *fileStorage) DownloadFromURL(url, path string) error {
 	if err != nil {
 		defer os.Remove(tmpFile.Name())
 		log.Println("Could not create temporary file:", err)
-		return fmt.Errorf("Could not create temporary file: %v", err)
+		return "", fmt.Errorf("Could not create temporary file: %v", err)
 	}
+	sha512 := sha512.New()
+	multiWriter := io.MultiWriter(tmpFile, sha512)
 
-	_, err = io.Copy(tmpFile, resp.Body)
+	_, err = io.Copy(multiWriter, resp.Body)
 	if err != nil {
 		defer os.Remove(tmpFile.Name())
 		log.Println("Error downloading file:", err)
-		return fmt.Errorf("Error downloading file: %v", err)
+		return "", fmt.Errorf("Error downloading file: %v", err)
 	}
 
 	err = tmpFile.Close()
 	if err != nil {
 		defer os.Remove(tmpFile.Name())
 		log.Println("Could not close temporary file:", err)
-		return fmt.Errorf("Could not close temporary file: %v", err)
+		return "", fmt.Errorf("Could not close temporary file: %v", err)
 	}
 
 	// There's no strong reason I can think of, but for good measure, let's gate the
 	// final rename down to one-at-a-time using the semaphore
 	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
 		log.Printf("Failed to acquire semaphore: %v", err)
-		return err
+		return "", err
 	}
 	defer store.sem.Release(1)
 
-	return os.Rename(tmpFile.Name(), fullPath)
+	return hex.EncodeToString(sha512.Sum(nil)), os.Rename(tmpFile.Name(), fullPath)
 }
 
 // ReadBlob reads the file at the given path into memory and returns it as a slice of bytes
@@ -130,4 +135,21 @@ func (store *fileStorage) WriteBlob(path string, blob []byte) error {
 	}
 	defer store.sem.Release(1)
 	return ioutil.WriteFile(filepath.Join(store.directory, path), blob, 0644)
+}
+
+// ListDirectoryFiles lists the names of all the files contained in a directory
+func (store *fileStorage) ListDirectoryFiles(path string) ([]string, error) {
+	if exists, err := store.Exists(path); err != nil {
+		return nil, err
+	} else if !exists {
+		return []string{}, nil
+	}
+	paths := []string{}
+	err := filepath.Walk(filepath.Join(store.directory, path), func(fullPath string, info os.FileInfo, err error) error {
+		withoutDir := strings.TrimPrefix(fullPath, store.directory)
+		withoutAnyLeadingSlashes := strings.TrimLeft(withoutDir, "/\\")
+		paths = append(paths, withoutAnyLeadingSlashes)
+		return nil
+	})
+	return paths, err
 }

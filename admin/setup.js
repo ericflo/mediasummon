@@ -1,6 +1,6 @@
 var installed = false;
 
-export function ensureUIKitInstalled() {
+export function ensureInstalled() {
   if (installed) {
     return;
   }
@@ -9,6 +9,11 @@ export function ensureUIKitInstalled() {
   const UIKit = require('uikit');
   const Icons = require('uikit/dist/js/uikit-icons');
   UIKit.use(Icons);
+
+
+  const dayjs = require('dayjs');
+  const relativetime = require('dayjs/plugin/relativeTime');
+  dayjs.extend(relativetime);
 
   installed = true;
 }

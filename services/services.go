@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ type ServiceMetadata struct {
 	Name string `json:"name"`
 }
 
+/*
 // ServiceSystemData is metadata about a service that the system provides
 type ServiceSystemData struct {
 	LastSync  null.Time `json:"last_sync"`
@@ -49,17 +51,19 @@ type ServiceSystemData struct {
 	ItemCount int       `json:"item_count"`
 	FailCount int       `json:"fail_count"`
 }
+*/
 
 // ServiceSyncData is data about a single sync session performed by a service
 type ServiceSyncData struct {
-	Started     time.Time `json:"start"`
-	Ended       null.Time `json:"end"`
-	PageCurrent null.Int  `json:"page_current"`
-	PageMax     null.Int  `json:"page_max"`
-	ItemCount   null.Int  `json:"item_count"`
-	SkipCount   null.Int  `json:"skip_count"`
-	FailCount   null.Int  `json:"fail_count"`
-	FetchCount  null.Int  `json:"fetch_count"`
+	Started     time.Time         `json:"start"`
+	Ended       null.Time         `json:"end"`
+	PageCurrent null.Int          `json:"page_current"`
+	PageMax     null.Int          `json:"page_max"`
+	ItemCount   null.Int          `json:"item_count"`
+	SkipCount   null.Int          `json:"skip_count"`
+	FailCount   null.Int          `json:"fail_count"`
+	FetchCount  null.Int          `json:"fetch_count"`
+	Hashes      map[string]string `json:"hashes"`
 }
 
 // SyncService represents a service that can be synchronized to a directory
@@ -195,13 +199,64 @@ func handleSyncError(store storage.Storage, serviceName string, syncData *Servic
 	return persistSyncData(store, serviceName, syncData)
 }
 
-func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncData *ServiceSyncData, fetchErr error) {
+func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncData *ServiceSyncData, fetchErr error, filePath, hash string) {
 	if fetchErr == nil {
 		syncData.FetchCount = incrementOrSet(syncData.FetchCount, 1)
+		syncData.Hashes[filePath] = hash
 		persistSyncData(store, serviceName, syncData)
 	} else {
-		handleSyncError(store, serviceName, syncData, 1)
+		syncData.FailCount = incrementOrSet(syncData.FailCount, 1)
+		persistSyncData(store, serviceName, syncData)
 	}
+}
+
+// ListServiceSyncDataPaths lists the paths to the ServiceSyncData
+func ListServiceSyncDataPaths(store storage.Storage, serviceName string) ([]string, []int64, error) {
+	names, err := store.ListDirectoryFiles(filepath.Join(".meta", serviceName, "syncdata"))
+	if err != nil {
+		return nil, nil, err
+	}
+	paths := make([]string, 0, len(names))
+	values := make([]int64, 0, len(names))
+	for _, filePath := range names {
+		if !strings.HasSuffix(filePath, ".json") {
+			continue
+		}
+		name := filepath.Base(filePath)
+		// Check that it parses as a number
+		value, err := strconv.ParseInt(strings.TrimSuffix(name, ".json"), 10, 64)
+		if err != nil {
+			continue
+		}
+		paths = append(paths, filePath)
+		values = append(values, value)
+	}
+	return paths, values, nil
+}
+
+// GetLatestServiceSyncData gets the latest ServiceSyncData for the given service
+func GetLatestServiceSyncData(store storage.Storage, serviceName string) (*ServiceSyncData, error) {
+	paths, values, err := ListServiceSyncDataPaths(store, serviceName)
+	largestPath := ""
+	largestValue := int64(-1)
+	for i, dataPath := range paths {
+		if values[i] > largestValue {
+			largestPath = dataPath
+			largestValue = values[i]
+		}
+	}
+	if largestValue == int64(-1) {
+		return nil, nil
+	}
+	blob, err := store.ReadBlob(largestPath)
+	if err != nil {
+		return nil, err
+	}
+	syncData := &ServiceSyncData{}
+	if err = json.Unmarshal(blob, &syncData); err != nil {
+		return nil, err
+	}
+	return syncData, nil
 }
 
 // GetenvDefault gets an environment, but defaults to the parameter given if none is found

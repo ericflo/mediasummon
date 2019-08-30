@@ -9,9 +9,10 @@ import (
 type Storage interface {
 	Exists(path string) (bool, error)
 	EnsureDirectoryExists(path string) error
-	DownloadFromURL(url, path string) error
+	DownloadFromURL(url, path string) (string, error)
 	ReadBlob(path string) ([]byte, error)
 	WriteBlob(path string, blob []byte) error
+	ListDirectoryFiles(path string) ([]string, error)
 }
 
 // NewStorage takes the given URL and returns the appropriate configured storage interface

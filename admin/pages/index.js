@@ -1,6 +1,6 @@
 import '../node_modules/uikit/dist/css/uikit.min.css';
 import { useState, useEffect } from 'react';
-import { ensureUIKitInstalled } from '../setup';
+import { ensureInstalled } from '../setup';
 import {fetchServices} from '../fetchers/services';
 import ServiceSummary from '../components/ServiceSummary';
 import Header from '../components/Header';
@@ -9,7 +9,7 @@ export default function Home() {
   const [services, setServices] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
   useEffect(() => {
-    ensureUIKitInstalled();
+    ensureInstalled();
     fetchServices(setServices, setErrorMessage);
   }, []);
   return (
@@ -23,7 +23,7 @@ export default function Home() {
       <div className="uk-section uk-section-default uk-padding-remove">
         <h3>Services to sync</h3>
         {services.map(service => {
-          return <ServiceSummary key={service.id} service={service} />;
+          return <ServiceSummary key={service.metadata.id} service={service} />;
         })}
       </div>
     </div>

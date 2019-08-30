@@ -184,6 +184,7 @@ func (svc *googleService) Sync() error {
 	svc.syncData = &ServiceSyncData{
 		Started: time.Now().UTC(),
 		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+		Hashes:  map[string]string{},
 	}
 	if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
 		return sdErr
@@ -296,8 +297,9 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 				} else {
 					url += "=d"
 				}
-				svc.fetchErr = svc.storage.DownloadFromURL(url, p)
-				persistSyncDataPostFetch(svc.storage, "google", svc.syncData, svc.fetchErr)
+				var hash string
+				hash, svc.fetchErr = svc.storage.DownloadFromURL(url, p)
+				persistSyncDataPostFetch(svc.storage, "google", svc.syncData, svc.fetchErr, filePath, hash)
 			}(item, filePath)
 		}
 	}

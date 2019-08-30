@@ -57,7 +57,7 @@ func RunAdmin() {
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) http.Handler {
 	mux.Handle("/", http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out"))))
-	mux.HandleFunc("/resources/services.json", handleAdminServiceMapRequest)
+	mux.HandleFunc("/resources/services.json", makeAdminServiceMapRequest(serviceConfig.Storage))
 	return cors.Default().Handler(mux)
 }
 
@@ -76,17 +76,32 @@ func renderJSONError(w http.ResponseWriter, err error, code int) {
 	renderJSONErrorMessage(w, err.Error(), code)
 }
 
+// AdminServiceDescription is the response that the admin gives when talking about a service
+type AdminServiceDescription struct {
+	Metadata *services.ServiceMetadata `json:"metadata"`
+	LastSync *services.ServiceSyncData `json:"last_sync"`
+}
+
 // handleAdminServiceMapRequest handles http requests for the service map
-func handleAdminServiceMapRequest(w http.ResponseWriter, r *http.Request) {
-	svcs := make([]*services.ServiceMetadata, 0, len(serviceMap))
-	for _, svc := range serviceMap {
-		svcs = append(svcs, svc.Metadata())
+func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
+		for serviceName, svc := range serviceMap {
+			lastSync, err := services.GetLatestServiceSyncData(store, serviceName)
+			if err != nil {
+				log.Println("Error getting latest service sync data", err)
+			}
+			svcs = append(svcs, &AdminServiceDescription{
+				Metadata: svc.Metadata(),
+				LastSync: lastSync,
+			})
+		}
+		data, err := json.Marshal(svcs)
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
 	}
-	data, err := json.Marshal(svcs)
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
 }
