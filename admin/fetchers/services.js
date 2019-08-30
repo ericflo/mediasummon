@@ -30,7 +30,6 @@ export async function fetchServices(setServices, setErrorMessage) {
 }
 
 export async function fetchServiceSyncStart(serviceID) {
-  console.log("getInstalledCSRF()", getInstalledCSRF());
   const url = config.apiPrefix + '/resources/service/sync.json?service='+serviceID;
   const resp = await httpFetch(url, {
     method: 'POST',
@@ -40,8 +39,6 @@ export async function fetchServiceSyncStart(serviceID) {
     },
     credentials: 'include',
   });
-  console.log('RESP', resp);
   const data = await resp.json();
-  console.log('JSON', data);
   return data;
 }

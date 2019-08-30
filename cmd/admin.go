@@ -65,12 +65,35 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.Service
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
 	mux.HandleFunc("/resources/services.json", makeAdminServiceMapRequest(serviceConfig.Storage))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
-	csrfSecret, err := ensureCSRFSecret(serviceConfig.Storage)
-	if err != nil {
-		return nil, err
+	corsMiddleware := cors.New(cors.Options{
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		AllowCredentials: true,
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		},
+		AllowedHeaders: []string{"*"},
+		ExposedHeaders: []string{"X-CSRF-Token"},
+		Debug:          false,
+	})
+	handler := corsMiddleware.Handler(mux)
+	if !serviceConfig.IsDebug {
+		csrfSecret, err := ensureCSRFSecret(serviceConfig.Storage)
+		if err != nil {
+			return nil, err
+		}
+		csrfMiddleware := csrf.Protect([]byte(csrfSecret),
+			csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure)),
+		)
+		handler = csrfMiddleware(handler)
 	}
-	csrfMiddleware := csrf.Protect([]byte(csrfSecret), csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure)))
-	return csrfMiddleware(cors.AllowAll().Handler(mux)), nil
+	return handler, nil
 }
 
 func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {

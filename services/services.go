@@ -86,6 +86,7 @@ type ServiceConfig struct {
 	WebPort     string
 	FrontendURL string
 	AdminPath   string
+	IsDebug     bool
 	Secrets     map[string]map[string]string
 	Storage     storage.Storage
 }
@@ -101,6 +102,7 @@ func (config *ServiceConfig) LoadFromEnv() {
 	}
 	config.WebPort = GetenvDefault("WEB_PORT", DefaultWebPort)
 	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
+	config.IsDebug = strings.ToLower(os.Getenv("IS_DEBUG")) == "true"
 	config.Secrets = map[string]map[string]string{
 		"google": map[string]string{
 			"ClientID":     os.Getenv("GOOGLE_CLIENT_ID"),

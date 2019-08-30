@@ -416,9 +416,8 @@ function _fetchServiceSyncStart() {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            console.log("getInstalledCSRF()", Object(_setup__WEBPACK_IMPORTED_MODULE_4__["getInstalledCSRF"])());
             url = _config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/service/sync.json?service=' + serviceID;
-            _context2.next = 4;
+            _context2.next = 3;
             return Object(_fetch__WEBPACK_IMPORTED_MODULE_2__["default"])(url, {
               method: 'POST',
               headers: {
@@ -428,18 +427,16 @@ function _fetchServiceSyncStart() {
               credentials: 'include'
             });
 
-          case 4:
+          case 3:
             resp = _context2.sent;
-            console.log('RESP', resp);
-            _context2.next = 8;
+            _context2.next = 6;
             return resp.json();
 
-          case 8:
+          case 6:
             data = _context2.sent;
-            console.log('JSON', data);
             return _context2.abrupt("return", data);
 
-          case 11:
+          case 8:
           case "end":
             return _context2.stop();
         }
@@ -18546,6 +18543,8 @@ function Home() {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ensureInstalled", function() { return ensureInstalled; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getInstalledCSRF", function() { return getInstalledCSRF; });
+/* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./config */ "./config.js");
+
 var installed = false;
 var installedCSRF = null;
 function ensureInstalled() {
@@ -18567,9 +18566,10 @@ function ensureInstalled() {
   dayjs.extend(relativetime);
   var req = new XMLHttpRequest();
   req.addEventListener('load', function () {
+    console.log('loaded', req.getResponseHeader('x-csrf-token'));
     installedCSRF = req.getResponseHeader('x-csrf-token');
   });
-  req.open('HEAD', document.location, true);
+  req.open('HEAD', _config__WEBPACK_IMPORTED_MODULE_0__["default"].apiPrefix, true);
   req.send(null);
   installed = true;
 }
