@@ -64,12 +64,13 @@ func RunAdmin() {
 func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
 	mux.HandleFunc("/resources/services.json", makeAdminServiceMapRequest(serviceConfig.Storage))
+	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
 	csrfSecret, err := ensureCSRFSecret(serviceConfig.Storage)
 	if err != nil {
 		return nil, err
 	}
-	csrfMiddleware := csrf.Protect([]byte(csrfSecret))
-	return csrfMiddleware(cors.Default().Handler(mux)), nil
+	csrfMiddleware := csrf.Protect([]byte(csrfSecret), csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure)))
+	return csrfMiddleware(cors.AllowAll().Handler(mux)), nil
 }
 
 func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
@@ -85,6 +86,10 @@ func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
 
 func renderJSONError(w http.ResponseWriter, err error, code int) {
 	renderJSONErrorMessage(w, err.Error(), code)
+}
+
+func renderCORSFailure(w http.ResponseWriter, r *http.Request) {
+	renderJSONError(w, csrf.FailureReason(r), http.StatusForbidden)
 }
 
 // AdminServiceDescription is the response that the admin gives when talking about a service
@@ -122,4 +127,25 @@ func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
+}
+
+func handleAdminServiceSync(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
+	}
+	serviceID := r.URL.Query().Get("service")
+	svc, exists := serviceMap[serviceID]
+	if !exists {
+		renderJSONErrorMessage(w, "Service with id '"+serviceID+"' was not found.", http.StatusNotFound)
+		return
+	}
+	go svc.Sync()
+	data, err := json.Marshal(map[string]string{"status": "ok"})
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }

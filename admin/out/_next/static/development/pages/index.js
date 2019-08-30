@@ -59,31 +59,72 @@ function Header(_ref) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ServiceSummary; });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dayjs */ "./node_modules/dayjs/dayjs.min.js");
-/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(dayjs__WEBPACK_IMPORTED_MODULE_1__);
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
-var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dayjs */ "./node_modules/dayjs/dayjs.min.js");
+/* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(dayjs__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _fetchers_services__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../fetchers/services */ "./fetchers/services.js");
 
+
+var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
+var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
+
+
+
+
+function handleSyncClick(_x, _x2) {
+  return _handleSyncClick.apply(this, arguments);
+}
+
+function _handleSyncClick() {
+  _handleSyncClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(service, ev) {
+    var result;
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            ev.stopPropagation();
+            ev.preventDefault();
+            _context.next = 4;
+            return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_4__["fetchServiceSyncStart"])(service.metadata.id);
+
+          case 4:
+            result = _context.sent;
+            console.log('result', result);
+            return _context.abrupt("return", false);
+
+          case 7:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _handleSyncClick.apply(this, arguments);
+}
 
 function ServiceSummary(_ref) {
   var service = _ref.service;
   var sync = service.last_sync;
-  var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_1___default()(sync.start).fromNow() : 'Never';
+  var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_3___default()(sync.start).fromNow() : 'Never';
   var startString = sync ? sync.startString : null;
   return __jsx("div", {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 9
+      lineNumber: 18
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 10
+      lineNumber: 19
     },
     __self: this
   }, __jsx("div", {
@@ -91,14 +132,14 @@ function ServiceSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 11
+      lineNumber: 20
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 12
+      lineNumber: 21
     },
     __self: this
   }, __jsx("img", {
@@ -108,42 +149,42 @@ function ServiceSummary(_ref) {
     src: '/static/images/logo-' + service.metadata.id + '.png',
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 13
+      lineNumber: 22
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 15
+      lineNumber: 24
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 16
+      lineNumber: 25
     },
     __self: this
   }, service.metadata.name), __jsx("p", {
     className: "uk-text-meta uk-margin-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 17
+      lineNumber: 26
     },
     __self: this
   }, "Last synced: ", __jsx("time", {
     dateTime: startString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 18
+      lineNumber: 27
     },
     __self: this
   }, start), sync ? ' (' + (sync.fetch_count || 0) + ' downloaded)' : null)))), service.needs_credentials ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 25
+      lineNumber: 34
     },
     __self: this
   }, __jsx("div", {
@@ -151,19 +192,19 @@ function ServiceSummary(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 26
+      lineNumber: 35
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 27
+      lineNumber: 36
     },
     __self: this
   }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 28
+      lineNumber: 37
     },
     __self: this
   }, __jsx("a", {
@@ -171,14 +212,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-primary",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 29
+      lineNumber: 38
     },
     __self: this
   }, "Grant Permission")))) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 33
+      lineNumber: 42
     },
     __self: this
   }, __jsx("a", {
@@ -186,10 +227,26 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 34
+      lineNumber: 43
     },
     __self: this
-  }, "View details")));
+  }, "View details"), __jsx("p", {
+    className: "uk-align-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 44
+    },
+    __self: this
+  }, service.current_sync ? null : __jsx("a", {
+    className: "uk-button uk-button-primary",
+    href: "#",
+    onClick: handleSyncClick.bind(this, service),
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 46
+    },
+    __self: this
+  }, "Sync now"))));
 }
 
 /***/ }),
@@ -239,17 +296,20 @@ function httpFetch() {
 /*!******************************!*\
   !*** ./fetchers/services.js ***!
   \******************************/
-/*! exports provided: fetchServices */
+/*! exports provided: fetchServices, fetchServiceSyncStart */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchServices", function() { return fetchServices; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchServiceSyncStart", function() { return fetchServiceSyncStart; });
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _fetch__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../fetch */ "./fetch.js");
 /* harmony import */ var _config__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../config */ "./config.js");
+/* harmony import */ var _setup__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../setup */ "./setup.js");
+
 
 
 
@@ -341,6 +401,52 @@ function _fetchServices() {
     }, _callee, null, [[0, 26]]);
   }));
   return _fetchServices.apply(this, arguments);
+}
+
+function fetchServiceSyncStart(_x3) {
+  return _fetchServiceSyncStart.apply(this, arguments);
+}
+
+function _fetchServiceSyncStart() {
+  _fetchServiceSyncStart = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(serviceID) {
+    var url, resp, data;
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            console.log("getInstalledCSRF()", Object(_setup__WEBPACK_IMPORTED_MODULE_4__["getInstalledCSRF"])());
+            url = _config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/service/sync.json?service=' + serviceID;
+            _context2.next = 4;
+            return Object(_fetch__WEBPACK_IMPORTED_MODULE_2__["default"])(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': Object(_setup__WEBPACK_IMPORTED_MODULE_4__["getInstalledCSRF"])()
+              },
+              credentials: 'include'
+            });
+
+          case 4:
+            resp = _context2.sent;
+            console.log('RESP', resp);
+            _context2.next = 8;
+            return resp.json();
+
+          case 8:
+            data = _context2.sent;
+            console.log('JSON', data);
+            return _context2.abrupt("return", data);
+
+          case 11:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+  return _fetchServiceSyncStart.apply(this, arguments);
 }
 
 /***/ }),
@@ -18350,18 +18456,26 @@ function Home() {
     Object(_setup__WEBPACK_IMPORTED_MODULE_2__["ensureInstalled"])();
     Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_3__["fetchServices"])(setServices, setErrorMessage);
   }, []);
+  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(function () {
+    var timer = setInterval(function () {
+      Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_3__["fetchServices"])(setServices, setErrorMessage);
+    }, 1000);
+    return function () {
+      return clearInterval(timer);
+    };
+  }, []);
   return __jsx("div", {
     className: "uk-container",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 16
+      lineNumber: 22
     },
     __self: this
   }, __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_5__["default"], {
     title: "Your Mediasummon Dashboard",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 17
+      lineNumber: 23
     },
     __self: this
   }), errorMessage ? __jsx("div", {
@@ -18369,7 +18483,7 @@ function Home() {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 25
     },
     __self: this
   }, __jsx("a", {
@@ -18377,33 +18491,33 @@ function Home() {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 26
     },
     __self: this
   }), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 21
+      lineNumber: 27
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 21
+      lineNumber: 27
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 23
+      lineNumber: 29
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 24
+      lineNumber: 30
     },
     __self: this
   }, "Services to sync"), services.map(function (service) {
@@ -18412,7 +18526,7 @@ function Home() {
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 26
+        lineNumber: 32
       },
       __self: this
     });
@@ -18425,13 +18539,15 @@ function Home() {
 /*!******************!*\
   !*** ./setup.js ***!
   \******************/
-/*! exports provided: ensureInstalled */
+/*! exports provided: ensureInstalled, getInstalledCSRF */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ensureInstalled", function() { return ensureInstalled; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getInstalledCSRF", function() { return getInstalledCSRF; });
 var installed = false;
+var installedCSRF = null;
 function ensureInstalled() {
   if (installed) {
     return;
@@ -18449,7 +18565,16 @@ function ensureInstalled() {
   var relativetime = __webpack_require__(/*! dayjs/plugin/relativeTime */ "./node_modules/dayjs/plugin/relativeTime.js");
 
   dayjs.extend(relativetime);
+  var req = new XMLHttpRequest();
+  req.addEventListener('load', function () {
+    installedCSRF = req.getResponseHeader('x-csrf-token');
+  });
+  req.open('HEAD', document.location, true);
+  req.send(null);
   installed = true;
+}
+function getInstalledCSRF() {
+  return installedCSRF;
 }
 
 /***/ }),

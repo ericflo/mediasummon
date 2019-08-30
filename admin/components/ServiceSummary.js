@@ -1,5 +1,14 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import { fetchServiceSyncStart } from '../fetchers/services';
+
+async function handleSyncClick(service, ev) {
+  ev.stopPropagation()
+  ev.preventDefault();
+  const result = await fetchServiceSyncStart(service.metadata.id);
+  console.log('result', result);
+  return false;
+}
 
 export default function ServiceSummary({service}) {
   const sync = service.last_sync;
@@ -32,6 +41,10 @@ export default function ServiceSummary({service}) {
         </div> : null}
       <div className="uk-card-footer">
         <a href="#" className="uk-button uk-button-text">View details</a>
+        <p className="uk-align-right">
+          {service.current_sync ? null :
+            <a className="uk-button uk-button-primary" href="#" onClick={handleSyncClick.bind(this, service)}>Sync now</a>}
+        </p>
       </div>
     </div>
   )

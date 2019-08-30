@@ -12,6 +12,12 @@ export default function Home() {
     ensureInstalled();
     fetchServices(setServices, setErrorMessage);
   }, []);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchServices(setServices, setErrorMessage);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <div className="uk-container">
       <Header title="Your Mediasummon Dashboard" />

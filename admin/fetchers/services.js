@@ -1,5 +1,6 @@
 import httpFetch from '../fetch';
 import config from '../config';
+import { getInstalledCSRF } from '../setup';
 
 export async function fetchServices(setServices, setErrorMessage) {
   try {
@@ -26,4 +27,21 @@ export async function fetchServices(setServices, setErrorMessage) {
   } catch (err) {
     setErrorMessage('Could not complete fetch: ' + err);
   }
+}
+
+export async function fetchServiceSyncStart(serviceID) {
+  console.log("getInstalledCSRF()", getInstalledCSRF());
+  const url = config.apiPrefix + '/resources/service/sync.json?service='+serviceID;
+  const resp = await httpFetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': getInstalledCSRF(),
+    },
+    credentials: 'include',
+  });
+  console.log('RESP', resp);
+  const data = await resp.json();
+  console.log('JSON', data);
+  return data;
 }

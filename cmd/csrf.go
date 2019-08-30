@@ -63,6 +63,8 @@ func ensureCSRFSecret(store storage.Storage) ([]byte, error) {
 			return nil, err
 		}
 		_csrfSecret = blob
+	} else {
+		_csrfSecret = blob
 	}
 	return blob, nil
 }
