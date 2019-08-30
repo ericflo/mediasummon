@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/instagram"
 	"golang.org/x/sync/semaphore"
+	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/storage"
 )
 
@@ -24,6 +25,7 @@ const instagramRequestSize = 100
 
 type instagramService struct {
 	serviceConfig *ServiceConfig
+	syncData      *ServiceSyncData
 	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
@@ -156,6 +158,14 @@ func (svc *instagramService) Sync() error {
 		time.Sleep(time.Second)
 	}
 
+	svc.syncData = &ServiceSyncData{
+		Started: time.Now().UTC(),
+		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+	}
+	if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+
 	maxID := ""
 	makeURL := func() string {
 		base := fmt.Sprintf("https://api.instagram.com/v1/users/self/media/recent/?access_token=%s&count=%d", svc.accessToken.AccessToken, instagramRequestSize)
@@ -166,6 +176,11 @@ func (svc *instagramService) Sync() error {
 	}
 
 	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
+		svc.syncData.PageCurrent = null.IntFrom(int64(i))
+		if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
+			return sdErr
+		}
+
 		log.Println("Fetching Instagram directory page", i)
 		// Fetch a page from Instagram
 		resp, err := svc.client.Get(makeURL())
@@ -180,6 +195,12 @@ func (svc *instagramService) Sync() error {
 		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			log.Println("Error decoding Instagram JSON response " + err.Error())
 			return err
+		}
+
+		// Increase the item count and persist
+		svc.syncData.ItemCount = incrementOrSet(svc.syncData.ItemCount, len(data.Data))
+		if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
+			return sdErr
 		}
 
 		// Sync the individual media items in this page
@@ -197,6 +218,12 @@ func (svc *instagramService) Sync() error {
 		maxID = data.Data[len(data.Data)-1].ID
 	}
 
+	svc.syncData.Ended = null.TimeFrom(time.Now().UTC())
+	if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+	svc.syncData = nil
+
 	return nil
 }
 
@@ -206,19 +233,22 @@ func (svc *instagramService) syncDataItems(items []*instagramDataItem) error {
 
 	svc.fetchErr = nil
 
-	for _, item := range items {
+	for itemIdx, item := range items {
 		video, videoExists := item.Videos["standard_resolution"]
 		image, imageExists := item.Images["standard_resolution"]
 		if videoExists {
 			if err := svc.syncDataItemMedia(ctx, item, video); err != nil {
+				handleSyncError(svc.storage, "instagram", svc.syncData, len(items)-itemIdx)
 				return err
 			}
 		} else if imageExists {
 			if err := svc.syncDataItemMedia(ctx, item, image); err != nil {
+				handleSyncError(svc.storage, "instagram", svc.syncData, len(items)-itemIdx)
 				return err
 			}
 		} else {
 			log.Println("Could not find standard resolution video or image", item)
+			handleSyncError(svc.storage, "instagram", svc.syncData, 1)
 			continue
 		}
 	}
@@ -248,13 +278,15 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 	createdTime := time.Unix(createdTimestamp, 0)
 	formatted := createdTime.Format(svc.serviceConfig.Format)
 
-	if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
-		return err
-	}
 	filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
 	if exists, err := svc.storage.Exists(filePath); err != nil {
 		return err
-	} else if !exists {
+	} else if exists {
+		svc.syncData.SkipCount = incrementOrSet(svc.syncData.SkipCount, 1)
+		if sdErr := persistSyncData(svc.storage, "instagram", svc.syncData); sdErr != nil {
+			return sdErr
+		}
+	} else {
 		if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
 			log.Printf("Failed to acquire semaphore during loop: %v", err)
 			return err
@@ -265,6 +297,7 @@ func (svc *instagramService) syncDataItemMedia(ctx context.Context, item *instag
 				return
 			}
 			svc.fetchErr = svc.storage.DownloadFromURL(m.URL, p)
+			persistSyncDataPostFetch(svc.storage, "instagram", svc.syncData, svc.fetchErr)
 		}(media, filePath)
 	}
 	return nil

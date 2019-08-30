@@ -23,6 +23,7 @@ const googleRequestSize = 100
 
 type googleService struct {
 	serviceConfig *ServiceConfig
+	syncData      *ServiceSyncData
 	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
@@ -180,6 +181,14 @@ func (svc *googleService) Sync() error {
 		time.Sleep(time.Second)
 	}
 
+	svc.syncData = &ServiceSyncData{
+		Started: time.Now().UTC(),
+		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+	}
+	if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+
 	pageToken := ""
 	makeURL := func() string {
 		base := fmt.Sprintf("https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=%d", googleRequestSize)
@@ -190,6 +199,11 @@ func (svc *googleService) Sync() error {
 	}
 
 	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
+		svc.syncData.PageCurrent = null.IntFrom(int64(i))
+		if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
+			return sdErr
+		}
+
 		log.Println("Fetching Google Photos library page", i)
 		// Fetch a page from Google Photos
 		resp, err := svc.client.Get(makeURL())
@@ -204,6 +218,12 @@ func (svc *googleService) Sync() error {
 		if err = json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			log.Println("Error decoding Google Photos JSON response " + err.Error())
 			return err
+		}
+
+		// Increase the item count and persist
+		svc.syncData.ItemCount = incrementOrSet(svc.syncData.ItemCount, len(data.MediaItems))
+		if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
+			return sdErr
 		}
 
 		// Sync the individual media items in this page
@@ -221,6 +241,12 @@ func (svc *googleService) Sync() error {
 		}
 	}
 
+	svc.syncData.Ended = null.TimeFrom(time.Now().UTC())
+	if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+	svc.syncData = nil
+
 	return nil
 }
 
@@ -230,27 +256,33 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 
 	svc.fetchErr = nil
 
-	for _, item := range items {
+	for itemIdx, item := range items {
 		ext := strings.ToLower(filepath.Ext(item.Filename.String))
 		if !strings.HasPrefix(ext, ".") {
 			log.Println("Could not parse filename extension: " + item.Filename.String)
+			handleSyncError(svc.storage, "google", svc.syncData, len(items)-itemIdx)
 			continue
 		}
 		if !item.MediaMetadata.CreationTime.Valid {
 			log.Println("Didn't parse a valid CreationTime, can't determine filename.")
+			handleSyncError(svc.storage, "google", svc.syncData, len(items)-itemIdx)
 			continue
 		}
 		formatted := item.MediaMetadata.CreationTime.Time.Format(svc.serviceConfig.Format)
 
-		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
-			return err
-		}
 		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
 		if exists, err := svc.storage.Exists(filePath); err != nil {
+			handleSyncError(svc.storage, "google", svc.syncData, len(items)-itemIdx)
 			return err
-		} else if !exists {
+		} else if exists {
+			svc.syncData.SkipCount = incrementOrSet(svc.syncData.SkipCount, 1)
+			if sdErr := persistSyncData(svc.storage, "google", svc.syncData); sdErr != nil {
+				return sdErr
+			}
+		} else {
 			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
 				log.Printf("Failed to acquire semaphore during loop: %v", err)
+				handleSyncError(svc.storage, "google", svc.syncData, len(items)-itemIdx)
 				return err
 			}
 			go func(i *googleMediaItem, p string) {
@@ -265,6 +297,7 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 					url += "=d"
 				}
 				svc.fetchErr = svc.storage.DownloadFromURL(url, p)
+				persistSyncDataPostFetch(svc.storage, "google", svc.syncData, svc.fetchErr)
 			}(item, filePath)
 		}
 	}

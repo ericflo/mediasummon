@@ -25,6 +25,7 @@ const facebookTimestampFormat = "2006-01-02T15:04:05-0700"
 
 type facebookService struct {
 	serviceConfig *ServiceConfig
+	syncData      *ServiceSyncData
 	storage       storage.Storage
 	conf          *oauth2.Config
 	client        *http.Client
@@ -168,6 +169,14 @@ func (svc *facebookService) Sync() error {
 		time.Sleep(time.Second)
 	}
 
+	svc.syncData = &ServiceSyncData{
+		Started: time.Now().UTC(),
+		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
+	}
+	if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+
 	nextURL := ""
 	makeURL := func() string {
 		base := fmt.Sprintf("https://graph.facebook.com/v4.0/me/photos?type=uploaded&fields=id,created_time,images&limit=%d", facebookRequestSize)
@@ -178,6 +187,11 @@ func (svc *facebookService) Sync() error {
 	}
 
 	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
+		svc.syncData.PageCurrent = null.IntFrom(int64(i))
+		if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
+			return sdErr
+		}
+
 		log.Println("Fetching Facebook directory page", i)
 		// Fetch a page from Facebook
 		resp, err := svc.client.Get(makeURL())
@@ -194,6 +208,12 @@ func (svc *facebookService) Sync() error {
 			return err
 		}
 
+		// Increase the item count and persist
+		svc.syncData.ItemCount = incrementOrSet(svc.syncData.ItemCount, len(data.Data))
+		if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
+			return sdErr
+		}
+
 		// Sync the individual media items in this page
 		if err = svc.syncDataItems(data.Data); err != nil {
 			log.Println("Error syncing Facebook data items: " + err.Error())
@@ -208,6 +228,12 @@ func (svc *facebookService) Sync() error {
 		// Extract new beforeCursor for the next round of the loop
 		nextURL = data.Paging.Next.String
 	}
+
+	svc.syncData.Ended = null.TimeFrom(time.Now().UTC())
+	if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
+		return sdErr
+	}
+	svc.syncData = nil
 
 	return nil
 }
@@ -231,31 +257,38 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 
 	svc.fetchErr = nil
 
-	for _, item := range items {
+	for itemIdx, item := range items {
 		image := getMaxSizeImage(item.Images)
 		parsedURL, err := url.Parse(image.Source)
 		if err != nil {
+			handleSyncError(svc.storage, "facebook", svc.syncData, len(items)-itemIdx)
 			return err
 		}
 		ext := strings.ToLower(filepath.Ext(parsedURL.Path))
 		if !strings.HasPrefix(ext, ".") {
+			handleSyncError(svc.storage, "facebook", svc.syncData, len(items)-itemIdx)
 			return fmt.Errorf("Could not parse extension: %s", parsedURL.Path)
 		}
 		createdTimestamp, err := time.Parse(facebookTimestampFormat, item.CreatedTime)
 		if err != nil {
+			handleSyncError(svc.storage, "facebook", svc.syncData, len(items)-itemIdx)
 			return fmt.Errorf("Could not parse created time into int64: %v", err)
 		}
 		formatted := createdTimestamp.Format(svc.serviceConfig.Format)
 
-		if err := svc.storage.EnsureDirectoryExists(filepath.Dir(formatted)); err != nil {
-			return err
-		}
 		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
 		if exists, err := svc.storage.Exists(filePath); err != nil {
+			handleSyncError(svc.storage, "facebook", svc.syncData, len(items)-itemIdx)
 			return err
-		} else if !exists {
+		} else if exists {
+			svc.syncData.SkipCount = incrementOrSet(svc.syncData.SkipCount, 1)
+			if sdErr := persistSyncData(svc.storage, "facebook", svc.syncData); sdErr != nil {
+				return sdErr
+			}
+		} else {
 			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
 				log.Printf("Failed to acquire semaphore during loop: %v", err)
+				handleSyncError(svc.storage, "facebook", svc.syncData, len(items)-itemIdx)
 				return err
 			}
 			go func(i *facebookImage, p string) {
@@ -264,6 +297,7 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 					return
 				}
 				svc.fetchErr = svc.storage.DownloadFromURL(i.Source, p)
+				persistSyncDataPostFetch(svc.storage, "facebook", svc.syncData, svc.fetchErr)
 			}(image, filePath)
 		}
 	}

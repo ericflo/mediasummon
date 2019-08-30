@@ -56,8 +56,8 @@ type ServiceSyncData struct {
 	Ended       null.Time `json:"end"`
 	PageCurrent null.Int  `json:"page_current"`
 	PageMax     null.Int  `json:"page_max"`
-	SkipCount   null.Int  `json:"skip_count"`
 	ItemCount   null.Int  `json:"item_count"`
+	SkipCount   null.Int  `json:"skip_count"`
 	FailCount   null.Int  `json:"fail_count"`
 	FetchCount  null.Int  `json:"fetch_count"`
 }
@@ -140,7 +140,7 @@ func displayErrorPage(w http.ResponseWriter, msg string) {
 func saveOAuthData(store storage.Storage, tok *oauth2.Token, serviceName string) error {
 	encodedTok, err := json.Marshal(tok)
 	if err != nil {
-		return fmt.Errorf("Could not encode Facebook authentication token to save: %v", err)
+		return fmt.Errorf("Could not encode authentication token to save: %v", err)
 	}
 	authdir := filepath.Join(".meta", serviceName)
 	if err = store.EnsureDirectoryExists(authdir); err != nil {
@@ -148,7 +148,7 @@ func saveOAuthData(store storage.Storage, tok *oauth2.Token, serviceName string)
 	}
 	path := filepath.Join(authdir, "auth.json")
 	if err = store.WriteBlob(path, encodedTok); err != nil {
-		return fmt.Errorf("Could not write Facebook auth data to disk: %v", err)
+		return fmt.Errorf("Could not write auth data to disk: %v", err)
 	}
 	return nil
 }
@@ -171,6 +171,39 @@ func loadOAuthData(store storage.Storage, serviceName string) (*oauth2.Token, er
 	return tok, nil
 }
 
+func persistSyncData(store storage.Storage, serviceName string, syncData *ServiceSyncData) error {
+	encoded, err := json.Marshal(syncData)
+	if err != nil {
+		log.Printf("Error: Could not encode data to save: %v", err)
+		return fmt.Errorf("Could not encode data to save: %v", err)
+	}
+	datadir := filepath.Join(".meta", serviceName, "syncdata")
+	if err = store.EnsureDirectoryExists(datadir); err != nil {
+		log.Printf("Error: Could not create syncdata directory: %v", err)
+		return fmt.Errorf("Could not create syncdata directory: %v", err)
+	}
+	path := filepath.Join(datadir, fmt.Sprintf("%d.json", syncData.Started.UnixNano()))
+	if err = store.WriteBlob(path, encoded); err != nil {
+		log.Printf("Error: Could not write sync data to disk: %v", err)
+		return fmt.Errorf("Could not write sync data to disk: %v", err)
+	}
+	return nil
+}
+
+func handleSyncError(store storage.Storage, serviceName string, syncData *ServiceSyncData, count int) error {
+	syncData.FailCount = incrementOrSet(syncData.FailCount, count)
+	return persistSyncData(store, serviceName, syncData)
+}
+
+func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncData *ServiceSyncData, fetchErr error) {
+	if fetchErr == nil {
+		syncData.FetchCount = incrementOrSet(syncData.FetchCount, 1)
+		persistSyncData(store, serviceName, syncData)
+	} else {
+		handleSyncError(store, serviceName, syncData, 1)
+	}
+}
+
 // GetenvDefault gets an environment, but defaults to the parameter given if none is found
 func GetenvDefault(name string, def string) string {
 	ret := os.Getenv(name)
@@ -178,4 +211,13 @@ func GetenvDefault(name string, def string) string {
 		return def
 	}
 	return ret
+}
+
+// incrementOrSet either increments a null.Int value by the value, or creates a valid one from it
+func incrementOrSet(toSet null.Int, val int) null.Int {
+	if toSet.Valid {
+		toSet.Int64 += int64(val)
+		return toSet
+	}
+	return null.IntFrom(int64(val))
 }
