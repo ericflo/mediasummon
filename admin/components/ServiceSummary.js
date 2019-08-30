@@ -21,6 +21,15 @@ export default function ServiceSummary({service}) {
           </div>
         </div>
       </div>
+      {service.needs_credentials ?
+        <div className="uk-card-body uk-padding-remove-vertical uk-margin">
+          <div className="uk-alert-warning" uk-alert="true">
+            <p>It looks like your permission is required before we can sync this service for you. Clicking this button will send you to {service.metadata.name}&rsquo;s website, where you can grant permission to download these items for you, and you&rsquo;ll be returned here afterwards.</p>
+            <p>
+              <a href={service.credential_redirect_url} className="uk-button uk-button-primary">Grant Permission</a>
+            </p>
+          </div>
+        </div> : null}
       <div className="uk-card-footer">
         <a href="#" className="uk-button uk-button-text">View details</a>
       </div>
