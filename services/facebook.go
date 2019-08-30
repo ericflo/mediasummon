@@ -111,6 +111,10 @@ func (svc *facebookService) Metadata() *ServiceMetadata {
 	}
 }
 
+func (svc *facebookService) CurrentSyncData() *ServiceSyncData {
+	return svc.syncData
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *facebookService) NeedsCredentials() bool {
 	return svc.client == nil || svc.accessToken == nil

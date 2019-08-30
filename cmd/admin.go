@@ -81,6 +81,7 @@ type AdminServiceDescription struct {
 	Metadata              *services.ServiceMetadata `json:"metadata"`
 	NeedsCredentials      bool                      `json:"needs_credentials"`
 	CredentialRedirectURL string                    `json:"credential_redirect_url"`
+	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
 	LastSync              *services.ServiceSyncData `json:"last_sync"`
 }
 
@@ -98,6 +99,7 @@ func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 				Metadata:              svc.Metadata(),
 				NeedsCredentials:      svc.NeedsCredentials(),
 				CredentialRedirectURL: svc.CredentialRedirectURL(),
+				CurrentSync:           svc.CurrentSyncData(),
 				LastSync:              lastSync,
 			})
 		}

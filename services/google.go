@@ -124,6 +124,10 @@ func (svc *googleService) Metadata() *ServiceMetadata {
 	}
 }
 
+func (svc *googleService) CurrentSyncData() *ServiceSyncData {
+	return svc.syncData
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *googleService) NeedsCredentials() bool {
 	return svc.client == nil

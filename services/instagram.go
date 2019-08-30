@@ -100,6 +100,10 @@ func (svc *instagramService) Metadata() *ServiceMetadata {
 	}
 }
 
+func (svc *instagramService) CurrentSyncData() *ServiceSyncData {
+	return svc.syncData
+}
+
 // NeedsCredentials reports whether credentials are needed for this user
 func (svc *instagramService) NeedsCredentials() bool {
 	return svc.client == nil || svc.accessToken == nil

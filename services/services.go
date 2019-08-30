@@ -70,6 +70,7 @@ type ServiceSyncData struct {
 type SyncService interface {
 	Setup() error
 	Metadata() *ServiceMetadata
+	CurrentSyncData() *ServiceSyncData
 	NeedsCredentials() bool
 	CredentialRedirectURL() string
 	Sync() error
