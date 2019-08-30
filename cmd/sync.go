@@ -41,7 +41,7 @@ func RunSync() {
 	flag.StringVar(&serviceConfig.AdminPath, "a", services.DefaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
-	store, err := storage.NewStorage(serviceConfig.Directory)
+	store, err := storage.NewStorage([]string{serviceConfig.Directory})
 	if err != nil || store == nil {
 		log.Println("FATAL: Could not initialize storage driver", err)
 		return

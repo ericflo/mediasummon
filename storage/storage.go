@@ -15,28 +15,36 @@ type Storage interface {
 	ListDirectoryFiles(path string) ([]string, error)
 }
 
-// NewStorage takes the given URL and returns the appropriate configured storage interface
-func NewStorage(url string) (Storage, error) {
-	parsedURL, err := netURL.Parse(url)
-	if err != nil {
-		return nil, err
-	}
-	// If it's a single-letter scheme, it's Windows and a drive letter, so just pass the whole
-	// url as the base path to the underlying file storage layer
-	if len(parsedURL.Scheme) == 1 {
-		store, err := NewFileStorage(url)
+// NewStorage takes the given URLs and returns the appropriate configured storage interface
+func NewStorage(urls []string) (*Multi, error) {
+	stores := []Storage{}
+	for _, url := range urls {
+		parsedURL, err := netURL.Parse(url)
 		if err != nil {
 			return nil, err
 		}
-		return &Multi{Stores: []Storage{store}}, nil
-	}
-	switch parsedURL.Scheme {
-	case "file", "":
-		store, err := NewFileStorage(parsedURL.Path)
-		if err != nil {
-			return nil, err
+		// If it's a single-letter scheme, it's Windows and a drive letter, so just pass the whole
+		// url as the base path to the underlying file storage layer
+		if len(parsedURL.Scheme) == 1 {
+			store, err := NewFileStorage(url)
+			if err != nil {
+				return nil, err
+			}
+			stores = append(stores, store)
+			continue
 		}
-		return &Multi{Stores: []Storage{store}}, nil
+		switch parsedURL.Scheme {
+		case "file", "":
+			store, err := NewFileStorage(parsedURL.Path)
+			if err != nil {
+				return nil, err
+			}
+			stores = append(stores, store)
+			continue
+		}
+
+		return nil, fmt.Errorf("Could not load storage for scheme: %v (%v)", parsedURL.Scheme, url)
 	}
-	return nil, fmt.Errorf("Could not load storage for scheme: %v (%v)", parsedURL.Scheme, url)
+	return &Multi{Stores: stores}, nil
+
 }
