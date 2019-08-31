@@ -59,7 +59,8 @@ func RunAdmin() {
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
-	mux.HandleFunc("/resources/services.json", makeAdminServiceMapRequest(serviceConfig.Storage))
+	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage))
+	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
@@ -120,8 +121,8 @@ type AdminServiceDescription struct {
 	LastSync              *services.ServiceSyncData `json:"last_sync"`
 }
 
-// handleAdminServiceMapRequest handles http requests for the service map
-func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
+// makeAdminServices handles http requests for the service map
+func makeAdminServices(store *storage.Multi) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
 		for _, serviceName := range sortedServiceNames() {
@@ -139,6 +140,30 @@ func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 			})
 		}
 		data, err := json.MarshalIndent(svcs, "", "  ")
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}
+}
+
+// AdminTargetDescription is the response that the admin gives when talking about a sync target
+type AdminTargetDescription struct {
+	URL string `json:"url"`
+}
+
+// makeAdminTargets handles http requests for the service map
+func makeAdminTargets(store *storage.Multi) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		adminTargets := make([]*AdminTargetDescription, 0, len(serviceMap))
+		for _, store := range store.Stores {
+			adminTargets = append(adminTargets, &AdminTargetDescription{
+				URL: store.URL(),
+			})
+		}
+		data, err := json.MarshalIndent(adminTargets, "", "  ")
 		if err != nil {
 			renderJSONError(w, err, http.StatusInternalServerError)
 		}

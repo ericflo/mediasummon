@@ -7,6 +7,7 @@ import (
 
 // Storage represents a a method of storing and retrieving data
 type Storage interface {
+	URL() string
 	Exists(path string) (bool, error)
 	EnsureDirectoryExists(path string) error
 	DownloadFromURL(url, path string) (string, error)

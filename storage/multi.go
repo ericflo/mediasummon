@@ -20,6 +20,12 @@ type Multi struct {
 	rnd    *rand.Rand
 }
 
+// URL returns an empty string for the multi. Maybe in the future we can come up with
+// a scheme for encoding multiple urls within a url, maybe with query params or something.
+func (m *Multi) URL() string {
+	return ""
+}
+
 func (m *Multi) clippedQuorumCount() int {
 	if m.quorum == 0 {
 		m.quorum = 1

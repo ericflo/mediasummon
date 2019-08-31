@@ -23,14 +23,23 @@ type fileStorage struct {
 
 // NewFileStorage creates a new storage interface that can talk to the local filesystems
 func NewFileStorage(directory string) (Storage, error) {
-	if err := os.MkdirAll(directory, 0644); err != nil {
-		log.Println("Could not create directory ("+directory+"): ", err)
-		return nil, fmt.Errorf("Could not create directory (%s): %v", directory, err)
+	fullDir, err := filepath.Abs(directory)
+	if err != nil {
+		return nil, err
+	}
+	if err = os.MkdirAll(fullDir, 0644); err != nil {
+		log.Println("Could not create directory ("+fullDir+"): ", err)
+		return nil, fmt.Errorf("Could not create directory (%s): %v", fullDir, err)
 	}
 	return &fileStorage{
-		directory: directory,
+		directory: fullDir,
 		sem:       semaphore.NewWeighted(1),
 	}, nil
+}
+
+// URL returns the string of the url to this storage interface
+func (store *fileStorage) URL() string {
+	return "file://" + store.directory
 }
 
 // Exists returns true if the path refers to a file that exists on the local filesystem
