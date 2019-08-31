@@ -228,3 +228,14 @@ func (m *Multi) RemoveTarget(urlStr string) error {
 	}
 	return nil
 }
+
+// AddTarget adds a target to the current set of stores
+func (m *Multi) AddTarget(urlStr string) error {
+	store, err := NewStorageSingle(urlStr)
+	if err != nil {
+		return err
+	}
+	m.Stores = append(m.Stores, store)
+	// TODO: Copy all the data to the new storage drive before returning?
+	return nil
+}

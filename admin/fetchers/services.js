@@ -2,7 +2,7 @@ import httpFetch from '../fetch';
 import config from '../config';
 import { getInstalledCSRF } from '../setup';
 
-export async function fetchServices(setServices, setErrorMessage) {
+export async function fetchServices() {
   try {
     const result = await httpFetch(config.apiPrefix + '/resources/services.json');
     if (result.ok) {
@@ -20,12 +20,12 @@ export async function fetchServices(setServices, setErrorMessage) {
           sync.end = Date.parse(sync.end);
         }
       }
-      setServices(services);
+      return services;
     } else {
-      setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
+      throw 'Completed fetch but got bad status from resource: ' + result.status;
     }
   } catch (err) {
-    setErrorMessage('Could not complete fetch: ' + err);
+    throw 'Could not complete fetch: ' + err;
   }
 }
 

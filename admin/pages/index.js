@@ -16,13 +16,30 @@ async function handleTargetRemoveClick(target, targets, setTargets, setErrorMess
     return;
   }
   try {
-    const result = await fetchTargetRemove(target.url, setErrorMessage);
-    console.log('remove result', result);
+    const result = await fetchTargetRemove(target.url);
     setTargets(targets.filter(t => t.url !== target.url));
   } catch (err) {
     setErrorMessage('' + err);
   }
   return false;
+}
+
+async function fullSetup(setServices, setTargets, setErrorMessage) {
+  ensureInstalled();
+  try {
+    setServices(await fetchServices());
+    setTargets(await fetchTargets());
+  } catch (err) {
+    setErrorMessage('' + err);
+  }
+}
+
+async function updateServices(setServices, setErrorMessage) {
+  try {
+    setServices(await fetchServices());
+  } catch (err) {
+    setErrorMessage('' + err);
+  }
 }
 
 export default function Home() {
@@ -31,18 +48,14 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   useEffect(() => {
-    ensureInstalled();
-    fetchServices(setServices, setErrorMessage);
-    fetchTargets(setTargets, setErrorMessage);
-  }, []);
+    fullSetup(setServices, setTargets, setErrorMessage);
+  }, [isAdding]);
   useEffect(() => {
     const timer = setInterval(() => {
-      if (targets.length) {
-        fetchServices(setServices, setErrorMessage);
-      }
+      updateServices(setServices, setErrorMessage);
     }, 1000);
     return () => clearInterval(timer);
-  }, [targets]);
+  }, []);
   const removeTargetClickCallback = useCallback(target => {
     handleTargetRemoveClick(target, targets, setTargets, setErrorMessage);
   }, [targets]);

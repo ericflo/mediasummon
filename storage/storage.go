@@ -21,25 +21,37 @@ type Storage interface {
 	ListDirectoryFiles(path string) ([]string, error)
 }
 
+// NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,
+// which is to take in a slice of urls and return a Multi storage interface)
+func NewStorageSingle(url string) (Storage, error) {
+	normalized := NormalizeStorageURL(url)
+	parsedURL, err := netURL.Parse(normalized)
+	if err != nil {
+		return nil, err
+	}
+	switch parsedURL.Scheme {
+	case "file":
+		if len(parsedURL.Path) == 0 {
+			return nil, fmt.Errorf("Invalid URL: %v", url)
+		}
+		store, err := NewFileStorage(parsedURL.Path[1:])
+		if err != nil {
+			return nil, err
+		}
+		return store, nil
+	}
+	return nil, fmt.Errorf("Could not load storage for scheme: %v (%v) ((%v))", parsedURL.Scheme, url, normalized)
+}
+
 // NewStorage takes the given URLs and returns the appropriate configured storage interface
 func NewStorage(urls []string) (*Multi, error) {
 	stores := []Storage{}
 	for _, url := range urls {
-		normalized := NormalizeStorageURL(url)
-		parsedURL, err := netURL.Parse(normalized)
+		store, err := NewStorageSingle(url)
 		if err != nil {
 			return nil, err
 		}
-		switch parsedURL.Scheme {
-		case "file":
-			store, err := NewFileStorage(parsedURL.Path[1:])
-			if err != nil {
-				return nil, err
-			}
-			stores = append(stores, store)
-			continue
-		}
-		return nil, fmt.Errorf("Could not load storage for scheme: %v (%v) ((%v))", parsedURL.Scheme, url, normalized)
+		stores = append(stores, store)
 	}
 	return &Multi{Stores: stores}, nil
 }

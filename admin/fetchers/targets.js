@@ -2,7 +2,7 @@ import httpFetch from '../fetch';
 import config from '../config';
 import { getInstalledCSRF } from '../setup';
 
-export async function fetchTargets(setTargets, setErrorMessage) {
+export async function fetchTargets() {
   try {
     const result = await httpFetch(config.apiPrefix + '/resources/targets.json');
     if (result.ok) {
@@ -13,17 +13,17 @@ export async function fetchTargets(setTargets, setErrorMessage) {
         target.kind = split[0];
         target.path = decodeURIComponent(split[1].substring(1));
       }
-      setTargets(targets);
+      return targets
     } else {
-      setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
+      throw 'Completed fetch but got bad status from resource: ' + result.status;
     }
   } catch (err) {
-    setErrorMessage('Could not complete fetch: ' + err);
+    throw 'Could not complete fetch: ' + err;
   }
 }
 
-export async function fetchTargetRemove(url, setErrorMessage) {
-  const apiURL = config.apiPrefix + '/resources/target/remove.json?url=' + encodeURIComponent(url);
+async function fetchTargetOperation(operation, url) {
+  const apiURL = config.apiPrefix + '/resources/target/' + operation + '.json?url=' + encodeURIComponent(url);
   var resp = null;
   try {
     resp = await httpFetch(apiURL, {
@@ -35,17 +35,33 @@ export async function fetchTargetRemove(url, setErrorMessage) {
       credentials: 'include',
     });
     if (!resp.ok) {
-      setErrorMessage('Completed fetch but got bad status from resource: ' + resp.status);
-      return;
+      var errorToThrow = null;
+      try {
+        const errJson = await resp.json();
+        if (errJson.error) {
+          errorToThrow = errJson.error;
+        } else {
+          errorToThrow = 'Completed fetch but got error from resource: ' + errJson;
+        }
+      } catch (err) {
+        throw 'Completed fetch but got bad status from resource: ' + resp.status + ' (' + err + ')';
+      }
+      throw errorToThrow;
     }
   } catch (err) {
-    setErrorMessage('Could not complete fetch: ' + err);
-    return;
+    throw 'Could not complete fetch: ' + err;
   }
   try {
-    const data = await resp.json();
-    return data;
+    return await resp.json();
   } catch (err) {
-    setErrorMessage('Could not parse JSON: ' + err);
+    throw 'Could not parse JSON: ' + err;
   }
+}
+
+export async function fetchTargetRemove(url) {
+  return fetchTargetOperation('remove', url);
+}
+
+export async function fetchTargetAdd(url) {
+  return fetchTargetOperation('add', url);
 }

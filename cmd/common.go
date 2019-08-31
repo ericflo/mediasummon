@@ -29,6 +29,18 @@ func populateServiceMap(serviceConfig *services.ServiceConfig) {
 	}
 }
 
+func destroyServiceMap() {
+	// Get a list of all keys
+	keys := make([]string, 0, len(serviceMap))
+	for key := range serviceMap {
+		keys = append(keys, key)
+	}
+	// Delete each one from the service map
+	for _, key := range keys {
+		delete(serviceMap, key)
+	}
+}
+
 // sortedServiceNames returns a sorted list of the service names registered to the serviceMap
 func sortedServiceNames() []string {
 	serviceNames := make([]string, 0, len(serviceMap))

@@ -99,6 +99,11 @@ func printTargetList(configPath string) {
 func addTarget(configPath, target string) error {
 	target = storage.NormalizeStorageURL(target)
 
+	store, err := storage.NewStorageSingle(target)
+	if err != nil {
+		return fmt.Errorf("Invalid sync target %v", err)
+	}
+
 	// First read in the current config
 	config, err := readConfig(configPath)
 	if err != nil {
@@ -109,10 +114,12 @@ func addTarget(configPath, target string) error {
 	sort.Strings(config.Targets)
 	idx := sort.SearchStrings(config.Targets, target)
 	exists := idx < len(config.Targets) && config.Targets[idx] == target
-	if !exists {
-		// If not, add it
-		config.Targets = append(config.Targets, target)
+	// If it exists already, it's an error
+	if exists {
+		return fmt.Errorf("Cannot add target, it's there already %v", target)
 	}
+	// Otherwise, add it
+	config.Targets = append(config.Targets, store.URL())
 	sort.Strings(config.Targets)
 
 	// Write the config back out
@@ -135,8 +142,9 @@ func removeTarget(configPath, target string) error {
 	// Check whether the target is already in the list
 	sort.Strings(config.Targets)
 	idx := sort.SearchStrings(config.Targets, target)
-	if idx != len(config.Targets) {
-		// If it is, remove it
+	exists := idx < len(config.Targets) && config.Targets[idx] == target
+	if exists {
+		// If it does, remove it
 		config.Targets = append(config.Targets[:idx], config.Targets[idx+1:]...)
 	}
 

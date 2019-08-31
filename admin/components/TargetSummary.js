@@ -5,7 +5,7 @@ export default function TargetSummary({target, onRemoveClick}) {
   const clickCallback = useCallback(ev => {
     ev.preventDefault();
     onRemoveClick(target);
-  }, [target]);
+  }, [target, onRemoveClick]);
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">

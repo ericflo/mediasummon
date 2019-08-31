@@ -63,7 +63,8 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, serviceConfi
 	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
 	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
-	mux.HandleFunc("/resources/target/remove.json", makeHandleAdminTargetRemove(configPath, serviceConfig.Storage))
+	mux.HandleFunc("/resources/target/remove.json", makeHandleAdminTargetRemove(configPath, serviceConfig))
+	mux.HandleFunc("/resources/target/add.json", makeHandleAdminTargetAdd(configPath, serviceConfig))
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -201,7 +202,7 @@ func handleAdminServiceSync(w http.ResponseWriter, r *http.Request) {
 	renderStatusOK(w, r)
 }
 
-func makeHandleAdminTargetRemove(configPath string, store *storage.Multi) http.HandlerFunc {
+func makeHandleAdminTargetRemove(configPath string, serviceConfig *services.ServiceConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
@@ -214,13 +215,41 @@ func makeHandleAdminTargetRemove(configPath string, store *storage.Multi) http.H
 			return
 		}
 		if err = removeTarget(configPath, urlString); err != nil {
-			renderJSONErrorMessage(w, "Could not remove sync target: "+err.Error(), http.StatusInternalServerError)
+			renderJSONErrorMessage(w, "Could not remove sync target: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err = store.RemoveTarget(urlString); err != nil {
+		if err = serviceConfig.Storage.RemoveTarget(urlString); err != nil {
 			renderJSONErrorMessage(w, "Could not remove sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		destroyServiceMap()
+		populateServiceMap(serviceConfig)
+		renderStatusOK(w, r)
+	}
+}
+
+func makeHandleAdminTargetAdd(configPath string, serviceConfig *services.ServiceConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+			return
+		}
+		urlString := r.URL.Query().Get("url")
+		_, err := url.Parse(urlString)
+		if err != nil {
+			renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err = addTarget(configPath, urlString); err != nil {
+			renderJSONErrorMessage(w, "Could not add sync target: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err = serviceConfig.Storage.AddTarget(urlString); err != nil {
+			renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		destroyServiceMap()
+		populateServiceMap(serviceConfig)
 		renderStatusOK(w, r)
 	}
 }
