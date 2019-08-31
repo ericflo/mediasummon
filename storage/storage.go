@@ -2,8 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"log"
 	netURL "net/url"
+	"path/filepath"
+	"strings"
 )
+
+var filePrefixes = []string{".", "./", "/"}
 
 // Storage represents a a method of storing and retrieving data
 type Storage interface {
@@ -20,32 +25,63 @@ type Storage interface {
 func NewStorage(urls []string) (*Multi, error) {
 	stores := []Storage{}
 	for _, url := range urls {
-		parsedURL, err := netURL.Parse(url)
+		normalized := NormalizeStorageURL(url)
+		parsedURL, err := netURL.Parse(normalized)
 		if err != nil {
 			return nil, err
 		}
-		// If it's a single-letter scheme, it's Windows and a drive letter, so just pass the whole
-		// url as the base path to the underlying file storage layer
-		if len(parsedURL.Scheme) == 1 {
-			store, err := NewFileStorage(url)
-			if err != nil {
-				return nil, err
-			}
-			stores = append(stores, store)
-			continue
-		}
 		switch parsedURL.Scheme {
-		case "file", "":
-			store, err := NewFileStorage(parsedURL.Path)
+		case "file":
+			store, err := NewFileStorage(parsedURL.Path[1:])
 			if err != nil {
 				return nil, err
 			}
 			stores = append(stores, store)
 			continue
 		}
-
-		return nil, fmt.Errorf("Could not load storage for scheme: %v (%v)", parsedURL.Scheme, url)
+		return nil, fmt.Errorf("Could not load storage for scheme: %v (%v) ((%v))", parsedURL.Scheme, url, normalized)
 	}
 	return &Multi{Stores: stores}, nil
+}
 
+// NormalizeStorageURL takes any path or url and normalizes it into a canonical url for use in the system
+func NormalizeStorageURL(orig string) string {
+	// Special case check for certain string prefixes, which we shortcut into turning into an absolute file url
+	for _, filePrefix := range filePrefixes {
+		if strings.HasPrefix(orig, filePrefix) {
+			abs, err := filepath.Abs(orig)
+			if err != nil {
+				log.Println("Failed to normalize url - could not make special case filepath absolute:", orig, err)
+				return orig
+			}
+			return "file:///" + abs
+		}
+	}
+
+	// Otherwise we need to try to parse the URL and inspect it more closely
+
+	// Parse the URL
+	parsedURL, err := netURL.Parse(orig)
+	if err != nil {
+		log.Println("Failed to normalize url - could not parse url:", orig, err)
+		return orig
+	}
+
+	// If there was no scheme, it's probably a relative path like 'path/to/media', so give it file:// and
+	// make the path absolute
+	if parsedURL.Scheme == "" {
+		abs, err := filepath.Abs(parsedURL.Path)
+		if err != nil {
+			log.Println("Failed to normalize url - could not make relative filepath absolute:", orig, err)
+			return orig
+		}
+		return "file:///" + abs
+	}
+
+	// If it's a single-letter scheme, it's Windows and a drive letter, so compensate
+	if len(parsedURL.Scheme) == 1 {
+		return "file:///" + orig
+	}
+
+	return parsedURL.String()
 }

@@ -3,20 +3,23 @@ package cmd
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"maxint.co/mediasummon/services"
+	"maxint.co/mediasummon/storage"
 )
 
 const defaultConfigPath = "mediasummon.config.json"
 
 var defaultConfig = &commandConfig{
-	Targets:     []string{"media"},
+	Targets:     []string{storage.NormalizeStorageURL("media")},
 	AdminPath:   "admin",
 	Format:      strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
 	NumFetchers: 6,
@@ -48,13 +51,58 @@ func RunTargetAdd() {
 		return
 	}
 	target := os.Args[1]
-
-	// First read in the current config
 	configPath := getTargetConfigPath()
+	if err := addTarget(configPath, target); err != nil {
+		log.Println("Could not add to target:", err)
+		return
+	}
+	printTargetList(configPath)
+}
+
+// RunTargetRemove runs a 'target remove' command which removes a sync target from the list
+func RunTargetRemove() {
+	if len(os.Args) < 2 {
+		log.Println("Must include a target to remove, i.e. 'target remove path/to/my/folder'")
+		return
+	}
+	target := os.Args[1]
+	configPath := getTargetConfigPath()
+	if err := removeTarget(configPath, target); err != nil {
+		log.Println("Could not remove from target:", err)
+		return
+	}
+	printTargetList(configPath)
+}
+
+// RunTargetList runs a 'target list' command which lists the current sync targets from the list
+func RunTargetList() {
+	configPath := getTargetConfigPath()
+	printTargetList(configPath)
+}
+
+func printTargetList(configPath string) {
 	config, err := readConfig(configPath)
 	if err != nil {
 		log.Println("Error reading config", err)
 		return
+	}
+	for i, target := range config.Targets {
+		unescaped, err := url.PathUnescape(storage.NormalizeStorageURL(target))
+		if err != nil {
+			log.Printf("%d) %s {error: %v}", i+1, target, err)
+		} else {
+			log.Printf("%d) %s", i+1, unescaped)
+		}
+	}
+}
+
+func addTarget(configPath, target string) error {
+	target = storage.NormalizeStorageURL(target)
+
+	// First read in the current config
+	config, err := readConfig(configPath)
+	if err != nil {
+		return fmt.Errorf("Error reading config %v", err)
 	}
 
 	// Check whether the target is already in the list
@@ -70,26 +118,18 @@ func RunTargetAdd() {
 	// Write the config back out
 	err = writeConfig(configPath, config)
 	if err != nil {
-		log.Println("Error writing new config")
+		return fmt.Errorf("Error writing new config %v", err)
 	}
-
-	printTargetList(config)
+	return nil
 }
 
-// RunTargetRemove runs a 'target remove' command which removes a sync target from the list
-func RunTargetRemove() {
-	if len(os.Args) < 2 {
-		log.Println("Must include a target to remove, i.e. 'target remove path/to/my/folder'")
-		return
-	}
-	target := os.Args[1]
+func removeTarget(configPath, target string) error {
+	target = storage.NormalizeStorageURL(target)
 
 	// First read in the current config
-	configPath := getTargetConfigPath()
 	config, err := readConfig(configPath)
 	if err != nil {
-		log.Println("Error reading config", err)
-		return
+		return fmt.Errorf("Error reading config %v", err)
 	}
 
 	// Check whether the target is already in the list
@@ -103,27 +143,9 @@ func RunTargetRemove() {
 	// Write the config back out
 	err = writeConfig(configPath, config)
 	if err != nil {
-		log.Println("Error writing new config")
+		return fmt.Errorf("Error writing new config %v", err)
 	}
-
-	printTargetList(config)
-}
-
-// RunTargetList runs a 'target list' command which lists the current sync targets from the list
-func RunTargetList() {
-	configPath := getTargetConfigPath()
-	config, err := readConfig(configPath)
-	if err != nil {
-		log.Println("Error reading config:", err)
-		return
-	}
-	printTargetList(config)
-}
-
-func printTargetList(config *commandConfig) {
-	for i, target := range config.Targets {
-		log.Printf("%d) %s", i+1, target)
-	}
+	return nil
 }
 
 func getTargetConfigPath() string {

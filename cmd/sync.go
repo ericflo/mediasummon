@@ -53,14 +53,14 @@ func RunSync() {
 	populateServiceMap(serviceConfig)
 
 	if serviceName == "all" {
-		runSyncList(serviceConfig)
+		runSyncList(configPath, serviceConfig)
 	} else {
-		runSyncService(serviceName, serviceConfig)
+		runSyncService(serviceName, configPath, serviceConfig)
 	}
 }
 
 // runSyncList runs sync on all the services that have credentials
-func runSyncList(serviceConfig *services.ServiceConfig) {
+func runSyncList(configPath string, serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
 	for serviceName, svc := range serviceMap {
@@ -74,7 +74,7 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
@@ -92,7 +92,7 @@ func runSyncList(serviceConfig *services.ServiceConfig) {
 }
 
 // runSyncService runs sync for an individual service, requesting credentials from the user if needed
-func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
+func runSyncService(serviceName, configPath string, serviceConfig *services.ServiceConfig) {
 	svc, exists := serviceMap[serviceName]
 	if !exists {
 		log.Println("Could not find service: " + serviceName)
@@ -104,7 +104,7 @@ func runSyncService(serviceName string, serviceConfig *services.ServiceConfig) {
 		mux.HandleFunc(key, handler)
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}

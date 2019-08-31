@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -31,6 +32,9 @@ func (m *Multi) clippedQuorumCount() int {
 		m.quorum = 1
 	}
 	if len(m.Stores) < m.quorum {
+		if len(m.Stores) == 0 {
+			log.Println("Warning: looks like there are no sync targets configured")
+		}
 		return len(m.Stores)
 	}
 	return m.quorum
@@ -80,6 +84,8 @@ func (m *Multi) Exists(path string) (bool, error) {
 	// Validate the responses, so if there's one value, there's nothing to check
 	if len(resps) == 1 {
 		return resps[0], nil
+	} else if len(resps) == 0 {
+		return false, nil
 	}
 	// But if there are multiple values, check them against each other
 	for i := 0; i < len(resps)-1; i++ {
@@ -143,6 +149,8 @@ func (m *Multi) ReadBlob(path string) ([]byte, error) {
 	// Validate the responses, so if there's one value, there's nothing to check
 	if len(resps) == 1 {
 		return resps[0], nil
+	} else if len(resps) == 0 {
+		return nil, nil
 	}
 	// But if there are multiple values, check them against each other
 	for i := 0; i < len(resps)-1; i++ {
@@ -185,6 +193,8 @@ func (m *Multi) ListDirectoryFiles(path string) ([]string, error) {
 	// Validate the responses, so if there's one value, there's nothing to check
 	if len(resps) == 1 {
 		return resps[0], nil
+	} else if len(resps) == 0 {
+		return nil, nil
 	}
 	// But if there are multiple values, check them against each other
 	for i := 0; i < len(resps)-1; i++ {
@@ -198,4 +208,23 @@ func (m *Multi) ListDirectoryFiles(path string) ([]string, error) {
 	}
 
 	return resps[0], nil
+}
+
+// RemoveTarget removes a target represented by the given URL from the current set of stores
+func (m *Multi) RemoveTarget(urlStr string) error {
+	normalized := NormalizeStorageURL(urlStr)
+	newStores := make([]Storage, 0, len(m.Stores)-1)
+	found := false
+	for _, store := range m.Stores {
+		if store.URL() == normalized {
+			found = true
+			continue
+		}
+		newStores = append(newStores, store)
+	}
+	m.Stores = newStores
+	if !found {
+		return fmt.Errorf("Did not find url in sync target set: %s", urlStr)
+	}
+	return nil
 }

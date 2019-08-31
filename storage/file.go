@@ -39,7 +39,7 @@ func NewFileStorage(directory string) (Storage, error) {
 
 // URL returns the string of the url to this storage interface
 func (store *fileStorage) URL() string {
-	return "file://" + store.directory
+	return NormalizeStorageURL("file:///" + store.directory)
 }
 
 // Exists returns true if the path refers to a file that exists on the local filesystem

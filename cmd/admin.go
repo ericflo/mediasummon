@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -48,7 +49,7 @@ func RunAdmin() {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach Admin HTTP Handlers", err)
 		return
@@ -57,11 +58,12 @@ func RunAdmin() {
 	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 }
 
-func attachAdminHTTPHandlers(mux *http.ServeMux, serviceConfig *services.ServiceConfig) (http.Handler, error) {
+func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
 	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage))
-	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
+	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
+	mux.HandleFunc("/resources/target/remove.json", makeHandleAdminTargetRemove(configPath, serviceConfig.Storage))
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -110,6 +112,17 @@ func renderJSONError(w http.ResponseWriter, err error, code int) {
 
 func renderCORSFailure(w http.ResponseWriter, r *http.Request) {
 	renderJSONError(w, csrf.FailureReason(r), http.StatusForbidden)
+}
+
+func renderStatusOK(w http.ResponseWriter, r *http.Request) {
+	data, err := json.Marshal(map[string]string{"status": "ok"})
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // AdminServiceDescription is the response that the admin gives when talking about a service
@@ -185,11 +198,29 @@ func handleAdminServiceSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go svc.Sync()
-	data, err := json.Marshal(map[string]string{"status": "ok"})
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
+	renderStatusOK(w, r)
+}
+
+func makeHandleAdminTargetRemove(configPath string, store *storage.Multi) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+			return
+		}
+		urlString := r.URL.Query().Get("url")
+		_, err := url.Parse(urlString)
+		if err != nil {
+			renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err = removeTarget(configPath, urlString); err != nil {
+			renderJSONErrorMessage(w, "Could not remove sync target: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err = store.RemoveTarget(urlString); err != nil {
+			renderJSONErrorMessage(w, "Could not remove sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		renderStatusOK(w, r)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
 }
