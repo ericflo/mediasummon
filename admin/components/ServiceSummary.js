@@ -1,19 +1,20 @@
 import React from 'react';
+import { useCallback } from 'react';
 import dayjs from 'dayjs';
 import { fetchServiceSyncStart } from '../fetchers/services';
 
-async function handleSyncClick(service, ev) {
-  ev.stopPropagation()
-  ev.preventDefault();
-  const result = await fetchServiceSyncStart(service.metadata.id);
-  console.log('result', result);
-  return false;
+async function handleSyncClick(service) {
+  await fetchServiceSyncStart(service.metadata.id);
 }
 
 export default function ServiceSummary({service}) {
   const sync = service.last_sync;
   const start = sync ? dayjs(sync.start).fromNow() : 'Never';
   const startString = sync ? sync.startString : null;
+  const syncCallback = useCallback(ev => {
+    ev.stopPropagation();
+    handleSyncClick(service);
+  }, [service]);
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
@@ -42,8 +43,10 @@ export default function ServiceSummary({service}) {
       <div className="uk-card-footer">
         <a href="#" className="uk-button uk-button-text">View details</a>
         <p className="uk-align-right">
-          {service.current_sync || service.needs_credentials ? null :
-            <a className="uk-button uk-button-primary" href="#" onClick={handleSyncClick.bind(this, service)}>Sync now</a>}
+          {service.needs_credentials ? null :
+            <button className="uk-button uk-button-primary" disabled={service.current_sync} onClick={syncCallback}>
+              {service.current_sync ? 'Syncing...' : 'Sync now'}
+            </button>}
         </p>
       </div>
     </div>

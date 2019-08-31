@@ -1,6 +1,11 @@
 import React from 'react';
+import {useCallback} from 'react';
 
 export default function TargetSummary({target, onRemoveClick}) {
+  const clickCallback = useCallback(ev => {
+    ev.preventDefault();
+    onRemoveClick(target);
+  }, [target]);
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
@@ -12,7 +17,7 @@ export default function TargetSummary({target, onRemoveClick}) {
             <h3 className="uk-card-title uk-margin-remove-bottom uk-text-middle">{target.path}</h3>
           </div>
           <div className="uk-width-auto">
-            <a className="uk-close-small" uk-close="true" onClick={onRemoveClick}></a>
+            <a className="uk-close-small" uk-close="true" onClick={clickCallback}></a>
           </div>
         </div>
       </div>
