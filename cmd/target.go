@@ -8,14 +8,37 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+
+	"maxint.co/mediasummon/services"
 )
 
 const defaultConfigPath = "mediasummon.config.json"
 
-var defaultConfig = &commandConfig{Targets: []string{"media"}}
+var defaultConfig = &commandConfig{
+	Targets:     []string{"media"},
+	AdminPath:   "admin",
+	Format:      strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
+	NumFetchers: 6,
+	MaxPages:    0,
+	WebPort:     "5000",
+}
 
 type commandConfig struct {
-	Targets []string `json:"targets"`
+	Targets     []string `json:"targets"`
+	AdminPath   string   `json:"admin_path"`
+	Format      string   `json:"format"`
+	NumFetchers int64    `json:"num_fetchers"`
+	MaxPages    int      `json:"max_pages"`
+	WebPort     string   `json:"web_port"`
+}
+
+func (config *commandConfig) ApplyToServiceConfig(serviceConfig *services.ServiceConfig) {
+	serviceConfig.AdminPath = config.AdminPath
+	serviceConfig.Format = config.Format
+	serviceConfig.NumFetchers = config.NumFetchers
+	serviceConfig.MaxPages = config.MaxPages
+	serviceConfig.WebPort = config.WebPort
 }
 
 // RunTargetAdd runs an 'target add' command which adds a new sync target to the list
@@ -37,10 +60,12 @@ func RunTargetAdd() {
 	// Check whether the target is already in the list
 	sort.Strings(config.Targets)
 	idx := sort.SearchStrings(config.Targets, target)
-	if idx == len(config.Targets) {
+	exists := idx < len(config.Targets) && config.Targets[idx] == target
+	if !exists {
 		// If not, add it
 		config.Targets = append(config.Targets, target)
 	}
+	sort.Strings(config.Targets)
 
 	// Write the config back out
 	err = writeConfig(configPath, config)
@@ -126,7 +151,7 @@ func writeConfig(configPath string, config *commandConfig) error {
 	if err := os.MkdirAll(filepath.Dir(configPath), 0644); err != nil {
 		return err
 	}
-	encoded, err := json.Marshal(config)
+	encoded, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return err
 	}

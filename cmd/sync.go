@@ -32,14 +32,6 @@ func RunSync() {
 	flag.StringVar(&configPath, "c", defaultConfigPath, "path to config file [shorthand]")
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
-	flag.StringVar(&serviceConfig.Format, "format", services.DefaultFormat, "format for how to name and place media")
-	flag.StringVar(&serviceConfig.Format, "f", services.DefaultFormat, "format for how to name and place media [shorthand]")
-	flag.Int64Var(&serviceConfig.NumFetchers, "num-fetchers", services.DefaultNumFetchers, "number of fetchers to run to download content")
-	flag.Int64Var(&serviceConfig.NumFetchers, "n", services.DefaultNumFetchers, "number of fetchers to run to download content [shorthand]")
-	flag.IntVar(&serviceConfig.MaxPages, "max-pages", services.DefaultMaxPages, "max pages to fetch, zero meaning auto")
-	flag.IntVar(&serviceConfig.MaxPages, "m", services.DefaultMaxPages, "max pages to fetch, zero meaning auto [shorthand]")
-	flag.StringVar(&serviceConfig.AdminPath, "admin", services.DefaultAdminPath, "path to admin static site")
-	flag.StringVar(&serviceConfig.AdminPath, "a", services.DefaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
 	config, err := readConfig(configPath)
@@ -47,6 +39,7 @@ func RunSync() {
 		log.Println("Error reading config", err)
 		return
 	}
+	config.ApplyToServiceConfig(serviceConfig)
 
 	store, err := storage.NewStorage(config.Targets)
 	if err != nil || store == nil {

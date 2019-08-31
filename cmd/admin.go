@@ -21,11 +21,6 @@ func RunAdmin() {
 	serviceConfig := &services.ServiceConfig{}
 	flag.StringVar(&configPath, "config", defaultConfigPath, "path to config file")
 	flag.StringVar(&configPath, "c", defaultConfigPath, "path to config file [shorthand]")
-	serviceConfig.Format = services.DefaultFormat
-	serviceConfig.NumFetchers = services.DefaultNumFetchers
-	serviceConfig.MaxPages = services.DefaultMaxPages
-	flag.StringVar(&serviceConfig.AdminPath, "admin", services.DefaultAdminPath, "path to admin static site")
-	flag.StringVar(&serviceConfig.AdminPath, "a", services.DefaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
 	config, err := readConfig(configPath)
@@ -33,6 +28,7 @@ func RunAdmin() {
 		log.Println("Error reading config", err)
 		return
 	}
+	config.ApplyToServiceConfig(serviceConfig)
 
 	store, err := storage.NewStorage(config.Targets)
 	if err != nil || store == nil {
@@ -142,7 +138,7 @@ func makeAdminServiceMapRequest(store storage.Storage) http.HandlerFunc {
 				LastSync:              lastSync,
 			})
 		}
-		data, err := json.Marshal(svcs)
+		data, err := json.MarshalIndent(svcs, "", "  ")
 		if err != nil {
 			renderJSONError(w, err, http.StatusInternalServerError)
 		}
