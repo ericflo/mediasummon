@@ -43,16 +43,6 @@ type ServiceMetadata struct {
 	Name string `json:"name"`
 }
 
-/*
-// ServiceSystemData is metadata about a service that the system provides
-type ServiceSystemData struct {
-	LastSync  null.Time `json:"last_sync"`
-	SyncCount int       `json:"sync_count"`
-	ItemCount int       `json:"item_count"`
-	FailCount int       `json:"fail_count"`
-}
-*/
-
 // ServiceSyncData is data about a single sync session performed by a service
 type ServiceSyncData struct {
 	Started     time.Time         `json:"start"`
@@ -79,7 +69,6 @@ type SyncService interface {
 
 // ServiceConfig is a struct that can configure a service
 type ServiceConfig struct {
-	Directory   string
 	Format      string
 	NumFetchers int64
 	MaxPages    int
@@ -95,10 +84,6 @@ type ServiceConfig struct {
 func (config *ServiceConfig) LoadFromEnv() {
 	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
 		log.Printf("Could not load .env file in current directory %v", err)
-	}
-	dirEnv := filepath.Join(config.Directory, ".meta", ".env")
-	if err := godotenv.Load(dirEnv); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in target directory %v", err)
 	}
 	config.WebPort = GetenvDefault("WEB_PORT", DefaultWebPort)
 	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)

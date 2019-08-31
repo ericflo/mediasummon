@@ -21,7 +21,23 @@ func main() {
 	case "admin":
 		cmd.RunAdmin()
 		break
+	case "target":
+		subcommand := os.Args[1]
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+		switch subcommand {
+		case "add":
+			cmd.RunTargetAdd()
+			break
+		case "remove":
+			cmd.RunTargetRemove()
+			break
+		case "list":
+			cmd.RunTargetList()
+			break
+		default:
+			log.Println("Unknown subcommand:", subcommand, "Valid subcommands are: {add, remove, list}")
+		}
 	default:
-		log.Println("Unknown command:", command, "Valid commands are: {sync, admin}")
+		log.Println("Unknown command:", command, "Valid commands are: {sync, admin, target}")
 	}
 }

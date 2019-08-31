@@ -24,13 +24,14 @@ func serviceOptions() []string {
 // RunSync runs a 'sync' command line application that syncs a service to a directory
 func RunSync() {
 	serviceOptions := strings.Join(serviceOptions(), ", ")
+	var configPath string
 	var serviceName string
 	serviceConfig := &services.ServiceConfig{}
 
+	flag.StringVar(&configPath, "config", defaultConfigPath, "path to config file")
+	flag.StringVar(&configPath, "c", defaultConfigPath, "path to config file [shorthand]")
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
-	flag.StringVar(&serviceConfig.Directory, "directory", services.DefaultDirectory, "which directory to sync to")
-	flag.StringVar(&serviceConfig.Directory, "d", services.DefaultDirectory, "which directory to sync to [shorthand]")
 	flag.StringVar(&serviceConfig.Format, "format", services.DefaultFormat, "format for how to name and place media")
 	flag.StringVar(&serviceConfig.Format, "f", services.DefaultFormat, "format for how to name and place media [shorthand]")
 	flag.Int64Var(&serviceConfig.NumFetchers, "num-fetchers", services.DefaultNumFetchers, "number of fetchers to run to download content")
@@ -41,7 +42,13 @@ func RunSync() {
 	flag.StringVar(&serviceConfig.AdminPath, "a", services.DefaultAdminPath, "path to admin static site [shorthand]")
 	flag.Parse()
 
-	store, err := storage.NewStorage([]string{serviceConfig.Directory})
+	config, err := readConfig(configPath)
+	if err != nil {
+		log.Println("Error reading config", err)
+		return
+	}
+
+	store, err := storage.NewStorage(config.Targets)
 	if err != nil || store == nil {
 		log.Println("FATAL: Could not initialize storage driver", err)
 		return
