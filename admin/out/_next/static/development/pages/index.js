@@ -1,5 +1,306 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["static\\development\\pages\\index.js"],{
 
+/***/ "./components/AddTargetModal.js":
+/*!**************************************!*\
+  !*** ./components/AddTargetModal.js ***!
+  \**************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return AddTargetModal; });
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _fetchers_targets__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../fetchers/targets */ "./fetchers/targets.js");
+
+
+var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\AddTargetModal.js";
+var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
+
+
+
+
+function dismissSelf(setProtocol, setPathVal, setIsAdding) {
+  setProtocol('file');
+  setPathVal('');
+  setIsAdding(false);
+}
+
+function handleSaveClick(_x, _x2, _x3, _x4, _x5) {
+  return _handleSaveClick.apply(this, arguments);
+}
+
+function _handleSaveClick() {
+  _handleSaveClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(url, setErrorMessage, setProtocol, setPathVal, setIsAdding) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.prev = 0;
+            _context.next = 3;
+            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_3__["fetchTargetAdd"])(url);
+
+          case 3:
+            dismissSelf(setProtocol, setPathVal, setIsAdding);
+            _context.next = 9;
+            break;
+
+          case 6:
+            _context.prev = 6;
+            _context.t0 = _context["catch"](0);
+            setErrorMessage('' + _context.t0);
+
+          case 9:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee, null, [[0, 6]]);
+  }));
+  return _handleSaveClick.apply(this, arguments);
+}
+
+function nameForProtocol(protocol) {
+  switch (protocol) {
+    case 'file':
+      return 'Local Directory';
+
+    case 'gdrive':
+      return 'Google Drive';
+
+    case 'dropbox':
+      return 'Dropbox';
+
+    case 's3':
+      return 'S3';
+  }
+
+  return 'Unknown';
+}
+
+function AddTargetModal(_ref) {
+  var enabled = _ref.enabled,
+      setIsAdding = _ref.setIsAdding;
+
+  var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(null),
+      errorMessage = _useState[0],
+      setErrorMessage = _useState[1];
+
+  var _useState2 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(null),
+      selfVal = _useState2[0],
+      setSelfVal = _useState2[1];
+
+  var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])('file'),
+      protocol = _useState3[0],
+      setProtocol = _useState3[1];
+
+  var _useState4 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(''),
+      pathVal = _useState4[0],
+      setPathVal = _useState4[1];
+
+  Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
+    var showing = selfVal && enabled;
+
+    if (showing) {
+      __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js").modal(selfVal).show();
+    }
+
+    return function () {
+      if (showing) {
+        __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js").modal(selfVal).hide();
+      }
+    };
+  }, [selfVal, enabled]);
+  var closeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    dismissSelf(setProtocol, setPathVal, setIsAdding);
+  }, [selfVal]);
+  var refCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
+    setSelfVal(ref);
+  }, []);
+  var protocolChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    setProtocol(ev.target.value);
+  }, []);
+  var pathValueChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    setPathVal(ev.target.value);
+  }, []);
+  var saveCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    var extra = protocol === 'file' ? '/' : '';
+    handleSaveClick(protocol + '://' + extra + pathVal, setErrorMessage, setProtocol, setPathVal, setIsAdding);
+  }, [protocol, pathVal]);
+  return __jsx("div", {
+    "uk-modal": "true",
+    ref: refCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 69
+    },
+    __self: this
+  }, __jsx("div", {
+    className: "uk-modal-dialog",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 70
+    },
+    __self: this
+  }, __jsx("button", {
+    className: "uk-modal-close-default",
+    type: "button",
+    "uk-close": "true",
+    onClick: closeCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 71
+    },
+    __self: this
+  }), __jsx("div", {
+    className: "uk-modal-header",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 76
+    },
+    __self: this
+  }, __jsx("h2", {
+    className: "uk-modal-title",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 77
+    },
+    __self: this
+  }, "Summon your media to a new location")), __jsx("div", {
+    className: "uk-modal-body",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 79
+    },
+    __self: this
+  }, errorMessage ? __jsx("div", {
+    className: "uk-alert-danger",
+    "uk-alert": "true",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 81
+    },
+    __self: this
+  }, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 82
+    },
+    __self: this
+  }, __jsx("span", {
+    "uk-icon": "warning",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 82
+    },
+    __self: this
+  }), " ", errorMessage)) : null, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 84
+    },
+    __self: this
+  }, "Choose the additional location where you would like to save your media"), __jsx("form", {
+    className: "uk-form uk-flex",
+    onSubmit: saveCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 85
+    },
+    __self: this
+  }, __jsx("input", {
+    type: "submit",
+    onSubmit: saveCallback,
+    style: {
+      display: 'none'
+    },
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 86
+    },
+    __self: this
+  }), __jsx("span", {
+    className: "uk-width-auto",
+    "uk-form-custom": "target: true",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 87
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input uk-width-auto",
+    type: "text",
+    placeholder: nameForProtocol(protocol),
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 88
+    },
+    __self: this
+  }), __jsx("select", {
+    className: "uk-select",
+    onChange: protocolChangeCallback,
+    value: protocol,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 89
+    },
+    __self: this
+  }, __jsx("option", {
+    value: "file",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 90
+    },
+    __self: this
+  }, nameForProtocol('file')))), __jsx("input", {
+    type: "text",
+    className: "uk-input uk-width-expand",
+    placeholder: "/path/to/your/media/directory",
+    onChange: pathValueChangeCallback,
+    value: pathVal,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 98
+    },
+    __self: this
+  }))), __jsx("div", {
+    className: "uk-modal-footer uk-text-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 106
+    },
+    __self: this
+  }, __jsx("button", {
+    className: "uk-button uk-button-default",
+    type: "button",
+    onClick: closeCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 107
+    },
+    __self: this
+  }, "Cancel"), __jsx("button", {
+    className: "uk-button uk-button-primary",
+    type: "button",
+    onClick: saveCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 108
+    },
+    __self: this
+  }, "Save"))));
+}
+
+/***/ }),
+
 /***/ "./components/Header.js":
 /*!******************************!*\
   !*** ./components/Header.js ***!
@@ -75,30 +376,23 @@ var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
 
 
-function handleSyncClick(_x, _x2) {
+
+function handleSyncClick(_x) {
   return _handleSyncClick.apply(this, arguments);
 }
 
 function _handleSyncClick() {
   _handleSyncClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(service, ev) {
-    var result;
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(service) {
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            ev.stopPropagation();
-            ev.preventDefault();
-            _context.next = 4;
+            _context.next = 2;
             return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_4__["fetchServiceSyncStart"])(service.metadata.id);
 
-          case 4:
-            result = _context.sent;
-            console.log('result', result);
-            return _context.abrupt("return", false);
-
-          case 7:
+          case 2:
           case "end":
             return _context.stop();
         }
@@ -113,18 +407,22 @@ function ServiceSummary(_ref) {
   var sync = service.last_sync;
   var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_3___default()(sync.start).fromNow() : 'Never';
   var startString = sync ? sync.startString : null;
+  var syncCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.stopPropagation();
+    handleSyncClick(service);
+  }, [service]);
   return __jsx("div", {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 18
+      lineNumber: 19
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 20
     },
     __self: this
   }, __jsx("div", {
@@ -132,14 +430,14 @@ function ServiceSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 21
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 21
+      lineNumber: 22
     },
     __self: this
   }, __jsx("img", {
@@ -149,42 +447,42 @@ function ServiceSummary(_ref) {
     src: '/static/images/logo-' + service.metadata.id + '.png',
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 22
+      lineNumber: 23
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 24
+      lineNumber: 25
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 25
+      lineNumber: 26
     },
     __self: this
   }, service.metadata.name), __jsx("p", {
     className: "uk-text-meta uk-margin-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 26
+      lineNumber: 27
     },
     __self: this
   }, "Last synced: ", __jsx("time", {
     dateTime: startString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 27
+      lineNumber: 28
     },
     __self: this
   }, start), sync ? ' (' + (sync.fetch_count || 0) + ' downloaded)' : null)))), service.needs_credentials ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 34
+      lineNumber: 35
     },
     __self: this
   }, __jsx("div", {
@@ -192,19 +490,19 @@ function ServiceSummary(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 35
+      lineNumber: 36
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 36
+      lineNumber: 37
     },
     __self: this
   }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 37
+      lineNumber: 38
     },
     __self: this
   }, __jsx("a", {
@@ -212,14 +510,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-primary",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 38
+      lineNumber: 39
     },
     __self: this
   }, "Grant Permission")))) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 42
+      lineNumber: 43
     },
     __self: this
   }, __jsx("a", {
@@ -227,26 +525,26 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 43
+      lineNumber: 44
     },
     __self: this
   }, "View details"), __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 44
+      lineNumber: 45
     },
     __self: this
-  }, service.current_sync || service.needs_credentials ? null : __jsx("a", {
+  }, service.needs_credentials ? null : __jsx("button", {
     className: "uk-button uk-button-primary",
-    href: "#",
-    onClick: handleSyncClick.bind(this, service),
+    disabled: service.current_sync,
+    onClick: syncCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 46
+      lineNumber: 47
     },
     __self: this
-  }, "Sync now"))));
+  }, service.current_sync ? 'Syncing...' : 'Sync now'))));
 }
 
 /***/ }),
@@ -266,21 +564,26 @@ __webpack_require__.r(__webpack_exports__);
 var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\TargetSummary.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
+
 function TargetSummary(_ref) {
   var target = _ref.target,
       onRemoveClick = _ref.onRemoveClick;
+  var clickCallback = Object(react__WEBPACK_IMPORTED_MODULE_0__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    onRemoveClick(target);
+  }, [target, onRemoveClick]);
   return __jsx("div", {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 5
+      lineNumber: 10
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 6
+      lineNumber: 11
     },
     __self: this
   }, __jsx("div", {
@@ -288,14 +591,14 @@ function TargetSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 7
+      lineNumber: 12
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 8
+      lineNumber: 13
     },
     __self: this
   }, __jsx("span", {
@@ -303,37 +606,37 @@ function TargetSummary(_ref) {
     "uk-icon": "icon: folder; ratio: 2",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 9
+      lineNumber: 14
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 11
+      lineNumber: 16
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom uk-text-middle",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 12
+      lineNumber: 17
     },
     __self: this
   }, target.path)), __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 14
+      lineNumber: 19
     },
     __self: this
   }, __jsx("a", {
     className: "uk-close-small",
     "uk-close": "true",
-    onClick: onRemoveClick,
+    onClick: clickCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 15
+      lineNumber: 20
     },
     __self: this
   })))));
@@ -404,14 +707,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function fetchServices(_x, _x2) {
+function fetchServices() {
   return _fetchServices.apply(this, arguments);
 }
 
 function _fetchServices() {
   _fetchServices = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(setServices, setErrorMessage) {
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
     var result, services, i, service, sync;
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
       while (1) {
@@ -467,12 +770,10 @@ function _fetchServices() {
             break;
 
           case 20:
-            setServices(services);
-            _context.next = 24;
-            break;
+            return _context.abrupt("return", services);
 
           case 23:
-            setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
+            throw 'Completed fetch but got bad status from resource: ' + result.status;
 
           case 24:
             _context.next = 29;
@@ -481,7 +782,7 @@ function _fetchServices() {
           case 26:
             _context.prev = 26;
             _context.t0 = _context["catch"](0);
-            setErrorMessage('Could not complete fetch: ' + _context.t0);
+            throw 'Could not complete fetch: ' + _context.t0;
 
           case 29:
           case "end":
@@ -493,7 +794,7 @@ function _fetchServices() {
   return _fetchServices.apply(this, arguments);
 }
 
-function fetchServiceSyncStart(_x3) {
+function fetchServiceSyncStart(_x) {
   return _fetchServiceSyncStart.apply(this, arguments);
 }
 
@@ -542,13 +843,14 @@ function _fetchServiceSyncStart() {
 /*!*****************************!*\
   !*** ./fetchers/targets.js ***!
   \*****************************/
-/*! exports provided: fetchTargets, fetchTargetRemove */
+/*! exports provided: fetchTargets, fetchTargetRemove, fetchTargetAdd */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchTargets", function() { return fetchTargets; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchTargetRemove", function() { return fetchTargetRemove; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchTargetAdd", function() { return fetchTargetAdd; });
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
@@ -560,14 +862,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function fetchTargets(_x, _x2) {
+function fetchTargets() {
   return _fetchTargets.apply(this, arguments);
 }
 
 function _fetchTargets() {
   _fetchTargets = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(setTargets, setErrorMessage) {
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
     var result, targets, i, target, split;
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
       while (1) {
@@ -598,12 +900,10 @@ function _fetchTargets() {
               target.path = decodeURIComponent(split[1].substring(1));
             }
 
-            setTargets(targets);
-            _context.next = 13;
-            break;
+            return _context.abrupt("return", targets);
 
           case 12:
-            setErrorMessage('Completed fetch but got bad status from resource: ' + result.status);
+            throw 'Completed fetch but got bad status from resource: ' + result.status;
 
           case 13:
             _context.next = 18;
@@ -612,7 +912,7 @@ function _fetchTargets() {
           case 15:
             _context.prev = 15;
             _context.t0 = _context["catch"](0);
-            setErrorMessage('Could not complete fetch: ' + _context.t0);
+            throw 'Could not complete fetch: ' + _context.t0;
 
           case 18:
           case "end":
@@ -624,20 +924,20 @@ function _fetchTargets() {
   return _fetchTargets.apply(this, arguments);
 }
 
-function fetchTargetRemove(_x3, _x4) {
-  return _fetchTargetRemove.apply(this, arguments);
+function fetchTargetOperation(_x, _x2) {
+  return _fetchTargetOperation.apply(this, arguments);
 }
 
-function _fetchTargetRemove() {
-  _fetchTargetRemove = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+function _fetchTargetOperation() {
+  _fetchTargetOperation = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(url, setErrorMessage) {
-    var apiURL, resp, data;
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(operation, url) {
+    var apiURL, resp, errorToThrow, errJson;
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            apiURL = _config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/target/remove.json?url=' + encodeURIComponent(url);
+            apiURL = _config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/target/' + operation + '.json?url=' + encodeURIComponent(url);
             resp = null;
             _context2.prev = 2;
             _context2.next = 5;
@@ -654,45 +954,113 @@ function _fetchTargetRemove() {
             resp = _context2.sent;
 
             if (resp.ok) {
-              _context2.next = 9;
+              _context2.next = 19;
               break;
             }
 
-            setErrorMessage('Completed fetch but got bad status from resource: ' + resp.status);
-            return _context2.abrupt("return");
-
-          case 9:
-            _context2.next = 15;
-            break;
+            errorToThrow = null;
+            _context2.prev = 8;
+            _context2.next = 11;
+            return resp.json();
 
           case 11:
-            _context2.prev = 11;
-            _context2.t0 = _context2["catch"](2);
-            setErrorMessage('Could not complete fetch: ' + _context2.t0);
-            return _context2.abrupt("return");
+            errJson = _context2.sent;
+
+            if (errJson.error) {
+              errorToThrow = errJson.error;
+            } else {
+              errorToThrow = 'Completed fetch but got error from resource: ' + errJson;
+            }
+
+            _context2.next = 18;
+            break;
 
           case 15:
             _context2.prev = 15;
-            _context2.next = 18;
-            return resp.json();
+            _context2.t0 = _context2["catch"](8);
+            throw 'Completed fetch but got bad status from resource: ' + resp.status + ' (' + _context2.t0 + ')';
 
           case 18:
-            data = _context2.sent;
-            return _context2.abrupt("return", data);
+            throw errorToThrow;
 
-          case 22:
-            _context2.prev = 22;
-            _context2.t1 = _context2["catch"](15);
-            setErrorMessage('Could not parse JSON: ' + _context2.t1);
+          case 19:
+            _context2.next = 24;
+            break;
 
-          case 25:
+          case 21:
+            _context2.prev = 21;
+            _context2.t1 = _context2["catch"](2);
+            throw 'Could not complete fetch: ' + _context2.t1;
+
+          case 24:
+            _context2.prev = 24;
+            _context2.next = 27;
+            return resp.json();
+
+          case 27:
+            return _context2.abrupt("return", _context2.sent);
+
+          case 30:
+            _context2.prev = 30;
+            _context2.t2 = _context2["catch"](24);
+            throw 'Could not parse JSON: ' + _context2.t2;
+
+          case 33:
           case "end":
             return _context2.stop();
         }
       }
-    }, _callee2, null, [[2, 11], [15, 22]]);
+    }, _callee2, null, [[2, 21], [8, 15], [24, 30]]);
+  }));
+  return _fetchTargetOperation.apply(this, arguments);
+}
+
+function fetchTargetRemove(_x3) {
+  return _fetchTargetRemove.apply(this, arguments);
+}
+
+function _fetchTargetRemove() {
+  _fetchTargetRemove = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3(url) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            return _context3.abrupt("return", fetchTargetOperation('remove', url));
+
+          case 1:
+          case "end":
+            return _context3.stop();
+        }
+      }
+    }, _callee3);
   }));
   return _fetchTargetRemove.apply(this, arguments);
+}
+
+function fetchTargetAdd(_x4) {
+  return _fetchTargetAdd.apply(this, arguments);
+}
+
+function _fetchTargetAdd() {
+  _fetchTargetAdd = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee4(url) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            return _context4.abrupt("return", fetchTargetOperation('add', url));
+
+          case 1:
+          case "end":
+            return _context4.stop();
+        }
+      }
+    }, _callee4);
+  }));
+  return _fetchTargetAdd.apply(this, arguments);
 }
 
 /***/ }),
@@ -18684,7 +19052,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _fetchers_targets__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../fetchers/targets */ "./fetchers/targets.js");
 /* harmony import */ var _components_ServiceSummary__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../components/ServiceSummary */ "./components/ServiceSummary.js");
 /* harmony import */ var _components_TargetSummary__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../components/TargetSummary */ "./components/TargetSummary.js");
-/* harmony import */ var _components_Header__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../components/Header */ "./components/Header.js");
+/* harmony import */ var _components_AddTargetModal__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../components/AddTargetModal */ "./components/AddTargetModal.js");
+/* harmony import */ var _components_Header__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../components/Header */ "./components/Header.js");
 
 
 var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\pages\\index.js";
@@ -18699,70 +19068,150 @@ var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
 
 
-function handleTargetRemoveClick(_x, _x2, _x3, _x4, _x5) {
+
+function handleTargetRemoveClick(_x, _x2, _x3, _x4) {
   return _handleTargetRemoveClick.apply(this, arguments);
 }
 
 function _handleTargetRemoveClick() {
   _handleTargetRemoveClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(target, targets, setTargets, setErrorMessage, ev) {
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(target, targets, setTargets, setErrorMessage) {
     var UIKit, result;
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            ev.stopPropagation();
-            ev.preventDefault();
             UIKit = __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js");
-            _context.prev = 3;
-            _context.next = 6;
+            _context.prev = 1;
+            _context.next = 4;
             return UIKit.modal.confirm('Are you sure you want to remove this sync target? (' + target.path + ')');
 
-          case 6:
-            _context.next = 11;
+          case 4:
+            _context.next = 9;
             break;
 
-          case 8:
-            _context.prev = 8;
-            _context.t0 = _context["catch"](3);
+          case 6:
+            _context.prev = 6;
+            _context.t0 = _context["catch"](1);
             return _context.abrupt("return");
 
-          case 11:
-            _context.prev = 11;
-            _context.next = 14;
-            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargetRemove"])(target.url, setErrorMessage);
+          case 9:
+            _context.prev = 9;
+            _context.next = 12;
+            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargetRemove"])(target.url);
 
-          case 14:
+          case 12:
             result = _context.sent;
-            console.log('remove result', result);
             setTargets(targets.filter(function (t) {
               return t.url !== target.url;
             }));
-            _context.next = 22;
+            _context.next = 19;
             break;
 
-          case 19:
-            _context.prev = 19;
-            _context.t1 = _context["catch"](11);
+          case 16:
+            _context.prev = 16;
+            _context.t1 = _context["catch"](9);
             setErrorMessage('' + _context.t1);
 
-          case 22:
+          case 19:
             return _context.abrupt("return", false);
 
-          case 23:
+          case 20:
           case "end":
             return _context.stop();
         }
       }
-    }, _callee, null, [[3, 8], [11, 19]]);
+    }, _callee, null, [[1, 6], [9, 16]]);
   }));
   return _handleTargetRemoveClick.apply(this, arguments);
 }
 
-function Home() {
-  var _this = this;
+function fullSetup(_x5, _x6, _x7) {
+  return _fullSetup.apply(this, arguments);
+}
 
+function _fullSetup() {
+  _fullSetup = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(setServices, setTargets, setErrorMessage) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            Object(_setup__WEBPACK_IMPORTED_MODULE_4__["ensureInstalled"])();
+            _context2.prev = 1;
+            _context2.t0 = setServices;
+            _context2.next = 5;
+            return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])();
+
+          case 5:
+            _context2.t1 = _context2.sent;
+            (0, _context2.t0)(_context2.t1);
+            _context2.t2 = setTargets;
+            _context2.next = 10;
+            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargets"])();
+
+          case 10:
+            _context2.t3 = _context2.sent;
+            (0, _context2.t2)(_context2.t3);
+            _context2.next = 17;
+            break;
+
+          case 14:
+            _context2.prev = 14;
+            _context2.t4 = _context2["catch"](1);
+            setErrorMessage('' + _context2.t4);
+
+          case 17:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2, null, [[1, 14]]);
+  }));
+  return _fullSetup.apply(this, arguments);
+}
+
+function updateServices(_x8, _x9) {
+  return _updateServices.apply(this, arguments);
+}
+
+function _updateServices() {
+  _updateServices = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3(setServices, setErrorMessage) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            _context3.prev = 0;
+            _context3.t0 = setServices;
+            _context3.next = 4;
+            return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])();
+
+          case 4:
+            _context3.t1 = _context3.sent;
+            (0, _context3.t0)(_context3.t1);
+            _context3.next = 11;
+            break;
+
+          case 8:
+            _context3.prev = 8;
+            _context3.t2 = _context3["catch"](0);
+            setErrorMessage('' + _context3.t2);
+
+          case 11:
+          case "end":
+            return _context3.stop();
+        }
+      }
+    }, _callee3, null, [[0, 8]]);
+  }));
+  return _updateServices.apply(this, arguments);
+}
+
+function Home() {
   var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])([]),
       services = _useState[0],
       setServices = _useState[1];
@@ -18775,33 +19224,48 @@ function Home() {
       errorMessage = _useState3[0],
       setErrorMessage = _useState3[1];
 
+  var _useState4 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(false),
+      isAdding = _useState4[0],
+      setIsAdding = _useState4[1];
+
   Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
-    Object(_setup__WEBPACK_IMPORTED_MODULE_4__["ensureInstalled"])();
-    Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])(setServices, setErrorMessage);
-    Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargets"])(setTargets, setErrorMessage);
-  }, []);
+    fullSetup(setServices, setTargets, setErrorMessage);
+  }, [isAdding]);
   Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
     var timer = setInterval(function () {
-      if (targets.length) {
-        Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])(setServices, setErrorMessage);
-      }
+      updateServices(setServices, setErrorMessage);
     }, 1000);
     return function () {
       return clearInterval(timer);
     };
+  }, []);
+  var removeTargetClickCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (target) {
+    handleTargetRemoveClick(target, targets, setTargets, setErrorMessage);
   }, [targets]);
+  var addTargetClickCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    setIsAdding(true);
+  }, []);
   return __jsx("div", {
     className: "uk-container",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 47
+      lineNumber: 67
     },
     __self: this
-  }, __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_9__["default"], {
-    title: "Your Mediasummon Dashboard",
+  }, __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_10__["default"], {
+    title: "Mediasummon",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 48
+      lineNumber: 68
+    },
+    __self: this
+  }), __jsx(_components_AddTargetModal__WEBPACK_IMPORTED_MODULE_9__["default"], {
+    setIsAdding: setIsAdding,
+    enabled: isAdding,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 69
     },
     __self: this
   }), errorMessage ? __jsx("div", {
@@ -18809,7 +19273,7 @@ function Home() {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 50
+      lineNumber: 71
     },
     __self: this
   }, __jsx("a", {
@@ -18817,66 +19281,82 @@ function Home() {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 51
+      lineNumber: 72
     },
     __self: this
   }), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 52
+      lineNumber: 73
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 52
+      lineNumber: 73
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 54
+      lineNumber: 75
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 55
+      lineNumber: 76
     },
     __self: this
-  }, "Target locations to sync media to"), targets.map(function (target) {
+  }, "Summoning your media to these locations"), targets.map(function (target) {
     return __jsx(_components_TargetSummary__WEBPACK_IMPORTED_MODULE_8__["default"], {
       key: target.url,
       target: target,
-      onRemoveClick: handleTargetRemoveClick.bind(_this, target, targets, setTargets, setErrorMessage),
+      onRemoveClick: removeTargetClickCallback,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 58
+        lineNumber: 79
       },
       __self: this
     });
-  })), __jsx("div", {
+  }), __jsx("div", {
+    className: "uk-flex uk-flex-center",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 85
+    },
+    __self: this
+  }, __jsx("a", {
+    href: "#",
+    "uk-icon": "icon: plus-circle; ratio: 2",
+    onClick: addTargetClickCallback,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 86
+    },
+    __self: this
+  }))), __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 65
+      lineNumber: 92
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 66
+      lineNumber: 93
     },
     __self: this
-  }, "Services to sync from"), services.map(function (service) {
+  }, "Summoning media from these services"), services.map(function (service) {
     return __jsx(_components_ServiceSummary__WEBPACK_IMPORTED_MODULE_7__["default"], {
       key: service.metadata.id,
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 68
+        lineNumber: 95
       },
       __self: this
     });
