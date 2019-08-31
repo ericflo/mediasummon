@@ -63,7 +63,7 @@ export default function Home() {
         })}
       </div>
       <div className="uk-section uk-section-default uk-padding-remove">
-        <h3>Services to sync</h3>
+        <h3>Services to sync from</h3>
         {services.map(service => {
           return <ServiceSummary key={service.metadata.id} service={service} />;
         })}
