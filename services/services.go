@@ -77,7 +77,7 @@ type ServiceConfig struct {
 	AdminPath   string
 	IsDebug     bool
 	Secrets     map[string]map[string]string
-	Storage     storage.Storage
+	Storage     *storage.Multi
 }
 
 // LoadFromEnv loads any properties and secrets it can from the environment
