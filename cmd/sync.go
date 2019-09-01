@@ -5,13 +5,15 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 )
 
 const defaultServiceName = "all"
-const defaultHoursPerSync = 24
+const defaultHoursPerSync = 24.0
+const defaultDurationBetweenSyncChecks = time.Duration(time.Second * 5)
 
 // RunSync runs a 'sync' command line application that syncs a service to a directory
 func RunSync() {
@@ -45,14 +47,14 @@ func RunSync() {
 	populateServiceMap(serviceConfig)
 
 	if serviceName == "all" {
-		runSyncList(configPath, serviceConfig)
+		runSyncList(configPath, config, serviceConfig)
 	} else {
-		runSyncService(serviceName, configPath, serviceConfig)
+		runSyncService(serviceName, configPath, config, serviceConfig)
 	}
 }
 
 // runSyncList runs sync on all the services that have credentials
-func runSyncList(configPath string, serviceConfig *services.ServiceConfig) {
+func runSyncList(configPath string, config *commandConfig, serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
 	for serviceName, svc := range serviceMap {
@@ -66,7 +68,7 @@ func runSyncList(configPath string, serviceConfig *services.ServiceConfig) {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, config, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
@@ -84,7 +86,7 @@ func runSyncList(configPath string, serviceConfig *services.ServiceConfig) {
 }
 
 // runSyncService runs sync for an individual service, requesting credentials from the user if needed
-func runSyncService(serviceName, configPath string, serviceConfig *services.ServiceConfig) {
+func runSyncService(serviceName, configPath string, config *commandConfig, serviceConfig *services.ServiceConfig) {
 	svc, exists := serviceMap[serviceName]
 	if !exists {
 		log.Println("Could not find service: " + serviceName)
@@ -96,7 +98,7 @@ func runSyncService(serviceName, configPath string, serviceConfig *services.Serv
 		mux.HandleFunc(key, handler)
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, config, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
@@ -104,5 +106,63 @@ func runSyncService(serviceName, configPath string, serviceConfig *services.Serv
 
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)
+	}
+}
+
+// runScheduledServiceSync loops over every service that has credentials, and
+// if any one is ready for a new sync, starts a goroutine to sync it
+func runScheduledServiceSync(store *storage.Multi, config *commandConfig) error {
+	// Loop over very service in the service map
+	for serviceName, service := range serviceMap {
+		if service.NeedsCredentials() {
+			continue
+		}
+
+		// Get the last sync
+		lastSync, err := services.GetLatestServiceSyncData(store, serviceName)
+		if err != nil {
+			log.Println("Error getting latest service sync data", err)
+			return err
+		}
+
+		// If we haven't synced before, we know we can sync right away
+		if lastSync == nil {
+			go service.Sync()
+			continue
+		}
+
+		// If the last sync didn't ever end,
+		if !lastSync.Ended.Valid {
+			// If we're not currently running a sync for it, start one
+			if service.CurrentSyncData() == nil {
+				go service.Sync()
+			}
+			// Either way, either we were running a sync or we're running one now,
+			// so let's continue on
+			continue
+		}
+
+		// Now we need to see what our configured sync time is
+		hours := config.GetHoursPerSync(serviceName)
+		nextSyncTime := lastSync.Ended.Time.Add(time.Hour * time.Duration(hours))
+
+		// If it's after now, start up a sync and continue on
+		if time.Now().UTC().After(nextSyncTime) {
+			go service.Sync()
+			continue
+		}
+	}
+
+	return nil
+}
+
+// runServiceSyncLoop runs runScheduledServiceSync in a loop, reporting any errors to the console, and
+// waiting a configurable duration between checks
+func runServiceSyncLoop(store *storage.Multi, config *commandConfig) {
+	for {
+		if err := runScheduledServiceSync(store, config); err != nil {
+			log.Println("Error running scheduled service sync:", err)
+		}
+		time.Sleep(defaultDurationBetweenSyncChecks)
 	}
 }

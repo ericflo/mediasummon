@@ -74,7 +74,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
           uk-close="true"
           onClick={closeCallback} />
         <div className="uk-modal-header">
-          <h2 className="uk-modal-title">Summon your media to a new location</h2>
+          <h2 className="uk-modal-title">Summon your media to an additional location</h2>
         </div>
         <div className="uk-modal-body">
           {errorMessage ? 

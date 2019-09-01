@@ -3,12 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/gorilla/csrf"
 	"github.com/rs/cors"
@@ -49,18 +47,20 @@ func RunAdmin() {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, configPath, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, configPath, config, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach Admin HTTP Handlers", err)
 		return
 	}
 
+	go runServiceSyncLoop(store, config)
+
 	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 }
 
-func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, serviceConfig *services.ServiceConfig) (http.Handler, error) {
+func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, config *commandConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
-	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage))
+	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage, config))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
 	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
 	mux.HandleFunc("/resources/target/remove.json", makeHandleAdminTargetRemove(configPath, serviceConfig))
@@ -97,11 +97,14 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, serviceConfi
 }
 
 func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
-	// Doing it this way because we can verify using Go's type system that it won't
-	// encode improperly as long as it contains no quotes (which we ensure) and then
-	// we don't have to branch and check for errors here when there cannot be any
-	quoteless := strings.ReplaceAll(message, "\"", "")
-	encoded := []byte(fmt.Sprintf("{\"error\":\"%s\"}", quoteless))
+	encoded, err := json.Marshal(map[string]string{"error": message})
+	if err != nil {
+		log.Println("Could not encode JSON error message, sending back plaintext error message instead", err)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(code)
+		w.Write([]byte(message))
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(encoded)
@@ -131,12 +134,13 @@ type AdminServiceDescription struct {
 	Metadata              *services.ServiceMetadata `json:"metadata"`
 	NeedsCredentials      bool                      `json:"needs_credentials"`
 	CredentialRedirectURL string                    `json:"credential_redirect_url"`
+	HoursPerSync          float32                   `json:"hours_per_sync"`
 	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
 	LastSync              *services.ServiceSyncData `json:"last_sync"`
 }
 
 // makeAdminServices handles http requests for the service map
-func makeAdminServices(store *storage.Multi) http.HandlerFunc {
+func makeAdminServices(store *storage.Multi, config *commandConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
 		for _, serviceName := range sortedServiceNames() {
@@ -151,6 +155,7 @@ func makeAdminServices(store *storage.Multi) http.HandlerFunc {
 				CredentialRedirectURL: svc.CredentialRedirectURL(),
 				CurrentSync:           svc.CurrentSyncData(),
 				LastSync:              lastSync,
+				HoursPerSync:          config.GetHoursPerSync(serviceName),
 			})
 		}
 		data, err := json.MarshalIndent(svcs, "", "  ")

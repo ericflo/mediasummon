@@ -3,9 +3,12 @@ package storage
 import (
 	"fmt"
 	"log"
+	"net/url"
 	netURL "net/url"
 	"path/filepath"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 var filePrefixes = []string{".", "./", "/"}
@@ -58,6 +61,20 @@ func NewStorage(urls []string) (*Multi, error) {
 
 // NormalizeStorageURL takes any path or url and normalizes it into a canonical url for use in the system
 func NormalizeStorageURL(orig string) string {
+	if strings.HasPrefix(orig, "~") {
+		if expanded, err := homedir.Expand(orig); err != nil {
+			log.Println("Couldn't expand homedir", orig, err)
+		} else {
+			return "file:///" + expanded
+		}
+	} else if strings.HasPrefix(orig, "/~") {
+		if expanded, err := homedir.Expand(orig[1:]); err != nil {
+			log.Println("Couldn't expand homedir", orig, err)
+		} else {
+			return "file:///" + expanded
+		}
+	}
+
 	// Special case check for certain string prefixes, which we shortcut into turning into an absolute file url
 	for _, filePrefix := range filePrefixes {
 		if strings.HasPrefix(orig, filePrefix) {
@@ -79,6 +96,20 @@ func NormalizeStorageURL(orig string) string {
 		return orig
 	}
 
+	if strings.HasPrefix(parsedURL.Path, "~") {
+		if expanded, err := homedir.Expand(parsedURL.Path); err != nil {
+			log.Println("Couldn't expand homedir", parsedURL.Path, err)
+		} else {
+			return "file:///" + expanded
+		}
+	} else if strings.HasPrefix(parsedURL.Path, "/~") {
+		if expanded, err := homedir.Expand(parsedURL.Path[1:]); err != nil {
+			log.Println("Couldn't expand homedir", orig, err)
+		} else {
+			return "file:///" + expanded
+		}
+	}
+
 	// If there was no scheme, it's probably a relative path like 'path/to/media', so give it file:// and
 	// make the path absolute
 	if parsedURL.Scheme == "" {
@@ -95,5 +126,10 @@ func NormalizeStorageURL(orig string) string {
 		return "file:///" + orig
 	}
 
-	return parsedURL.String()
+	unescaped, err := url.PathUnescape(parsedURL.String())
+	if err != nil {
+		log.Println("Failed to normalize url - could not unescape final url:", parsedURL.String(), err)
+		return parsedURL.String()
+	}
+	return unescaped
 }

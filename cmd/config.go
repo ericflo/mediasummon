@@ -15,12 +15,14 @@ import (
 const defaultConfigPath = "mediasummon.config.json"
 
 type commandConfig struct {
-	Targets     []string `json:"targets"`
-	AdminPath   string   `json:"admin_path"`
-	Format      string   `json:"format"`
-	NumFetchers int64    `json:"num_fetchers"`
-	MaxPages    int      `json:"max_pages"`
-	WebPort     string   `json:"web_port"`
+	Targets      []string           `json:"targets"`
+	HoursPerSync map[string]float32 `json:"hours_per_sync"`
+
+	AdminPath   string `json:"admin_path"`
+	Format      string `json:"format"`
+	NumFetchers int64  `json:"num_fetchers"`
+	MaxPages    int    `json:"max_pages"`
+	WebPort     string `json:"web_port"`
 }
 
 func (config *commandConfig) ApplyToServiceConfig(serviceConfig *services.ServiceConfig) {
@@ -31,14 +33,29 @@ func (config *commandConfig) ApplyToServiceConfig(serviceConfig *services.Servic
 	serviceConfig.WebPort = config.WebPort
 }
 
+func (config *commandConfig) GetHoursPerSync(serviceName string) float32 {
+	if config.HoursPerSync == nil {
+		return defaultHoursPerSync
+	}
+	if h, exists := config.HoursPerSync[serviceName]; exists {
+		return h
+	}
+	return defaultHoursPerSync
+}
+
 func makeDefaultCommandConfig() *commandConfig {
+	hps := make(map[string]float32, len(serviceMap))
+	for serviceName := range serviceMap {
+		hps[serviceName] = defaultHoursPerSync
+	}
 	return &commandConfig{
-		Targets:     []string{storage.NormalizeStorageURL("media")},
-		AdminPath:   "admin",
-		Format:      strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-		NumFetchers: 6,
-		MaxPages:    0,
-		WebPort:     "5000",
+		Targets:      []string{storage.NormalizeStorageURL("~/mediasummon")},
+		AdminPath:    "admin",
+		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
+		NumFetchers:  6,
+		MaxPages:     0,
+		WebPort:      "5000",
+		HoursPerSync: hps,
 	}
 }
 
@@ -60,6 +77,14 @@ func readConfig(configPath string) (*commandConfig, error) {
 	}
 	var config *commandConfig
 	err = json.Unmarshal(encoded, &config)
+	if err != nil {
+		// Normalize storage target urls after successful load
+		newTargets := make([]string, 0, len(config.Targets))
+		for _, target := range config.Targets {
+			newTargets = append(newTargets, storage.NormalizeStorageURL(target))
+		}
+		config.Targets = newTargets
+	}
 	return config, err
 }
 

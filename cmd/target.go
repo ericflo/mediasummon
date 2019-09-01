@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 
+	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 )
 
@@ -17,6 +18,7 @@ func RunTargetAdd() {
 		return
 	}
 	configPath := getTargetConfigPath()
+	runTargetPreamble(configPath)
 	if err := addTarget(configPath, os.Args[1]); err != nil {
 		log.Println("Could not add to target:", err)
 		return
@@ -31,6 +33,7 @@ func RunTargetRemove() {
 		return
 	}
 	configPath := getTargetConfigPath()
+	runTargetPreamble(configPath)
 	if err := removeTarget(configPath, os.Args[1]); err != nil {
 		log.Println("Could not remove from target:", err)
 		return
@@ -42,6 +45,24 @@ func RunTargetRemove() {
 func RunTargetList() {
 	configPath := getTargetConfigPath()
 	printTargetList(configPath)
+}
+
+func runTargetPreamble(configPath string) {
+	config, err := readConfig(configPath)
+	if err != nil {
+		log.Println("Error reading config", err)
+		return
+	}
+	serviceConfig := &services.ServiceConfig{}
+	config.ApplyToServiceConfig(serviceConfig)
+	store, err := storage.NewStorage(config.Targets)
+	if err != nil || store == nil {
+		log.Println("FATAL: Could not initialize storage driver", err)
+		return
+	}
+	serviceConfig.Storage = store
+	serviceConfig.LoadFromEnv()
+	populateServiceMap(serviceConfig)
 }
 
 func printTargetList(configPath string) {
@@ -63,7 +84,7 @@ func printTargetList(configPath string) {
 func addTarget(configPath, target string) error {
 	target = storage.NormalizeStorageURL(target)
 
-	store, err := storage.NewStorageSingle(target)
+	_, err := storage.NewStorageSingle(target)
 	if err != nil {
 		return fmt.Errorf("Invalid sync target %v", err)
 	}
@@ -83,7 +104,7 @@ func addTarget(configPath, target string) error {
 		return fmt.Errorf("Cannot add target, it's there already %v", target)
 	}
 	// Otherwise, add it
-	config.Targets = append(config.Targets, store.URL())
+	config.Targets = append(config.Targets, target)
 	sort.Strings(config.Targets)
 
 	// Write the config back out
