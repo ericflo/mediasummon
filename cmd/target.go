@@ -139,9 +139,8 @@ func removeTarget(configPath, target string) error {
 	// Check whether the target is already in the list
 	sort.Strings(config.Targets)
 	idx := sort.SearchStrings(config.Targets, target)
-	exists := idx < len(config.Targets) && config.Targets[idx] == target
-	if exists {
-		// If it does, remove it
+	if idx < len(config.Targets) {
+		// If it is, remove it
 		config.Targets = append(config.Targets[:idx], config.Targets[idx+1:]...)
 	}
 
