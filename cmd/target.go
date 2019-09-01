@@ -82,12 +82,24 @@ func printTargetList(configPath string) {
 }
 
 func addTarget(configPath, target string) error {
+	// First we normalize our new target into a full URL with scheme prefix and everything
 	target = storage.NormalizeStorageURL(target)
 
-	_, err := storage.NewStorageSingle(target)
+	// Now we parse that URL, and check to make sure that it passes basic sanity checks
+	parsedURL, err := url.Parse(target)
+	if err != nil {
+		return err
+	} else if parsedURL.Path == "" || (parsedURL.Scheme == "file" && parsedURL.Path == "/") {
+		return fmt.Errorf("Invalid target URL: must have a path. (%v)", target)
+	}
+
+	// Now we actually instantiate a storage engine based on it to make sure it doesn't error out
+	_, err = storage.NewStorageSingle(target)
 	if err != nil {
 		return fmt.Errorf("Invalid sync target %v", err)
 	}
+
+	// Good, we now trust the target, let's add it...
 
 	// First read in the current config
 	config, err := readConfig(configPath)

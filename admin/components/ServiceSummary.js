@@ -10,7 +10,7 @@ async function handleSyncClick(service) {
 export default function ServiceSummary({service}) {
   const sync = service.last_sync;
   const start = sync ? dayjs(sync.start).fromNow() : 'Never';
-  const next = sync.end ? dayjs(sync.end).add(service.hours_per_sync, 'hour') : dayjs();
+  const next = (sync && sync.end) ? dayjs(sync.end).add(service.hours_per_sync, 'hour') : dayjs();
   const nextString = next ? ('' + next) : '';
   const startString = sync ? sync.startString : null;
   const syncCallback = useCallback(ev => {
