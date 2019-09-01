@@ -1,58 +1,23 @@
 package cmd
 
 import (
-	"encoding/json"
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 
-	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 )
-
-const defaultConfigPath = "mediasummon.config.json"
-
-var defaultConfig = &commandConfig{
-	Targets:     []string{storage.NormalizeStorageURL("media")},
-	AdminPath:   "admin",
-	Format:      strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-	NumFetchers: 6,
-	MaxPages:    0,
-	WebPort:     "5000",
-}
-
-type commandConfig struct {
-	Targets     []string `json:"targets"`
-	AdminPath   string   `json:"admin_path"`
-	Format      string   `json:"format"`
-	NumFetchers int64    `json:"num_fetchers"`
-	MaxPages    int      `json:"max_pages"`
-	WebPort     string   `json:"web_port"`
-}
-
-func (config *commandConfig) ApplyToServiceConfig(serviceConfig *services.ServiceConfig) {
-	serviceConfig.AdminPath = config.AdminPath
-	serviceConfig.Format = config.Format
-	serviceConfig.NumFetchers = config.NumFetchers
-	serviceConfig.MaxPages = config.MaxPages
-	serviceConfig.WebPort = config.WebPort
-}
 
 // RunTargetAdd runs an 'target add' command which adds a new sync target to the list
 func RunTargetAdd() {
 	if len(os.Args) < 2 {
-		log.Println("Must include a target to add, i.e. 'target add path/to/my/folder'")
+		log.Println("Must include a target to add, i.e. 'EXE target add path/to/my/folder'")
 		return
 	}
-	target := os.Args[1]
 	configPath := getTargetConfigPath()
-	if err := addTarget(configPath, target); err != nil {
+	if err := addTarget(configPath, os.Args[1]); err != nil {
 		log.Println("Could not add to target:", err)
 		return
 	}
@@ -62,12 +27,11 @@ func RunTargetAdd() {
 // RunTargetRemove runs a 'target remove' command which removes a sync target from the list
 func RunTargetRemove() {
 	if len(os.Args) < 2 {
-		log.Println("Must include a target to remove, i.e. 'target remove path/to/my/folder'")
+		log.Println("Must include a target to remove, i.e. 'EXE target remove path/to/my/folder'")
 		return
 	}
-	target := os.Args[1]
 	configPath := getTargetConfigPath()
-	if err := removeTarget(configPath, target); err != nil {
+	if err := removeTarget(configPath, os.Args[1]); err != nil {
 		log.Println("Could not remove from target:", err)
 		return
 	}
@@ -154,36 +118,4 @@ func removeTarget(configPath, target string) error {
 		return fmt.Errorf("Error writing new config %v", err)
 	}
 	return nil
-}
-
-func getTargetConfigPath() string {
-	var configPath string
-	flag.StringVar(&configPath, "config", defaultConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", defaultConfigPath, "path to config file [shorthand]")
-	flag.Parse()
-	return configPath
-}
-
-func readConfig(configPath string) (*commandConfig, error) {
-	encoded, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return defaultConfig, nil
-		}
-		return nil, err
-	}
-	var config *commandConfig
-	err = json.Unmarshal(encoded, &config)
-	return config, err
-}
-
-func writeConfig(configPath string, config *commandConfig) error {
-	if err := os.MkdirAll(filepath.Dir(configPath), 0644); err != nil {
-		return err
-	}
-	encoded, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(configPath, encoded, 0644)
 }

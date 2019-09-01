@@ -11,15 +11,7 @@ import (
 )
 
 const defaultServiceName = "all"
-
-// serviceOptions gets a slice of all the keys in the serviceMap, plus the "all" option
-func serviceOptions() []string {
-	serviceOptionList := []string{"all"}
-	for name := range serviceMap {
-		serviceOptionList = append(serviceOptionList, name)
-	}
-	return serviceOptionList
-}
+const defaultHoursPerSync = 24
 
 // RunSync runs a 'sync' command line application that syncs a service to a directory
 func RunSync() {

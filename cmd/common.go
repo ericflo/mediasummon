@@ -50,3 +50,12 @@ func sortedServiceNames() []string {
 	sort.Strings(serviceNames)
 	return serviceNames
 }
+
+// serviceOptions gets a slice of all the keys in the serviceMap, plus the "all" option
+func serviceOptions() []string {
+	serviceOptionList := []string{"all"}
+	for name := range serviceMap {
+		serviceOptionList = append(serviceOptionList, name)
+	}
+	return serviceOptionList
+}
