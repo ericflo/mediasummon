@@ -81,22 +81,31 @@ func printTargetList(configPath string) {
 	}
 }
 
-func addTarget(configPath, target string) error {
+func fullyNormalizeTarget(target string) (string, error) {
 	// First we normalize our new target into a full URL with scheme prefix and everything
 	target = storage.NormalizeStorageURL(target)
 
 	// Now we parse that URL, and check to make sure that it passes basic sanity checks
 	parsedURL, err := url.Parse(target)
 	if err != nil {
-		return err
+		return target, err
 	} else if parsedURL.Path == "" || (parsedURL.Scheme == "file" && parsedURL.Path == "/") {
-		return fmt.Errorf("Invalid target URL: must have a path. (%v)", target)
+		return target, fmt.Errorf("Invalid target URL: must have a path. (%v)", target)
 	}
 
 	// Now we actually instantiate a storage engine based on it to make sure it doesn't error out
-	_, err = storage.NewStorageSingle(target)
+	store, err := storage.NewStorageSingle(target)
 	if err != nil {
-		return fmt.Errorf("Invalid sync target %v", err)
+		return target, fmt.Errorf("Invalid sync target %v", err)
+	}
+
+	return store.URL(), nil
+}
+
+func addTarget(configPath, target string) error {
+	target, err := fullyNormalizeTarget(target)
+	if err != nil {
+		return err
 	}
 
 	// Good, we now trust the target, let's add it...
@@ -128,7 +137,10 @@ func addTarget(configPath, target string) error {
 }
 
 func removeTarget(configPath, target string) error {
-	target = storage.NormalizeStorageURL(target)
+	target, err := fullyNormalizeTarget(target)
+	if err != nil {
+		return err
+	}
 
 	// First read in the current config
 	config, err := readConfig(configPath)
@@ -136,17 +148,20 @@ func removeTarget(configPath, target string) error {
 		return fmt.Errorf("Error reading config %v", err)
 	}
 
-	// Check whether the target is already in the list
-	sort.Strings(config.Targets)
-	idx := sort.SearchStrings(config.Targets, target)
-	if idx < len(config.Targets) {
-		// If it is, remove it
-		config.Targets = append(config.Targets[:idx], config.Targets[idx+1:]...)
+	var next []string
+	for i, v := range config.Targets {
+		if v == target {
+			next = append(config.Targets[:i], config.Targets[i+1:]...)
+			break
+		}
 	}
+	if next == nil {
+		return fmt.Errorf("There was no target %v in targets %v", target, config.Targets)
+	}
+	config.Targets = next
 
 	// Write the config back out
-	err = writeConfig(configPath, config)
-	if err != nil {
+	if err = writeConfig(configPath, config); err != nil {
 		return fmt.Errorf("Error writing new config %v", err)
 	}
 	return nil
