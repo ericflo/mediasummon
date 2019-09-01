@@ -174,7 +174,7 @@ function AddTargetModal(_ref) {
       lineNumber: 77
     },
     __self: this
-  }, "Summon your media to a new location")), __jsx("div", {
+  }, "Summon your media to an additional location")), __jsx("div", {
     className: "uk-modal-body",
     __source: {
       fileName: _jsxFileName,
@@ -406,6 +406,8 @@ function ServiceSummary(_ref) {
   var service = _ref.service;
   var sync = service.last_sync;
   var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_3___default()(sync.start).fromNow() : 'Never';
+  var next = sync.end ? dayjs__WEBPACK_IMPORTED_MODULE_3___default()(sync.end).add(service.hours_per_sync, 'hour') : dayjs__WEBPACK_IMPORTED_MODULE_3___default()();
+  var nextString = next ? '' + next : '';
   var startString = sync ? sync.startString : null;
   var syncCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     ev.stopPropagation();
@@ -415,14 +417,14 @@ function ServiceSummary(_ref) {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 21
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 22
     },
     __self: this
   }, __jsx("div", {
@@ -430,14 +432,14 @@ function ServiceSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 21
+      lineNumber: 23
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 22
+      lineNumber: 24
     },
     __self: this
   }, __jsx("img", {
@@ -447,42 +449,49 @@ function ServiceSummary(_ref) {
     src: '/static/images/logo-' + service.metadata.id + '.png',
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 23
+      lineNumber: 25
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 25
+      lineNumber: 27
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 26
+      lineNumber: 28
     },
     __self: this
   }, service.metadata.name), __jsx("p", {
     className: "uk-text-meta uk-margin-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 27
+      lineNumber: 29
     },
     __self: this
   }, "Last synced: ", __jsx("time", {
     dateTime: startString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 28
+      lineNumber: 30
     },
     __self: this
-  }, start), sync ? ' (' + (sync.fetch_count || 0) + ' downloaded)' : null)))), service.needs_credentials ? __jsx("div", {
+  }, start), ' ', sync ? '(' + (sync.fetch_count || 0) + ' downloaded) ' : null, "\u2014 Next sync: ", __jsx("time", {
+    dateTime: nextString,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 32
+    },
+    __self: this
+  }, next.fromNow()))))), service.needs_credentials ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 35
+      lineNumber: 38
     },
     __self: this
   }, __jsx("div", {
@@ -490,19 +499,27 @@ function ServiceSummary(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 36
+      lineNumber: 39
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 37
+      lineNumber: 40
     },
     __self: this
-  }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("p", {
+  }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("div", {
+    className: "uk-panel",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 38
+      lineNumber: 41
+    },
+    __self: this
+  }, __jsx("p", {
+    className: "uk-align-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 42
     },
     __self: this
   }, __jsx("a", {
@@ -510,14 +527,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-primary",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 39
+      lineNumber: 43
     },
     __self: this
-  }, "Grant Permission")))) : null, __jsx("div", {
+  }, "Grant Permission"))))) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 43
+      lineNumber: 48
     },
     __self: this
   }, __jsx("a", {
@@ -525,14 +542,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 44
+      lineNumber: 49
     },
     __self: this
   }, "View details"), __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 45
+      lineNumber: 50
     },
     __self: this
   }, service.needs_credentials ? null : __jsx("button", {
@@ -541,7 +558,7 @@ function ServiceSummary(_ref) {
     onClick: syncCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 47
+      lineNumber: 52
     },
     __self: this
   }, service.current_sync ? 'Syncing...' : 'Sync now'))));
