@@ -16,15 +16,19 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/storage"
+	"maxint.co/mediasummon/userconfig"
 )
 
 const googleRequestSize = 100
 
+var googleScopes = []string{
+	"https://www.googleapis.com/auth/photoslibrary.readonly",
+}
+
 type googleService struct {
 	serviceConfig *ServiceConfig
-	syncData      *ServiceSyncData
-	conf          *oauth2.Config
-	client        *http.Client
+	syncDatas     map[string]*ServiceSyncData
 	fetchSem      *semaphore.Weighted
 	fetchErr      error
 }
@@ -75,42 +79,18 @@ type googleMediaItemsResponse struct {
 // NewGoogleService creates a new service that can be used to sync with Google Photos
 func NewGoogleService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &googleService{
-		serviceConfig: serviceConfig,
-		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
+		syncDatas: map[string]*ServiceSyncData{},
 	}
-	if err := svc.Setup(); err != nil {
+	if err := svc.Setup(serviceConfig); err != nil {
 		return nil, err
 	}
 	return svc, nil
 }
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
-func (svc *googleService) Setup() error {
-	secret, ok := svc.serviceConfig.Secrets["google"]
-	if !ok {
-		return fmt.Errorf("Invalid setup detected: environment variables not loaded by the time Google setup ran")
-	}
-	clientID, cidOK := secret["ClientID"]
-	clientSecret, csOK := secret["ClientSecret"]
-	if !cidOK || !csOK || strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
-		return fmt.Errorf("Found empty Google Photos auth client id or client secret, check environment variables")
-	}
-	svc.conf = &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/google/return",
-		Scopes: []string{
-			"https://www.googleapis.com/auth/photoslibrary.readonly",
-		},
-		Endpoint: google.Endpoint,
-	}
-	if tok, err := loadOAuthData(svc.serviceConfig, "google"); err != nil {
-		log.Println("Found no Google Photos auth data to build client from: " + err.Error())
-		svc.client = nil
-	} else if tok != nil {
-		svc.client = svc.conf.Client(oauth2.NoContext, tok)
-	}
-	applyMaxPagesHeuristic(svc, svc.serviceConfig)
+func (svc *googleService) Setup(serviceConfig *ServiceConfig) error {
+	svc.serviceConfig = serviceConfig
+	svc.fetchSem = semaphore.NewWeighted(serviceConfig.NumFetchers)
 	return nil
 }
 
@@ -121,18 +101,33 @@ func (svc *googleService) Metadata() *ServiceMetadata {
 	}
 }
 
-func (svc *googleService) CurrentSyncData() *ServiceSyncData {
-	return svc.syncData
+func (svc *googleService) CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData {
+	if userConfig == nil {
+		return nil
+	}
+	if svc.syncDatas == nil {
+		return nil
+	}
+	resp, _ := svc.syncDatas[userConfig.Path]
+	return resp
 }
 
 // NeedsCredentials reports whether credentials are needed for this user
-func (svc *googleService) NeedsCredentials() bool {
-	return svc.client == nil
+func (svc *googleService) NeedsCredentials(userConfig *userconfig.UserConfig) bool {
+	client, err := oAuth2Client(userConfig, "google", google.Endpoint, googleScopes)
+	if err != nil {
+		return true
+	}
+	return client != nil
 }
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
-func (svc *googleService) CredentialRedirectURL() string {
-	return svc.conf.AuthCodeURL("state")
+func (svc *googleService) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	oauthConf, err := oAuth2Conf(userConfig, "google", google.Endpoint, googleScopes)
+	if err != nil {
+		return "", err
+	}
+	return oauthConf.AuthCodeURL(userConfig.Path), nil
 }
 
 func (svc *googleService) HTTPHandlers() map[string]http.HandlerFunc {
@@ -152,32 +147,51 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tok, err := svc.conf.Exchange(oauth2.NoContext, code)
+	configPath := r.URL.Query().Get("state")
+	userConfig, err := userconfig.LoadUserConfig(configPath)
+	if err != nil {
+		displayErrorPage(w, "Could not load user config: "+err.Error())
+		return
+	}
+
+	oauthConf, err := oAuth2Conf(userConfig, "google", google.Endpoint, googleScopes)
+	if err != nil {
+		displayErrorPage(w, "Could not load auth conf: "+err.Error())
+		return
+	}
+
+	tok, err := oauthConf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		displayErrorPage(w, "Could not complete token exchange with Google. "+err.Error())
 		return
 	}
 
-	if err = saveOAuthData(svc.serviceConfig, tok, "google"); err != nil {
+	if err = saveOAuthData(userConfig, "google", tok); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
 
-	svc.client = svc.conf.Client(oauth2.NoContext, tok)
-
-	if svc.syncData == nil {
-		go svc.Sync()
+	if svc.CurrentSyncData(userConfig) == nil {
+		go svc.Sync(userConfig, MaxAllowablePages)
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (svc *googleService) Sync() error {
+func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) error {
+	if svc.CurrentSyncData(userConfig) != nil {
+		log.Println("Warning: called Sync() while already syncing")
+	}
+
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
-	for svc.NeedsCredentials() {
+	for svc.NeedsCredentials(userConfig) {
 		if !hasRequested {
-			if err := browser.OpenURL(svc.CredentialRedirectURL()); err != nil {
+			redir, err := svc.CredentialRedirectURL(userConfig)
+			if err != nil {
+				return err
+			}
+			if err := browser.OpenURL(redir); err != nil {
 				fmt.Fprintf(os.Stderr, "Could not open browser: %v", err)
 				return err
 			}
@@ -186,12 +200,24 @@ func (svc *googleService) Sync() error {
 		time.Sleep(time.Second)
 	}
 
-	svc.syncData = &ServiceSyncData{
-		Started: time.Now().UTC(),
-		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
-		Hashes:  map[string]string{},
+	client, err := oAuth2Client(userConfig, "google", google.Endpoint, googleScopes)
+	if err != nil {
+		return err
 	}
-	if sdErr := persistSyncData(svc.serviceConfig, "google", svc.syncData); sdErr != nil {
+
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
+
+	syncData := &ServiceSyncData{
+		UserConfigPath: userConfig.Path,
+		Started:        time.Now().UTC(),
+		PageMax:        maxPages,
+		Hashes:         map[string]string{},
+	}
+	svc.syncDatas[userConfig.Path] = syncData
+	if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
 		return sdErr
 	}
 
@@ -204,15 +230,15 @@ func (svc *googleService) Sync() error {
 		return base + "&pageToken=" + pageToken
 	}
 
-	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
-		svc.syncData.PageCurrent = null.IntFrom(int64(i))
-		if sdErr := persistSyncData(svc.serviceConfig, "google", svc.syncData); sdErr != nil {
+	for i := 1; i <= maxPages; i++ {
+		syncData.PageCurrent = null.IntFrom(int64(i))
+		if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
 			return sdErr
 		}
 
 		log.Println("Fetching Google Photos library page", i)
 		// Fetch a page from Google Photos
-		resp, err := svc.client.Get(makeURL())
+		resp, err := client.Get(makeURL())
 		if err != nil {
 			log.Println("Error fetching Google Photos directory page: " + err.Error())
 			return err
@@ -227,13 +253,13 @@ func (svc *googleService) Sync() error {
 		}
 
 		// Increase the item count and persist
-		svc.syncData.ItemCount = incrementOrSet(svc.syncData.ItemCount, len(data.MediaItems))
-		if sdErr := persistSyncData(svc.serviceConfig, "google", svc.syncData); sdErr != nil {
+		syncData.ItemCount = incrementOrSet(syncData.ItemCount, len(data.MediaItems))
+		if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
 			return sdErr
 		}
 
 		// Sync the individual media items in this page
-		if err = svc.syncMediaItems(data.MediaItems); err != nil {
+		if err = svc.syncMediaItems(store, syncData, data.MediaItems, userConfig.Format); err != nil {
 			log.Println("Error syncing Google Photos media items: " + err.Error())
 			return err
 		}
@@ -247,17 +273,17 @@ func (svc *googleService) Sync() error {
 		}
 	}
 
-	svc.syncData.Ended = null.TimeFrom(time.Now().UTC())
-	if sdErr := persistSyncData(svc.serviceConfig, "google", svc.syncData); sdErr != nil {
+	syncData.Ended = null.TimeFrom(time.Now().UTC())
+	if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
 		return sdErr
 	}
-	svc.syncData = nil
+	delete(svc.syncDatas, userConfig.Path)
 
 	return nil
 }
 
 // syncMediaItems syncs a batch of media items
-func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
+func (svc *googleService) syncMediaItems(store storage.Storage, syncData *ServiceSyncData, items []*googleMediaItem, format string) error {
 	ctx := context.TODO()
 
 	svc.fetchErr = nil
@@ -266,29 +292,29 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 		ext := strings.ToLower(filepath.Ext(item.Filename.String))
 		if !strings.HasPrefix(ext, ".") {
 			log.Println("Could not parse filename extension: " + item.Filename.String)
-			handleSyncError(svc.serviceConfig, "google", svc.syncData, len(items)-itemIdx)
+			handleSyncError(store, "google", syncData, len(items)-itemIdx)
 			continue
 		}
 		if !item.MediaMetadata.CreationTime.Valid {
 			log.Println("Didn't parse a valid CreationTime, can't determine filename.")
-			handleSyncError(svc.serviceConfig, "google", svc.syncData, len(items)-itemIdx)
+			handleSyncError(store, "google", syncData, len(items)-itemIdx)
 			continue
 		}
-		formatted := item.MediaMetadata.CreationTime.Time.Format(svc.serviceConfig.Format)
+		formatted := item.MediaMetadata.CreationTime.Time.Format(format)
 
 		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
-		if exists, err := svc.serviceConfig.Storage.Exists(filePath); err != nil {
-			handleSyncError(svc.serviceConfig, "google", svc.syncData, len(items)-itemIdx)
+		if exists, err := store.Exists(filePath); err != nil {
+			handleSyncError(store, "google", syncData, len(items)-itemIdx)
 			return err
 		} else if exists {
-			svc.syncData.SkipCount = incrementOrSet(svc.syncData.SkipCount, 1)
-			if sdErr := persistSyncData(svc.serviceConfig, "google", svc.syncData); sdErr != nil {
+			syncData.SkipCount = incrementOrSet(syncData.SkipCount, 1)
+			if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
 				return sdErr
 			}
 		} else {
 			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
 				log.Printf("Failed to acquire semaphore during loop: %v", err)
-				handleSyncError(svc.serviceConfig, "google", svc.syncData, len(items)-itemIdx)
+				handleSyncError(store, "google", syncData, len(items)-itemIdx)
 				return err
 			}
 			go func(i *googleMediaItem, p string) {
@@ -303,8 +329,8 @@ func (svc *googleService) syncMediaItems(items []*googleMediaItem) error {
 					url += "=d"
 				}
 				var hash string
-				hash, svc.fetchErr = svc.serviceConfig.Storage.DownloadFromURL(url, p)
-				persistSyncDataPostFetch(svc.serviceConfig, "google", svc.syncData, svc.fetchErr, filePath, hash)
+				hash, svc.fetchErr = store.DownloadFromURL(url, p)
+				persistSyncDataPostFetch(store, "google", syncData, svc.fetchErr, filePath, hash)
 			}(item, filePath)
 		}
 	}

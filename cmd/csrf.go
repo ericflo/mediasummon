@@ -3,13 +3,10 @@ package cmd
 import (
 	"crypto/rand"
 	"net/http"
-	"path/filepath"
 
 	"github.com/gorilla/csrf"
-	"maxint.co/mediasummon/storage"
+	"maxint.co/mediasummon/userconfig"
 )
-
-var _csrfSecret []byte
 
 type csrfWriter struct {
 	w           http.ResponseWriter
@@ -45,26 +42,25 @@ func CSRFHandler(h http.Handler) http.Handler {
 	})
 }
 
-func ensureCSRFSecret(store storage.Storage) ([]byte, error) {
-	if _csrfSecret != nil {
-		return _csrfSecret, nil
+func ensureCSRFSecret(userConfig *userconfig.UserConfig) ([]byte, error) {
+	meta, _ := userConfig.Secrets["meta"]
+	if meta == nil {
+		meta = map[string]string{}
 	}
-	filePath := filepath.Join(".meta", "csrf.txt")
-	blob, err := store.ReadBlob(filePath)
-	if err != nil {
-		return nil, err
-	}
-	if blob == nil || len(blob) == 0 {
-		blob = make([]byte, 32)
-		if _, err = rand.Read(blob); err != nil {
+	secret, _ := meta["CSRF"]
+	var bSecret []byte
+	if secret == "" {
+		bSecret = make([]byte, 32)
+		if _, err := rand.Read(bSecret); err != nil {
 			return nil, err
 		}
-		if err = store.WriteBlob(filePath, blob); err != nil {
+		meta["CSRF"] = string(bSecret)
+		userConfig.Secrets["meta"] = meta
+		if err := userConfig.Save(); err != nil {
 			return nil, err
 		}
-		_csrfSecret = blob
 	} else {
-		_csrfSecret = blob
+		bSecret = []byte(secret)
 	}
-	return blob, nil
+	return bSecret, nil
 }

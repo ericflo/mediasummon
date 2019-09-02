@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,13 +12,41 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/storage"
+	"maxint.co/mediasummon/userconfig"
 )
 
-const maxAllowablePages = 1000000
+// DefaultNumFetchers is the default number of http fetchers to run per service
+const DefaultNumFetchers = 6
+
+// MaxAllowablePages is the maximum allowable number of pages that a user can request
+const MaxAllowablePages = 1000000
+
+// ErrNeedSecrets is the error returned when we can't find secrets for a service
+var ErrNeedSecrets = errors.New("Could not find secrets for service")
+
+// ErrNeedAuthentication is the error returned when we can't build an oauth client from what we have saved
+var ErrNeedAuthentication = errors.New("We need permission to access this service on your behalf")
+
+// ServiceCreator is a function that can create a sync service
+type ServiceCreator func(serviceConfig *ServiceConfig) (SyncService, error)
+
+// SyncService represents a service that can be synchronized to a directory
+type SyncService interface {
+	Setup(serviceConfig *ServiceConfig) error
+
+	// Related to the service in general
+	Metadata() *ServiceMetadata
+	CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData
+	HTTPHandlers() map[string]http.HandlerFunc
+
+	// Related to a single user run
+	NeedsCredentials(userConfig *userconfig.UserConfig) bool
+	CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error)
+	Sync(userConfig *userconfig.UserConfig, maxPages int) error
+}
 
 // ServiceMetadata is metadata that a service provides about itself
 type ServiceMetadata struct {
@@ -25,100 +54,39 @@ type ServiceMetadata struct {
 	Name string `json:"name"`
 }
 
-// ServiceSyncData is data about a single sync session performed by a service
-type ServiceSyncData struct {
-	Started     time.Time         `json:"start"`
-	Ended       null.Time         `json:"end"`
-	PageCurrent null.Int          `json:"page_current"`
-	PageMax     null.Int          `json:"page_max"`
-	ItemCount   null.Int          `json:"item_count"`
-	SkipCount   null.Int          `json:"skip_count"`
-	FailCount   null.Int          `json:"fail_count"`
-	FetchCount  null.Int          `json:"fetch_count"`
-	Hashes      map[string]string `json:"hashes"`
-}
-
-// SyncService represents a service that can be synchronized to a directory
-type SyncService interface {
-	Setup() error
-	Metadata() *ServiceMetadata
-	CurrentSyncData() *ServiceSyncData
-	NeedsCredentials() bool
-	CredentialRedirectURL() string
-	Sync() error
-	HTTPHandlers() map[string]http.HandlerFunc
-}
-
 // ServiceConfig is a struct that can configure a service
 type ServiceConfig struct {
-	Format      string
 	NumFetchers int64
-	MaxPages    int // TODO: Move to new config struct
-	FrontendURL string
 	IsDebug     bool
-	Secrets     map[string]map[string]string
-	Storage     *storage.Multi
 }
 
-// Copy returns a copy of the current config
-func (config *ServiceConfig) Copy() *ServiceConfig {
-	resp := &ServiceConfig{
-		Format:      config.Format,
-		NumFetchers: config.NumFetchers,
-		MaxPages:    config.MaxPages,
-		FrontendURL: config.FrontendURL,
-		IsDebug:     config.IsDebug,
-		Storage:     config.Storage,
-	}
-	resp.Secrets = make(map[string]map[string]string, len(config.Secrets))
-	for k, v := range config.Secrets {
-		resp.Secrets[k] = v
-	}
-	return resp
+// ServiceSyncData is data about a single sync session performed by a service
+type ServiceSyncData struct {
+	UserConfigPath string            `json:"user_config_path"`
+	Started        time.Time         `json:"start"`
+	PageMax        int               `json:"page_max"`
+	Ended          null.Time         `json:"end"`
+	PageCurrent    null.Int          `json:"page_current"`
+	ItemCount      null.Int          `json:"item_count"`
+	SkipCount      null.Int          `json:"skip_count"`
+	FailCount      null.Int          `json:"fail_count"`
+	FetchCount     null.Int          `json:"fetch_count"`
+	Hashes         map[string]string `json:"hashes"`
 }
 
-// LoadFromEnv loads any properties and secrets it can from the environment
-func (config *ServiceConfig) LoadFromEnv() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
-	// TODO: Pull in the dynamic web port in the default frontend url
-	//config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
-	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:5000")
-	config.IsDebug = strings.ToLower(os.Getenv("IS_DEBUG")) == "true"
-	config.Secrets = map[string]map[string]string{
-		"google": map[string]string{
-			"ClientID":     os.Getenv("GOOGLE_CLIENT_ID"),
-			"ClientSecret": os.Getenv("GOOGLE_CLIENT_SECRET"),
-		},
-		"instagram": map[string]string{
-			"ClientID":     os.Getenv("INSTAGRAM_CLIENT_ID"),
-			"ClientSecret": os.Getenv("INSTAGRAM_CLIENT_SECRET"),
-		},
-		"facebook": map[string]string{
-			"ClientID":     os.Getenv("FACEBOOK_CLIENT_ID"),
-			"ClientSecret": os.Getenv("FACEBOOK_CLIENT_SECRET"),
-		},
-	}
-}
-
-// ServiceCreator is a function that can create a sync service
-type ServiceCreator func(serviceConfig *ServiceConfig) (SyncService, error)
-
-// applyMaxPagesHeuristic should be called in Setup() by SyncService implementers, to
-// apply this heuristic in a common way across all services
-func applyMaxPagesHeuristic(svc SyncService, serviceConfig *ServiceConfig) {
-	// Apply max pages heuristics
-	if serviceConfig.MaxPages < 0 {
-		serviceConfig.MaxPages = maxAllowablePages
-	} else if serviceConfig.MaxPages == 0 {
-		if svc.NeedsCredentials() {
-			// First time we sync the whole thing
-			serviceConfig.MaxPages = maxAllowablePages
-		} else {
-			// After that we just sync the latest page
-			serviceConfig.MaxPages = 1
+// NewServiceConfig creates a new service config with parameters read from the env
+func NewServiceConfig() *ServiceConfig {
+	numFetchersStr := GetenvDefault("NUM_FETCHERS", fmt.Sprintf("%d", DefaultNumFetchers))
+	numFetchers, err := strconv.ParseUint(numFetchersStr, 10, 64)
+	if err != nil || numFetchers <= 0 {
+		if err != nil {
+			log.Println("Warning: Could not parse NUM_FETCHERS", err, "...deafulting to default", DefaultNumFetchers)
 		}
+		numFetchers = DefaultNumFetchers
+	}
+	return &ServiceConfig{
+		NumFetchers: int64(numFetchers),
+		IsDebug:     os.Getenv("IS_DEBUG") != "",
 	}
 }
 
@@ -127,30 +95,38 @@ func displayErrorPage(w http.ResponseWriter, msg string) {
 	w.Write([]byte("Error: " + msg))
 }
 
-func saveOAuthData(serviceConfig *ServiceConfig, tok *oauth2.Token, serviceName string) error {
+func saveOAuthData(userConfig *userconfig.UserConfig, serviceName string, tok *oauth2.Token) error {
 	encodedTok, err := json.MarshalIndent(tok, "", "  ")
 	if err != nil {
 		return fmt.Errorf("Could not encode authentication token to save: %v", err)
 	}
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
 	authdir := filepath.Join(".meta", serviceName)
-	if err = serviceConfig.Storage.EnsureDirectoryExists(authdir); err != nil {
+	if err = store.EnsureDirectoryExists(authdir); err != nil {
 		return fmt.Errorf("Could not create auth metadata directory: %v", err)
 	}
 	path := filepath.Join(authdir, "auth.json")
-	if err = serviceConfig.Storage.WriteBlob(path, encodedTok); err != nil {
+	if err = store.WriteBlob(path, encodedTok); err != nil {
 		return fmt.Errorf("Could not write auth data to disk: %v", err)
 	}
 	return nil
 }
 
-func loadOAuthData(serviceConfig *ServiceConfig, serviceName string) (*oauth2.Token, error) {
+func loadOAuthData(userConfig *userconfig.UserConfig, serviceName string) (*oauth2.Token, error) {
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return nil, err
+	}
 	path := filepath.Join(".meta", serviceName, "auth.json")
-	if exists, err := serviceConfig.Storage.Exists(path); err != nil {
+	if exists, err := store.Exists(path); err != nil {
 		return nil, err
 	} else if !exists {
 		return nil, nil
 	}
-	encodedTok, err := serviceConfig.Storage.ReadBlob(path)
+	encodedTok, err := store.ReadBlob(path)
 	if err != nil {
 		return nil, err
 	}
@@ -161,43 +137,81 @@ func loadOAuthData(serviceConfig *ServiceConfig, serviceName string) (*oauth2.To
 	return tok, nil
 }
 
-func persistSyncData(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData) error {
+func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
+	secrets, _ := userConfig.Secrets[serviceName]
+	if secrets == nil {
+		return nil, ErrNeedSecrets
+	}
+	clientID, _ := secrets["ClientID"]
+	clientSecret, _ := secrets["ClientSecret"]
+	if clientID == "" || clientSecret == "" {
+		return nil, ErrNeedSecrets
+	}
+	return &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  userConfig.FrontendURL + "/auth/" + serviceName + "/return",
+		Scopes:       scopes,
+		Endpoint:     endpoint,
+	}, nil
+}
+
+func oAuth2Client(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*http.Client, error) {
+	oauthConf, err := oAuth2Conf(userConfig, serviceName, endpoint, scopes)
+	if err != nil {
+		return nil, err
+	}
+	tok, err := loadOAuthData(userConfig, serviceName)
+	if err != nil {
+		return nil, err
+	}
+	if tok == nil {
+		return nil, ErrNeedAuthentication
+	}
+	return oauthConf.Client(oauth2.NoContext, tok), nil
+}
+
+func persistSyncData(store storage.Storage, serviceName string, syncData *ServiceSyncData) error {
 	encoded, err := json.MarshalIndent(syncData, "", "  ")
 	if err != nil {
 		log.Printf("Error: Could not encode data to save: %v", err)
 		return fmt.Errorf("Could not encode data to save: %v", err)
 	}
 	datadir := filepath.Join(".meta", serviceName, "syncdata")
-	if err = serviceConfig.Storage.EnsureDirectoryExists(datadir); err != nil {
+	if err = store.EnsureDirectoryExists(datadir); err != nil {
 		log.Printf("Error: Could not create syncdata directory: %v", err)
 		return fmt.Errorf("Could not create syncdata directory: %v", err)
 	}
 	path := filepath.Join(datadir, fmt.Sprintf("%d.json", syncData.Started.UnixNano()))
-	if err = serviceConfig.Storage.WriteBlob(path, encoded); err != nil {
+	if err = store.WriteBlob(path, encoded); err != nil {
 		log.Printf("Error: Could not write sync data to disk: %v", err)
 		return fmt.Errorf("Could not write sync data to disk: %v", err)
 	}
 	return nil
 }
 
-func handleSyncError(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData, count int) error {
+func handleSyncError(store storage.Storage, serviceName string, syncData *ServiceSyncData, count int) error {
 	syncData.FailCount = incrementOrSet(syncData.FailCount, count)
-	return persistSyncData(serviceConfig, serviceName, syncData)
+	return persistSyncData(store, serviceName, syncData)
 }
 
-func persistSyncDataPostFetch(serviceConfig *ServiceConfig, serviceName string, syncData *ServiceSyncData, fetchErr error, filePath, hash string) {
+func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncData *ServiceSyncData, fetchErr error, filePath, hash string) {
 	if fetchErr == nil {
 		syncData.FetchCount = incrementOrSet(syncData.FetchCount, 1)
 		syncData.Hashes[filePath] = hash
-		persistSyncData(serviceConfig, serviceName, syncData)
+		persistSyncData(store, serviceName, syncData)
 	} else {
 		syncData.FailCount = incrementOrSet(syncData.FailCount, 1)
-		persistSyncData(serviceConfig, serviceName, syncData)
+		persistSyncData(store, serviceName, syncData)
 	}
 }
 
 // ListServiceSyncDataPaths lists the paths to the ServiceSyncData
-func ListServiceSyncDataPaths(store storage.Storage, serviceName string) ([]string, []int64, error) {
+func ListServiceSyncDataPaths(userConfig *userconfig.UserConfig, serviceName string) ([]string, []int64, error) {
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return nil, nil, err
+	}
 	names, err := store.ListDirectoryFiles(filepath.Join(".meta", serviceName, "syncdata"))
 	if err != nil {
 		return nil, nil, err
@@ -221,8 +235,8 @@ func ListServiceSyncDataPaths(store storage.Storage, serviceName string) ([]stri
 }
 
 // GetLatestServiceSyncData gets the latest ServiceSyncData for the given service
-func GetLatestServiceSyncData(store storage.Storage, serviceName string) (*ServiceSyncData, error) {
-	paths, values, err := ListServiceSyncDataPaths(store, serviceName)
+func GetLatestServiceSyncData(userConfig *userconfig.UserConfig, serviceName string) (*ServiceSyncData, error) {
+	paths, values, err := ListServiceSyncDataPaths(userConfig, serviceName)
 	largestPath := ""
 	largestValue := int64(-1)
 	for i, dataPath := range paths {
@@ -233,6 +247,10 @@ func GetLatestServiceSyncData(store storage.Storage, serviceName string) (*Servi
 	}
 	if largestValue == int64(-1) {
 		return nil, nil
+	}
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return nil, err
 	}
 	blob, err := store.ReadBlob(largestPath)
 	if err != nil {

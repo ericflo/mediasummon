@@ -6,38 +6,40 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/gorilla/csrf"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 	"maxint.co/mediasummon/services"
-	"maxint.co/mediasummon/storage"
+	"maxint.co/mediasummon/userconfig"
 )
+
+type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
 // RunAdmin runs an 'admin' command line application that serves the mediasummon admin site
 func RunAdmin() {
+	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
+		log.Printf("Could not load .env file in current directory %v", err)
+	}
+
 	var configPath string
-	serviceConfig := &services.ServiceConfig{}
-	flag.StringVar(&configPath, "config", defaultConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", defaultConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
+	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
 	flag.Parse()
 
-	config, err := readConfig(configPath)
+	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
-		log.Println("Error reading config", err)
-		return
+		if os.IsNotExist(err) {
+			userConfig = userconfig.NewUserConfig(sortedServiceNames())
+		} else {
+			log.Println("Error reading config", err)
+			return
+		}
 	}
-	config.ApplyToServiceConfig(serviceConfig)
 
-	store, err := storage.NewStorage(config.Targets)
-	if err != nil || store == nil {
-		log.Println("FATAL: Could not initialize storage driver", err)
-		return
-	}
-	serviceConfig.Storage = store
-
-	serviceConfig.LoadFromEnv()
-
+	serviceConfig := services.NewServiceConfig()
 	populateServiceMap(serviceConfig)
 
 	mux := http.NewServeMux()
@@ -47,24 +49,24 @@ func RunAdmin() {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, configPath, config, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, userConfig, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach Admin HTTP Handlers", err)
 		return
 	}
 
-	go runServiceSyncLoop(store, config)
+	go runServiceSyncLoop(userConfig)
 
-	http.ListenAndServe(":"+config.WebPort, handler)
+	http.ListenAndServe(":"+userConfig.WebPort, handler)
 }
 
-func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, config *commandConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
-	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(config.AdminPath, "out")))))
-	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage, config))
-	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
-	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))
-	mux.HandleFunc("/resources/target/remove.json", makeHandleAdminTargetRemove(configPath, serviceConfig))
-	mux.HandleFunc("/resources/target/add.json", makeHandleAdminTargetAdd(configPath, serviceConfig))
+func attachAdminHTTPHandlers(mux *http.ServeMux, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
+	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(userConfig.AdminPath, "out")))))
+	mux.HandleFunc("/resources/services.json", wrapHandler(handleAdminServices, serviceConfig))
+	mux.HandleFunc("/resources/service/sync.json", wrapHandler(handleAdminServiceSync, serviceConfig))
+	mux.HandleFunc("/resources/targets.json", wrapHandler(handleAdminTargets, serviceConfig))
+	mux.HandleFunc("/resources/target/remove.json", wrapHandler(handleAdminTargetRemove, serviceConfig))
+	mux.HandleFunc("/resources/target/add.json", wrapHandler(handleAdminTargetAdd, serviceConfig))
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -84,7 +86,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, config *comm
 	})
 	handler := corsMiddleware.Handler(mux)
 	if !serviceConfig.IsDebug {
-		csrfSecret, err := ensureCSRFSecret(serviceConfig.Storage)
+		csrfSecret, err := ensureCSRFSecret(userConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -94,6 +96,13 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, config *comm
 		handler = csrfMiddleware(handler)
 	}
 	return handler, nil
+}
+
+func wrapHandler(handler handlerFunc, serviceConfig *services.ServiceConfig) http.HandlerFunc {
+	var user *userconfig.UserConfig
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r, user, serviceConfig)
+	}
 }
 
 func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
@@ -139,33 +148,37 @@ type AdminServiceDescription struct {
 	LastSync              *services.ServiceSyncData `json:"last_sync"`
 }
 
-// makeAdminServices handles http requests for the service map
-func makeAdminServices(store *storage.Multi, config *commandConfig) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
-		for _, serviceName := range sortedServiceNames() {
-			svc := serviceMap[serviceName]
-			lastSync, err := services.GetLatestServiceSyncData(store, serviceName)
-			if err != nil {
-				log.Println("Error getting latest service sync data", err)
-			}
-			svcs = append(svcs, &AdminServiceDescription{
-				Metadata:              svc.Metadata(),
-				NeedsCredentials:      svc.NeedsCredentials(),
-				CredentialRedirectURL: svc.CredentialRedirectURL(),
-				CurrentSync:           svc.CurrentSyncData(),
-				LastSync:              lastSync,
-				HoursPerSync:          config.GetHoursPerSync(serviceName),
-			})
+// handleAdminServices handles http requests for the service map
+func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
+	for _, serviceName := range sortedServiceNames() {
+		svc := serviceMap[serviceName]
+		lastSync, err := services.GetLatestServiceSyncData(userConfig, serviceName)
+		if err != nil {
+			log.Println("Error getting latest service sync data", err)
 		}
-		data, err := json.MarshalIndent(svcs, "", "  ")
+		redir, err := svc.CredentialRedirectURL(userConfig)
 		if err != nil {
 			renderJSONError(w, err, http.StatusInternalServerError)
+			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+		svcs = append(svcs, &AdminServiceDescription{
+			Metadata:              svc.Metadata(),
+			NeedsCredentials:      svc.NeedsCredentials(userConfig),
+			CredentialRedirectURL: redir,
+			CurrentSync:           svc.CurrentSyncData(userConfig),
+			LastSync:              lastSync,
+			HoursPerSync:          userConfig.GetHoursPerSync(serviceName),
+		})
 	}
+	data, err := json.MarshalIndent(svcs, "", "  ")
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // AdminTargetDescription is the response that the admin gives when talking about a sync target
@@ -174,25 +187,29 @@ type AdminTargetDescription struct {
 }
 
 // makeAdminTargets handles http requests for the service map
-func makeAdminTargets(store *storage.Multi) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		adminTargets := make([]*AdminTargetDescription, 0, len(serviceMap))
-		for _, store := range store.Stores {
-			adminTargets = append(adminTargets, &AdminTargetDescription{
-				URL: store.URL(),
-			})
-		}
-		data, err := json.MarshalIndent(adminTargets, "", "  ")
-		if err != nil {
-			renderJSONError(w, err, http.StatusInternalServerError)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	adminTargets := make([]*AdminTargetDescription, 0, len(serviceMap))
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
 	}
+	for _, store := range store.Stores {
+		adminTargets = append(adminTargets, &AdminTargetDescription{
+			URL: store.URL(),
+		})
+	}
+	data, err := json.MarshalIndent(adminTargets, "", "  ")
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
-func handleAdminServiceSync(w http.ResponseWriter, r *http.Request) {
+func handleAdminServiceSync(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	if r.Method != "POST" {
 		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
 		return
@@ -203,58 +220,61 @@ func handleAdminServiceSync(w http.ResponseWriter, r *http.Request) {
 		renderJSONErrorMessage(w, "Service with id '"+serviceID+"' was not found.", http.StatusNotFound)
 		return
 	}
-	go svc.Sync()
+	go svc.Sync(userConfig, userConfig.MaxPages)
 	renderStatusOK(w, r)
 }
 
-func makeHandleAdminTargetRemove(configPath string, serviceConfig *services.ServiceConfig) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
-			return
-		}
-		urlString := r.URL.Query().Get("url")
-		_, err := url.Parse(urlString)
-		if err != nil {
-			renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = removeTarget(configPath, urlString); err != nil {
-			renderJSONErrorMessage(w, "Could not remove sync target: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = serviceConfig.Storage.RemoveTarget(urlString); err != nil {
-			renderJSONErrorMessage(w, "Could not remove sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		destroyServiceMap()
-		populateServiceMap(serviceConfig)
-		renderStatusOK(w, r)
+func handleAdminTargetRemove(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
 	}
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		renderJSONError(w, err, http.StatusBadRequest)
+		return
+	}
+	urlString := r.URL.Query().Get("url")
+	_, err = url.Parse(urlString)
+	if err != nil {
+		renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err = removeTarget(userConfig, urlString); err != nil {
+		renderJSONErrorMessage(w, "Could not remove sync target: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err = store.RemoveTarget(urlString); err != nil {
+		renderJSONErrorMessage(w, "Could not remove sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	renderStatusOK(w, r)
 }
 
-func makeHandleAdminTargetAdd(configPath string, serviceConfig *services.ServiceConfig) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
-			return
-		}
-		urlString := r.URL.Query().Get("url")
-		_, err := url.Parse(urlString)
-		if err != nil {
-			renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = addTarget(configPath, urlString); err != nil {
-			renderJSONErrorMessage(w, "Could not add sync target: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err = serviceConfig.Storage.AddTarget(urlString); err != nil {
-			renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		destroyServiceMap()
-		populateServiceMap(serviceConfig)
-		renderStatusOK(w, r)
+func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
 	}
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		renderJSONError(w, err, http.StatusBadRequest)
+		return
+	}
+	urlString := r.URL.Query().Get("url")
+	_, err = url.Parse(urlString)
+	if err != nil {
+		renderJSONErrorMessage(w, "Could not parse URL: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err = addTarget(userConfig, urlString); err != nil {
+		renderJSONErrorMessage(w, "Could not add sync target: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err = store.AddTarget(urlString); err != nil {
+		renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	renderStatusOK(w, r)
 }

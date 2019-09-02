@@ -17,17 +17,18 @@ import (
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/storage"
+	"maxint.co/mediasummon/userconfig"
 )
 
 const facebookRequestSize = 100
 const facebookTimestampFormat = "2006-01-02T15:04:05-0700"
 
+var facebookScopes = []string{"user_photos"}
+
 type facebookService struct {
 	serviceConfig *ServiceConfig
-	syncData      *ServiceSyncData
-	conf          *oauth2.Config
-	client        *http.Client
-	accessToken   *oauth2.Token
+	syncDatas     map[string]*ServiceSyncData
 	fetchSem      *semaphore.Weighted
 	fetchErr      error
 }
@@ -62,42 +63,18 @@ type facebookDataResponse struct {
 // NewFacebookService creates a new service that can be used to sync with Facebook
 func NewFacebookService(serviceConfig *ServiceConfig) (SyncService, error) {
 	svc := &facebookService{
-		serviceConfig: serviceConfig,
-		fetchSem:      semaphore.NewWeighted(serviceConfig.NumFetchers),
+		syncDatas: map[string]*ServiceSyncData{},
 	}
-	if err := svc.Setup(); err != nil {
+	if err := svc.Setup(serviceConfig); err != nil {
 		return nil, err
 	}
 	return svc, nil
 }
 
 // Setup sets up the service and checks for credentials, configuring an authed client if possible
-func (svc *facebookService) Setup() error {
-	secret, ok := svc.serviceConfig.Secrets["facebook"]
-	if !ok {
-		return fmt.Errorf("Invalid setup detected: environment variables not loaded by the time Facebook setup ran")
-	}
-	clientID, cidOK := secret["ClientID"]
-	clientSecret, csOK := secret["ClientSecret"]
-	if !cidOK || !csOK || strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
-		return fmt.Errorf("Found empty Facebook auth client id or client secret, check environment variables")
-	}
-	svc.conf = &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  svc.serviceConfig.FrontendURL + "/auth/facebook/return",
-		Scopes:       []string{"user_photos"},
-		Endpoint:     facebook.Endpoint,
-	}
-	if tok, err := loadOAuthData(svc.serviceConfig, "facebook"); err != nil {
-		log.Println("Found no Facebook auth data to build client from: " + err.Error())
-		svc.accessToken = nil
-		svc.client = nil
-	} else if tok != nil {
-		svc.accessToken = tok
-		svc.client = svc.conf.Client(oauth2.NoContext, tok)
-	}
-	applyMaxPagesHeuristic(svc, svc.serviceConfig)
+func (svc *facebookService) Setup(serviceConfig *ServiceConfig) error {
+	svc.serviceConfig = serviceConfig
+	svc.fetchSem = semaphore.NewWeighted(serviceConfig.NumFetchers)
 	return nil
 }
 
@@ -108,18 +85,33 @@ func (svc *facebookService) Metadata() *ServiceMetadata {
 	}
 }
 
-func (svc *facebookService) CurrentSyncData() *ServiceSyncData {
-	return svc.syncData
+func (svc *facebookService) CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData {
+	if userConfig == nil {
+		return nil
+	}
+	if svc.syncDatas == nil {
+		return nil
+	}
+	resp, _ := svc.syncDatas[userConfig.Path]
+	return resp
 }
 
 // NeedsCredentials reports whether credentials are needed for this user
-func (svc *facebookService) NeedsCredentials() bool {
-	return svc.client == nil || svc.accessToken == nil
+func (svc *facebookService) NeedsCredentials(userConfig *userconfig.UserConfig) bool {
+	client, err := oAuth2Client(userConfig, "facebook", facebook.Endpoint, facebookScopes)
+	if err != nil {
+		return true
+	}
+	return client != nil
 }
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
-func (svc *facebookService) CredentialRedirectURL() string {
-	return svc.conf.AuthCodeURL("state")
+func (svc *facebookService) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	oauthConf, err := oAuth2Conf(userConfig, "facebook", facebook.Endpoint, facebookScopes)
+	if err != nil {
+		return "", err
+	}
+	return oauthConf.AuthCodeURL(userConfig.Path), nil
 }
 
 func (svc *facebookService) HTTPHandlers() map[string]http.HandlerFunc {
@@ -139,33 +131,51 @@ func (svc *facebookService) HandleFacebookReturn(w http.ResponseWriter, r *http.
 		return
 	}
 
-	tok, err := svc.conf.Exchange(oauth2.NoContext, code)
+	configPath := r.URL.Query().Get("state")
+	userConfig, err := userconfig.LoadUserConfig(configPath)
+	if err != nil {
+		displayErrorPage(w, "Could not load user config: "+err.Error())
+		return
+	}
+
+	oauthConf, err := oAuth2Conf(userConfig, "facebook", facebook.Endpoint, facebookScopes)
+	if err != nil {
+		displayErrorPage(w, "Could not load auth conf: "+err.Error())
+		return
+	}
+
+	tok, err := oauthConf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		displayErrorPage(w, "Could not complete token exchange with Facebook. "+err.Error())
 		return
 	}
 
-	if err = saveOAuthData(svc.serviceConfig, tok, "facebook"); err != nil {
+	if err = saveOAuthData(userConfig, "facebook", tok); err != nil {
 		displayErrorPage(w, err.Error())
 		return
 	}
 
-	svc.accessToken = tok
-	svc.client = svc.conf.Client(oauth2.NoContext, tok)
-
-	if svc.syncData == nil {
-		go svc.Sync()
+	if svc.CurrentSyncData(userConfig) == nil {
+		go svc.Sync(userConfig, MaxAllowablePages)
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (svc *facebookService) Sync() error {
+func (svc *facebookService) Sync(userConfig *userconfig.UserConfig, maxPages int) error {
+	if svc.CurrentSyncData(userConfig) != nil {
+		log.Println("Warning: called Sync() while already syncing")
+	}
+
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
-	if svc.NeedsCredentials() {
+	if svc.NeedsCredentials(userConfig) {
 		if !hasRequested {
-			if err := browser.OpenURL(svc.CredentialRedirectURL()); err != nil {
+			redir, err := svc.CredentialRedirectURL(userConfig)
+			if err != nil {
+				return err
+			}
+			if err := browser.OpenURL(redir); err != nil {
 				fmt.Fprintf(os.Stderr, "Could not open browser: %v", err)
 				return err
 			}
@@ -174,12 +184,24 @@ func (svc *facebookService) Sync() error {
 		time.Sleep(time.Second)
 	}
 
-	svc.syncData = &ServiceSyncData{
-		Started: time.Now().UTC(),
-		PageMax: null.IntFrom(int64(svc.serviceConfig.MaxPages)),
-		Hashes:  map[string]string{},
+	client, err := oAuth2Client(userConfig, "facebook", facebook.Endpoint, facebookScopes)
+	if err != nil {
+		return err
 	}
-	if sdErr := persistSyncData(svc.serviceConfig, "facebook", svc.syncData); sdErr != nil {
+
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
+
+	syncData := &ServiceSyncData{
+		UserConfigPath: userConfig.Path,
+		Started:        time.Now().UTC(),
+		PageMax:        maxPages,
+		Hashes:         map[string]string{},
+	}
+	svc.syncDatas[userConfig.Path] = syncData
+	if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
 		return sdErr
 	}
 
@@ -192,15 +214,15 @@ func (svc *facebookService) Sync() error {
 		return nextURL
 	}
 
-	for i := 1; i <= svc.serviceConfig.MaxPages; i++ {
-		svc.syncData.PageCurrent = null.IntFrom(int64(i))
-		if sdErr := persistSyncData(svc.serviceConfig, "facebook", svc.syncData); sdErr != nil {
+	for i := 1; i <= maxPages; i++ {
+		syncData.PageCurrent = null.IntFrom(int64(i))
+		if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
 			return sdErr
 		}
 
 		log.Println("Fetching Facebook directory page", i)
 		// Fetch a page from Facebook
-		resp, err := svc.client.Get(makeURL())
+		resp, err := client.Get(makeURL())
 		if err != nil {
 			log.Println("Error fetching Facebook directory page: " + err.Error())
 			return err
@@ -215,13 +237,13 @@ func (svc *facebookService) Sync() error {
 		}
 
 		// Increase the item count and persist
-		svc.syncData.ItemCount = incrementOrSet(svc.syncData.ItemCount, len(data.Data))
-		if sdErr := persistSyncData(svc.serviceConfig, "facebook", svc.syncData); sdErr != nil {
+		syncData.ItemCount = incrementOrSet(syncData.ItemCount, len(data.Data))
+		if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
 			return sdErr
 		}
 
 		// Sync the individual media items in this page
-		if err = svc.syncDataItems(data.Data); err != nil {
+		if err = svc.syncDataItems(store, syncData, data.Data, userConfig.Format); err != nil {
 			log.Println("Error syncing Facebook data items: " + err.Error())
 			return err
 		}
@@ -235,11 +257,11 @@ func (svc *facebookService) Sync() error {
 		nextURL = data.Paging.Next.String
 	}
 
-	svc.syncData.Ended = null.TimeFrom(time.Now().UTC())
-	if sdErr := persistSyncData(svc.serviceConfig, "facebook", svc.syncData); sdErr != nil {
+	syncData.Ended = null.TimeFrom(time.Now().UTC())
+	if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
 		return sdErr
 	}
-	svc.syncData = nil
+	delete(svc.syncDatas, userConfig.Path)
 
 	return nil
 }
@@ -258,7 +280,7 @@ func getMaxSizeImage(images []*facebookImage) *facebookImage {
 }
 
 // syncDataItems syncs a batch of facebookDataItem items
-func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
+func (svc *facebookService) syncDataItems(store storage.Storage, syncData *ServiceSyncData, items []*facebookDataItem, format string) error {
 	ctx := context.TODO()
 
 	svc.fetchErr = nil
@@ -267,34 +289,34 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 		image := getMaxSizeImage(item.Images)
 		parsedURL, err := url.Parse(image.Source)
 		if err != nil {
-			handleSyncError(svc.serviceConfig, "facebook", svc.syncData, len(items)-itemIdx)
+			handleSyncError(store, "facebook", syncData, len(items)-itemIdx)
 			return err
 		}
 		ext := strings.ToLower(filepath.Ext(parsedURL.Path))
 		if !strings.HasPrefix(ext, ".") {
-			handleSyncError(svc.serviceConfig, "facebook", svc.syncData, len(items)-itemIdx)
+			handleSyncError(store, "facebook", syncData, len(items)-itemIdx)
 			return fmt.Errorf("Could not parse extension: %s", parsedURL.Path)
 		}
 		createdTimestamp, err := time.Parse(facebookTimestampFormat, item.CreatedTime)
 		if err != nil {
-			handleSyncError(svc.serviceConfig, "facebook", svc.syncData, len(items)-itemIdx)
+			handleSyncError(store, "facebook", syncData, len(items)-itemIdx)
 			return fmt.Errorf("Could not parse created time into int64: %v", err)
 		}
-		formatted := createdTimestamp.Format(svc.serviceConfig.Format)
+		formatted := createdTimestamp.Format(format)
 
 		filePath := filepath.Join(filepath.Dir(formatted), filepath.Base(formatted)+ext)
-		if exists, err := svc.serviceConfig.Storage.Exists(filePath); err != nil {
-			handleSyncError(svc.serviceConfig, "facebook", svc.syncData, len(items)-itemIdx)
+		if exists, err := store.Exists(filePath); err != nil {
+			handleSyncError(store, "facebook", syncData, len(items)-itemIdx)
 			return err
 		} else if exists {
-			svc.syncData.SkipCount = incrementOrSet(svc.syncData.SkipCount, 1)
-			if sdErr := persistSyncData(svc.serviceConfig, "facebook", svc.syncData); sdErr != nil {
+			syncData.SkipCount = incrementOrSet(syncData.SkipCount, 1)
+			if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
 				return sdErr
 			}
 		} else {
 			if err := svc.fetchSem.Acquire(ctx, 1); err != nil {
 				log.Printf("Failed to acquire semaphore during loop: %v", err)
-				handleSyncError(svc.serviceConfig, "facebook", svc.syncData, len(items)-itemIdx)
+				handleSyncError(store, "facebook", syncData, len(items)-itemIdx)
 				return err
 			}
 			go func(i *facebookImage, p string) {
@@ -303,8 +325,8 @@ func (svc *facebookService) syncDataItems(items []*facebookDataItem) error {
 					return
 				}
 				var hash string
-				hash, svc.fetchErr = svc.serviceConfig.Storage.DownloadFromURL(i.Source, p)
-				persistSyncDataPostFetch(svc.serviceConfig, "facebook", svc.syncData, svc.fetchErr, filePath, hash)
+				hash, svc.fetchErr = store.DownloadFromURL(i.Source, p)
+				persistSyncDataPostFetch(store, "facebook", syncData, svc.fetchErr, filePath, hash)
 			}(image, filePath)
 		}
 	}
