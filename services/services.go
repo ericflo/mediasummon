@@ -63,19 +63,19 @@ type ServiceConfig struct {
 }
 
 // Copy returns a copy of the current config
-func (sc *ServiceConfig) Copy() *ServiceConfig {
+func (config *ServiceConfig) Copy() *ServiceConfig {
 	resp := &ServiceConfig{
-		Format:      sc.Format,
-		NumFetchers: sc.NumFetchers,
-		MaxPages:    sc.MaxPages,
-		WebPort:     sc.WebPort,
-		FrontendURL: sc.FrontendURL,
-		AdminPath:   sc.AdminPath,
-		IsDebug:     sc.IsDebug,
-		Storage:     sc.Storage,
+		Format:      config.Format,
+		NumFetchers: config.NumFetchers,
+		MaxPages:    config.MaxPages,
+		WebPort:     config.WebPort,
+		FrontendURL: config.FrontendURL,
+		AdminPath:   config.AdminPath,
+		IsDebug:     config.IsDebug,
+		Storage:     config.Storage,
 	}
-	resp.Secrets = make(map[string]map[string]string, len(sc.Secrets))
-	for k, v := range sc.Secrets {
+	resp.Secrets = make(map[string]map[string]string, len(config.Secrets))
+	for k, v := range config.Secrets {
 		resp.Secrets[k] = v
 	}
 	return resp
