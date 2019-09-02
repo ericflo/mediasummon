@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -160,7 +159,6 @@ func (uc *UserConfig) GetHoursPerSync(serviceName string) float32 {
 
 // GetMultiStore instantiates, caches, and returns a *storage.Multi struct for this user config
 func (uc *UserConfig) GetMultiStore() (*storage.Multi, error) {
-	log.Println("uc", uc, "storageCache", storageCache)
 	store, _ := storageCache[uc.Path]
 	if store != nil {
 		return store, nil
