@@ -53,10 +53,8 @@ type SyncService interface {
 type ServiceConfig struct {
 	Format      string
 	NumFetchers int64
-	MaxPages    int
-	WebPort     string
+	MaxPages    int // TODO: Move to new config struct
 	FrontendURL string
-	AdminPath   string
 	IsDebug     bool
 	Secrets     map[string]map[string]string
 	Storage     *storage.Multi
@@ -68,9 +66,7 @@ func (config *ServiceConfig) Copy() *ServiceConfig {
 		Format:      config.Format,
 		NumFetchers: config.NumFetchers,
 		MaxPages:    config.MaxPages,
-		WebPort:     config.WebPort,
 		FrontendURL: config.FrontendURL,
-		AdminPath:   config.AdminPath,
 		IsDebug:     config.IsDebug,
 		Storage:     config.Storage,
 	}
@@ -86,7 +82,9 @@ func (config *ServiceConfig) LoadFromEnv() {
 	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
 		log.Printf("Could not load .env file in current directory %v", err)
 	}
-	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
+	// TODO: Pull in the dynamic web port in the default frontend url
+	//config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:"+config.WebPort)
+	config.FrontendURL = GetenvDefault("FRONTEND_URL", "http://localhost:5000")
 	config.IsDebug = strings.ToLower(os.Getenv("IS_DEBUG")) == "true"
 	config.Secrets = map[string]map[string]string{
 		"google": map[string]string{

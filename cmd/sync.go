@@ -72,7 +72,7 @@ func runSyncList(configPath string, config *commandConfig, serviceConfig *servic
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
-	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+	go http.ListenAndServe(":"+config.WebPort, handler)
 
 	i := 1
 	for serviceName, svc := range svcs {
@@ -102,7 +102,7 @@ func runSyncService(serviceName, configPath string, config *commandConfig, servi
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
-	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+	go http.ListenAndServe(":"+config.WebPort, handler)
 
 	if err := svc.Sync(); err != nil {
 		log.Println("Error syncing", serviceName, err)

@@ -55,11 +55,11 @@ func RunAdmin() {
 
 	go runServiceSyncLoop(store, config)
 
-	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+	http.ListenAndServe(":"+config.WebPort, handler)
 }
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, configPath string, config *commandConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
-	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(serviceConfig.AdminPath, "out")))))
+	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(config.AdminPath, "out")))))
 	mux.HandleFunc("/resources/services.json", makeAdminServices(serviceConfig.Storage, config))
 	mux.HandleFunc("/resources/service/sync.json", handleAdminServiceSync)
 	mux.HandleFunc("/resources/targets.json", makeAdminTargets(serviceConfig.Storage))

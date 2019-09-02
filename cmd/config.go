@@ -26,11 +26,9 @@ type commandConfig struct {
 }
 
 func (config *commandConfig) ApplyToServiceConfig(serviceConfig *services.ServiceConfig) {
-	serviceConfig.AdminPath = config.AdminPath
 	serviceConfig.Format = config.Format
 	serviceConfig.NumFetchers = config.NumFetchers
 	serviceConfig.MaxPages = config.MaxPages
-	serviceConfig.WebPort = config.WebPort
 }
 
 func (config *commandConfig) GetHoursPerSync(serviceName string) float32 {
