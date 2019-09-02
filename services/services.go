@@ -62,6 +62,25 @@ type ServiceConfig struct {
 	Storage     *storage.Multi
 }
 
+// Copy returns a copy of the current config
+func (sc *ServiceConfig) Copy() *ServiceConfig {
+	resp := &ServiceConfig{
+		Format:      sc.Format,
+		NumFetchers: sc.NumFetchers,
+		MaxPages:    sc.MaxPages,
+		WebPort:     sc.WebPort,
+		FrontendURL: sc.FrontendURL,
+		AdminPath:   sc.AdminPath,
+		IsDebug:     sc.IsDebug,
+		Storage:     sc.Storage,
+	}
+	resp.Secrets = make(map[string]map[string]string, len(sc.Secrets))
+	for k, v := range sc.Secrets {
+		resp.Secrets[k] = v
+	}
+	return resp
+}
+
 // LoadFromEnv loads any properties and secrets it can from the environment
 func (config *ServiceConfig) LoadFromEnv() {
 	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
