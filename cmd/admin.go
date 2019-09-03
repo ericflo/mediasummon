@@ -24,6 +24,7 @@ type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig
 // AdminServiceDescription is the response that the admin gives when talking about a service
 type AdminServiceDescription struct {
 	Metadata              *services.ServiceMetadata `json:"metadata"`
+	NeedsApp              bool                      `json:"needs_app"`
 	NeedsCredentials      bool                      `json:"needs_credentials"`
 	CredentialRedirectURL string                    `json:"credential_redirect_url"`
 	HoursPerSync          float32                   `json:"hours_per_sync"`
@@ -235,12 +236,19 @@ func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *use
 			log.Println("Error getting latest service sync data", err)
 		}
 		redir, err := svc.CredentialRedirectURL(userConfig)
+		needsApp := false
 		if err != nil {
-			renderJSONError(w, err, http.StatusInternalServerError)
-			return
+			if err == services.ErrNeedSecrets {
+				needsApp = true
+				redir = ""
+			} else {
+				renderJSONError(w, err, http.StatusInternalServerError)
+				return
+			}
 		}
 		svcs = append(svcs, &AdminServiceDescription{
 			Metadata:              svc.Metadata(),
+			NeedsApp:              needsApp,
 			NeedsCredentials:      svc.NeedsCredentials(userConfig),
 			CredentialRedirectURL: redir,
 			CurrentSync:           svc.CurrentSyncData(userConfig),
