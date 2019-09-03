@@ -1,16 +1,31 @@
+import React from 'react';
 import Link from 'next/link';
+
+function Logo() {
+  return (
+    <React.Fragment>
+      <Link href="/">
+        <a>
+          <img
+            width="72"
+            height="72"
+            style={{padding: 8, marginLeft: 4}}
+            src="/static/images/mediasummon-logo-transp.png"
+            alt="Mediasummon Logo" />
+        </a>
+      </Link>
+      <Link href="/">
+        <a className="uk-navbar-item uk-logo">Mediasummon</a>
+      </Link>
+    </React.Fragment>
+  );
+}
 
 function LoggedInNavbar(userConfig) {
   return (
     <nav className="uk-navbar-container" uk-navbar="true">
       <div className="uk-navbar-left">
-        <ul className="uk-navbar-nav">
-          <li>
-            <Link href="/">
-              <a>Dashboard</a>
-            </Link>
-          </li>
-        </ul>
+        <Logo />
       </div>
       <div className="uk-navbar-right">
         <ul className="uk-navbar-nav">
@@ -28,6 +43,9 @@ function LoggedInNavbar(userConfig) {
 function LoggedOutNavbar() {
   return (
     <nav className="uk-navbar-container" uk-navbar="true">
+      <div className="uk-navbar-left">
+        <Logo />
+      </div>
       <div className="uk-navbar-right">
         <ul className="uk-navbar-nav">
           <li>
