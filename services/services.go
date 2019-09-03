@@ -113,9 +113,15 @@ func NewServiceConfig() *ServiceConfig {
 			debugStr += "false"
 		}
 		encoded, err := godotenv.Marshal(map[string]string{
-			"IS_DEBUG":     debugStr,
-			"CSRF_SECRET":  base64.StdEncoding.EncodeToString(sc.CSRFSecret),
-			"NUM_FETCHERS": fmt.Sprintf("%d", numFetchers),
+			"IS_DEBUG":                debugStr,
+			"CSRF_SECRET":             base64.StdEncoding.EncodeToString(sc.CSRFSecret),
+			"NUM_FETCHERS":            fmt.Sprintf("%d", numFetchers),
+			"GOOGLE_CLIENT_ID":        "",
+			"GOOGLE_CLIENT_SECRET":    "",
+			"FACEBOOK_CLIENT_ID":      "",
+			"FACEBOOK_CLIENT_SECRET":  "",
+			"INSTAGRAM_CLIENT_ID":     "",
+			"INSTAGRAM_CLIENT_SECRET": "",
 		})
 		if err != nil {
 			log.Println("Could not encode new .env dotfile for writing", err)
