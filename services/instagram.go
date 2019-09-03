@@ -90,7 +90,7 @@ func (svc *instagramService) NeedsCredentials(userConfig *userconfig.UserConfig)
 	if err != nil {
 		return true
 	}
-	return client != nil
+	return client == nil
 }
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
@@ -174,6 +174,9 @@ func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages in
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials(userConfig) {
+		if maxPages == 0 {
+			maxPages = MaxAllowablePages
+		}
 		if !hasRequested {
 			redir, err := svc.CredentialRedirectURL(userConfig)
 			if err != nil {
@@ -186,6 +189,10 @@ func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages in
 			hasRequested = true
 		}
 		time.Sleep(time.Second)
+	}
+
+	if maxPages == 0 {
+		maxPages = 1
 	}
 
 	tok, err := loadOAuthData(userConfig, "instagram")

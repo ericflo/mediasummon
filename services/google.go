@@ -118,7 +118,7 @@ func (svc *googleService) NeedsCredentials(userConfig *userconfig.UserConfig) bo
 	if err != nil {
 		return true
 	}
-	return client != nil
+	return client == nil
 }
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
@@ -202,6 +202,9 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials(userConfig) {
+		if maxPages == 0 {
+			maxPages = MaxAllowablePages
+		}
 		if !hasRequested {
 			redir, err := svc.CredentialRedirectURL(userConfig)
 			if err != nil {
@@ -214,6 +217,10 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 			hasRequested = true
 		}
 		time.Sleep(time.Second)
+	}
+
+	if maxPages == 0 {
+		maxPages = 1
 	}
 
 	client, err := oAuth2Client(userConfig, "google", google.Endpoint, googleScopes)
