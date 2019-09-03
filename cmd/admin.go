@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -125,9 +126,9 @@ func wrapHandler(handler handlerFunc, serviceConfig *services.ServiceConfig) htt
 		var userConfig *userconfig.UserConfig
 		if token != "" {
 			// TODO: This should be put in a hmac or something and verified rather than trusted
-			userConfigPath := token
-			if conf, err := userconfig.LoadUserConfig(userConfigPath); err != nil {
-				log.Println("Error loading user config", userConfigPath, err)
+			userConfigPath, _ := base64.StdEncoding.DecodeString(token)
+			if conf, err := userconfig.LoadUserConfig(string(userConfigPath)); err != nil {
+				log.Println("Error loading user config", string(userConfigPath), err)
 			} else {
 				userConfig = conf
 			}
@@ -216,7 +217,7 @@ func makeLoginHandler(userConfigs []*userconfig.UserConfig) http.HandlerFunc {
 			return
 		}
 		renderJSON(w, map[string]string{
-			"token": userConfig.Path,
+			"token": base64.StdEncoding.EncodeToString([]byte(userConfig.Path)),
 		})
 	}
 }
