@@ -96,45 +96,30 @@ func displayErrorPage(w http.ResponseWriter, msg string) {
 }
 
 func saveOAuthData(userConfig *userconfig.UserConfig, serviceName string, tok *oauth2.Token) error {
-	encodedTok, err := json.MarshalIndent(tok, "", "  ")
+	secrets, _ := userConfig.Secrets[serviceName]
+	if secrets == nil {
+		secrets = map[string]string{}
+	}
+	encodedTok, err := json.Marshal(tok)
 	if err != nil {
 		return fmt.Errorf("Could not encode authentication token to save: %v", err)
 	}
-	store, err := userConfig.GetMultiStore()
-	if err != nil {
-		return err
-	}
-	authdir := filepath.Join(".meta", serviceName)
-	if err = store.EnsureDirectoryExists(authdir); err != nil {
-		return fmt.Errorf("Could not create auth metadata directory: %v", err)
-	}
-	path := filepath.Join(authdir, "auth.json")
-	if err = store.WriteBlob(path, encodedTok); err != nil {
-		return fmt.Errorf("Could not write auth data to disk: %v", err)
-	}
-	return nil
+	secrets["tok"] = string(encodedTok)
+	userConfig.Secrets[serviceName] = secrets
+	return userConfig.Save()
 }
 
 func loadOAuthData(userConfig *userconfig.UserConfig, serviceName string) (*oauth2.Token, error) {
-	store, err := userConfig.GetMultiStore()
-	if err != nil {
-		return nil, err
-	}
-	path := filepath.Join(".meta", serviceName, "auth.json")
-	if exists, err := store.Exists(path); err != nil {
-		return nil, err
-	} else if !exists {
+	secrets, _ := userConfig.Secrets[serviceName]
+	if secrets == nil {
 		return nil, nil
 	}
-	encodedTok, err := store.ReadBlob(path)
-	if err != nil {
-		return nil, err
-	}
 	var tok *oauth2.Token
-	if err = json.Unmarshal(encodedTok, &tok); err != nil {
-		return nil, err
+	var err error
+	if encodedToken, exists := secrets["tok"]; exists {
+		err = json.Unmarshal([]byte(encodedToken), &tok)
 	}
-	return tok, nil
+	return tok, err
 }
 
 func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
