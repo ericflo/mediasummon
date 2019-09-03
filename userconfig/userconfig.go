@@ -99,6 +99,7 @@ func LoadUserConfig(configPath string) (*UserConfig, error) {
 // LoadUserConfigs loads the user configs at the given paths, which defaults to
 // a default user config if it doesn't exist
 func LoadUserConfigs(configPaths []string, serviceNames []string) ([]*UserConfig, error) {
+	defaultCreated := false
 	userConfigs := make([]*UserConfig, 0, len(configPaths))
 	for _, configPath := range configPaths {
 		userConfig, err := LoadUserConfig(configPath)
@@ -106,7 +107,17 @@ func LoadUserConfigs(configPaths []string, serviceNames []string) ([]*UserConfig
 			if !os.IsNotExist(err) {
 				return nil, err
 			}
+			// If they already created a default, we throw an error - can't have two defaults
+			// to the same path
+			if defaultCreated {
+				return nil, errors.New("Cannot have two defaults, check your configPaths")
+			}
 			userConfig = NewUserConfig(serviceNames)
+			// Since we created a default one, save it
+			if err = userConfig.Save(); err != nil {
+				defaultCreated = true
+				return nil, err
+			}
 		}
 		userConfigs = append(userConfigs, userConfig)
 	}
