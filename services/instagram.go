@@ -70,8 +70,12 @@ func (svc *instagramService) Setup(serviceConfig *ServiceConfig) error {
 func (svc *instagramService) Metadata() *ServiceMetadata {
 	return &ServiceMetadata{
 		ID:   "instagram",
-		Name: "Instagram (Classic API)",
+		Name: "Instagram",
 	}
+}
+
+func (svc *instagramService) AppCreateURL() string {
+	return "https://www.instagram.com/developer/clients/register/"
 }
 
 func (svc *instagramService) CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData {

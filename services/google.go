@@ -102,6 +102,10 @@ func (svc *googleService) Metadata() *ServiceMetadata {
 	}
 }
 
+func (svc *googleService) AppCreateURL() string {
+	return "https://console.cloud.google.com/apis/credentials/oauthclient"
+}
+
 func (svc *googleService) CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData {
 	if userConfig == nil {
 		return nil

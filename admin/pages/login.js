@@ -60,7 +60,7 @@ export default function Login() {
               <input className="uk-input" type="password" placeholder="" ref={passwordLoaded} />
             </div>
           </div>
-          <input type="submit" onSubmit={loginCallback} value="Login" />
+          <input type="submit" className="uk-button uk-button-primary uk-align-right" onSubmit={loginCallback} value="Login" />
         </form>
       </div>
     </div>

@@ -86,6 +86,10 @@ func (svc *facebookService) Metadata() *ServiceMetadata {
 	}
 }
 
+func (svc *facebookService) AppCreateURL() string {
+	return "https://developers.facebook.com/apps/"
+}
+
 func (svc *facebookService) CurrentSyncData(userConfig *userconfig.UserConfig) *ServiceSyncData {
 	if userConfig == nil {
 		return nil

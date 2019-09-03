@@ -44,6 +44,7 @@ type SyncService interface {
 	// Related to a single user run
 	NeedsCredentials(userConfig *userconfig.UserConfig) bool
 	CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error)
+	AppCreateURL() string
 	Sync(userConfig *userconfig.UserConfig, maxPages int) error
 }
 
@@ -160,16 +161,33 @@ func loadOAuthData(userConfig *userconfig.UserConfig, serviceName string) (*oaut
 	return tok, err
 }
 
-func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
+func getServiceAppSecret(userConfig *userconfig.UserConfig, serviceName, secretName, backup string) (secret string, err error) {
 	secrets, _ := userConfig.Secrets[serviceName]
-	if secrets == nil {
-		return nil, ErrNeedSecrets
+	if secrets != nil {
+		if sec, exists := secrets[secretName]; exists {
+			secret = sec
+		}
 	}
-	clientID, _ := secrets["ClientID"]
-	clientSecret, _ := secrets["ClientSecret"]
-	if clientID == "" || clientSecret == "" {
-		return nil, ErrNeedSecrets
+	if secret == "" {
+		secret = os.Getenv(backup)
 	}
+	if secret == "" {
+		err = ErrNeedSecrets
+	}
+	return
+}
+
+func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
+	caps := strings.ToUpper(serviceName)
+	clientID, err := getServiceAppSecret(userConfig, serviceName, "ClientID", caps+"_CLIENT_ID")
+	if err != nil {
+		return nil, err
+	}
+	clientSecret, err := getServiceAppSecret(userConfig, serviceName, "ClientSecret", caps+"_CLIENT_SECRET")
+	if err != nil {
+		return nil, err
+	}
+
 	return &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,

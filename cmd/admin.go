@@ -28,6 +28,7 @@ type AdminServiceDescription struct {
 	NeedsApp              bool                      `json:"needs_app"`
 	NeedsCredentials      bool                      `json:"needs_credentials"`
 	CredentialRedirectURL string                    `json:"credential_redirect_url"`
+	AppCreateURL          string                    `json:"app_create_url"`
 	HoursPerSync          float32                   `json:"hours_per_sync"`
 	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
 	LastSync              *services.ServiceSyncData `json:"last_sync"`
@@ -85,6 +86,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	mux.Handle("/login", http.StripPrefix("/login", static))
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
+	mux.HandleFunc("/resources/config/secrets.json", wrapHandler(authRequired(handleAdminUpdateSecrets), serviceConfig))
 	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))
 	mux.HandleFunc("/resources/service/sync.json", wrapHandler(authRequired(handleAdminServiceSync), serviceConfig))
 	mux.HandleFunc("/resources/targets.json", wrapHandler(authRequired(handleAdminTargets), serviceConfig))
@@ -227,6 +229,34 @@ func handleAdminUserConfig(w http.ResponseWriter, r *http.Request, userConfig *u
 	renderJSON(w, userConfig)
 }
 
+func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
+	}
+	serviceID := r.FormValue("service")
+	_, exists := serviceMap[serviceID]
+	if !exists {
+		renderJSONErrorMessage(w, "Service with id '"+serviceID+"' was not found.", http.StatusNotFound)
+		return
+	}
+
+	secrets, exists := userConfig.Secrets[serviceID]
+	if !exists {
+		secrets = map[string]string{}
+	}
+	secrets["ClientID"] = r.FormValue("client_id")
+	secrets["ClientSecret"] = r.FormValue("client_secret")
+	userConfig.Secrets[serviceID] = secrets
+
+	if err := userConfig.Save(); err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	renderJSON(w, userConfig)
+}
+
 // handleAdminServices handles http requests for the service map
 func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
@@ -252,6 +282,7 @@ func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *use
 			NeedsApp:              needsApp,
 			NeedsCredentials:      svc.NeedsCredentials(userConfig),
 			CredentialRedirectURL: redir,
+			AppCreateURL:          svc.AppCreateURL(),
 			CurrentSync:           svc.CurrentSyncData(userConfig),
 			LastSync:              lastSync,
 			HoursPerSync:          userConfig.GetHoursPerSync(serviceName),
