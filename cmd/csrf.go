@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"crypto/rand"
 	"net/http"
 
 	"github.com/gorilla/csrf"
-	"maxint.co/mediasummon/userconfig"
 )
 
 type csrfWriter struct {
@@ -40,27 +38,4 @@ func CSRFHandler(h http.Handler) http.Handler {
 		}
 		h.ServeHTTP(sw, r)
 	})
-}
-
-func ensureCSRFSecret(userConfig *userconfig.UserConfig) ([]byte, error) {
-	meta, _ := userConfig.Secrets["meta"]
-	if meta == nil {
-		meta = map[string]string{}
-	}
-	secret, _ := meta["CSRF"]
-	var bSecret []byte
-	if secret == "" {
-		bSecret = make([]byte, 32)
-		if _, err := rand.Read(bSecret); err != nil {
-			return nil, err
-		}
-		meta["CSRF"] = string(bSecret)
-		userConfig.Secrets["meta"] = meta
-		if err := userConfig.Save(); err != nil {
-			return nil, err
-		}
-	} else {
-		bSecret = []byte(secret)
-	}
-	return bSecret, nil
 }

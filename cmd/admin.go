@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/csrf"
-	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/userconfig"
@@ -18,15 +17,29 @@ import (
 
 type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
+// AdminServiceDescription is the response that the admin gives when talking about a service
+type AdminServiceDescription struct {
+	Metadata              *services.ServiceMetadata `json:"metadata"`
+	NeedsCredentials      bool                      `json:"needs_credentials"`
+	CredentialRedirectURL string                    `json:"credential_redirect_url"`
+	HoursPerSync          float32                   `json:"hours_per_sync"`
+	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
+	LastSync              *services.ServiceSyncData `json:"last_sync"`
+}
+
+// AdminTargetDescription is the response that the admin gives when talking about a sync target
+type AdminTargetDescription struct {
+	URL string `json:"url"`
+}
+
 // RunAdmin runs an 'admin' command line application that serves the mediasummon admin site
 func RunAdmin() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
-
 	var configPath string
+	var adminPath string
 	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
 	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&adminPath, "admin", userconfig.DefaultUserConfigPath, "path to admin site files")
+	flag.StringVar(&adminPath, "a", userconfig.DefaultUserConfigPath, "path to admin site files [shorthand]")
 	flag.Parse()
 
 	serviceConfig := services.NewServiceConfig()
@@ -49,7 +62,7 @@ func RunAdmin() {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, userConfig, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, adminPath, []*userconfig.UserConfig{userConfig}, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach Admin HTTP Handlers", err)
 		return
@@ -60,8 +73,9 @@ func RunAdmin() {
 	http.ListenAndServe(":"+userConfig.WebPort, handler)
 }
 
-func attachAdminHTTPHandlers(mux *http.ServeMux, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
-	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(userConfig.AdminPath, "out")))))
+func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
+	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(adminPath, "out")))))
+	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/services.json", wrapHandler(handleAdminServices, serviceConfig))
 	mux.HandleFunc("/resources/service/sync.json", wrapHandler(handleAdminServiceSync, serviceConfig))
 	mux.HandleFunc("/resources/targets.json", wrapHandler(handleAdminTargets, serviceConfig))
@@ -86,11 +100,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, userConfig *userconfig.UserConf
 	})
 	handler := corsMiddleware.Handler(mux)
 	if !serviceConfig.IsDebug {
-		csrfSecret, err := ensureCSRFSecret(userConfig)
-		if err != nil {
-			return nil, err
-		}
-		csrfMiddleware := csrf.Protect([]byte(csrfSecret),
+		csrfMiddleware := csrf.Protect(serviceConfig.CSRFSecret,
 			csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure)),
 		)
 		handler = csrfMiddleware(handler)
@@ -119,6 +129,21 @@ func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
 	w.Write(encoded)
 }
 
+func renderJSON(w http.ResponseWriter, data interface{}) {
+	encoded, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(encoded)
+}
+
+func renderStatusOK(w http.ResponseWriter) {
+	renderJSON(w, map[string]string{"status": "ok"})
+}
+
 func renderJSONError(w http.ResponseWriter, err error, code int) {
 	renderJSONErrorMessage(w, err.Error(), code)
 }
@@ -127,25 +152,44 @@ func renderCORSFailure(w http.ResponseWriter, r *http.Request) {
 	renderJSONError(w, csrf.FailureReason(r), http.StatusForbidden)
 }
 
-func renderStatusOK(w http.ResponseWriter, r *http.Request) {
-	data, err := json.Marshal(map[string]string{"status": "ok"})
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+func renderAuthFailure(w http.ResponseWriter, r *http.Request) {
+	renderJSONErrorMessage(w, "Must be authenticated to access this resource", http.StatusForbidden)
 }
 
-// AdminServiceDescription is the response that the admin gives when talking about a service
-type AdminServiceDescription struct {
-	Metadata              *services.ServiceMetadata `json:"metadata"`
-	NeedsCredentials      bool                      `json:"needs_credentials"`
-	CredentialRedirectURL string                    `json:"credential_redirect_url"`
-	HoursPerSync          float32                   `json:"hours_per_sync"`
-	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
-	LastSync              *services.ServiceSyncData `json:"last_sync"`
+// makeLoginHandler makes a login handler which handles http requests for auth
+
+func makeLoginHandler(userConfigs []*userconfig.UserConfig) http.HandlerFunc {
+	paths := make(map[string]string, len(userConfigs))
+	for _, config := range userConfigs {
+		paths[config.Username] = config.Path
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+			return
+		}
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		path, exists := paths[username]
+		if !exists {
+			renderJSONErrorMessage(w, "Invalid username or password", http.StatusBadRequest)
+			return
+		}
+		userConfig, err := userconfig.LoadUserConfig(path)
+		if err != nil {
+			renderJSONError(w, err, http.StatusBadRequest)
+			return
+		}
+		err = userConfig.CheckPassword(password)
+		if err != nil {
+			renderJSONError(w, err, http.StatusBadRequest)
+			return
+		}
+		renderJSON(w, map[string]string{
+			"token": userConfig.Path,
+		})
+		renderStatusOK(w)
+	}
 }
 
 // handleAdminServices handles http requests for the service map
@@ -171,19 +215,7 @@ func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *use
 			HoursPerSync:          userConfig.GetHoursPerSync(serviceName),
 		})
 	}
-	data, err := json.MarshalIndent(svcs, "", "  ")
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-}
-
-// AdminTargetDescription is the response that the admin gives when talking about a sync target
-type AdminTargetDescription struct {
-	URL string `json:"url"`
+	renderJSON(w, svcs)
 }
 
 // makeAdminTargets handles http requests for the service map
@@ -199,14 +231,8 @@ func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *user
 			URL: store.URL(),
 		})
 	}
-	data, err := json.MarshalIndent(adminTargets, "", "  ")
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	renderJSON(w, adminTargets)
+
 }
 
 func handleAdminServiceSync(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
@@ -221,7 +247,7 @@ func handleAdminServiceSync(w http.ResponseWriter, r *http.Request, userConfig *
 		return
 	}
 	go svc.Sync(userConfig, userConfig.MaxPages)
-	renderStatusOK(w, r)
+	renderStatusOK(w)
 }
 
 func handleAdminTargetRemove(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
@@ -249,7 +275,7 @@ func handleAdminTargetRemove(w http.ResponseWriter, r *http.Request, userConfig 
 		renderJSONErrorMessage(w, "Could not remove sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderStatusOK(w, r)
+	renderStatusOK(w)
 }
 
 func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
@@ -276,5 +302,5 @@ func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *us
 		renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderStatusOK(w, r)
+	renderStatusOK(w)
 }

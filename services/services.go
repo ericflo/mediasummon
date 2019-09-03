@@ -1,9 +1,12 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/storage"
@@ -58,6 +62,7 @@ type ServiceMetadata struct {
 type ServiceConfig struct {
 	NumFetchers int64
 	IsDebug     bool
+	CSRFSecret  []byte
 }
 
 // ServiceSyncData is data about a single sync session performed by a service
@@ -76,18 +81,54 @@ type ServiceSyncData struct {
 
 // NewServiceConfig creates a new service config with parameters read from the env
 func NewServiceConfig() *ServiceConfig {
+	sc := &ServiceConfig{}
+	rewrite := false
+	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
+		log.Printf("Could not load .env file in current directory %v, writing default one", err)
+		rewrite = true
+	}
+
 	numFetchersStr := GetenvDefault("NUM_FETCHERS", fmt.Sprintf("%d", DefaultNumFetchers))
 	numFetchers, err := strconv.ParseUint(numFetchersStr, 10, 64)
 	if err != nil || numFetchers <= 0 {
 		if err != nil {
-			log.Println("Warning: Could not parse NUM_FETCHERS", err, "...deafulting to default", DefaultNumFetchers)
+			log.Println("Warning: Could not parse NUM_FETCHERS", err, "...defaulting to default", DefaultNumFetchers)
 		}
-		numFetchers = DefaultNumFetchers
+		sc.NumFetchers = DefaultNumFetchers
+	} else {
+		sc.NumFetchers = int64(numFetchers)
 	}
-	return &ServiceConfig{
-		NumFetchers: int64(numFetchers),
-		IsDebug:     os.Getenv("IS_DEBUG") != "",
+	sc.IsDebug = os.Getenv("IS_DEBUG") != ""
+	sc.CSRFSecret, _ = base64.StdEncoding.DecodeString(os.Getenv("CSRF_SECRET"))
+	if sc.CSRFSecret == nil || len(sc.CSRFSecret) == 0 {
+		bSecret := make([]byte, 32)
+		if _, err := rand.Read(bSecret); err != nil {
+			log.Println("Error getting randomness for secret")
+		}
+		sc.CSRFSecret = bSecret
+		rewrite = true
 	}
+
+	if rewrite {
+		debugStr := ""
+		if sc.IsDebug {
+			debugStr += "false"
+		}
+		encoded, err := godotenv.Marshal(map[string]string{
+			"IS_DEBUG":     debugStr,
+			"CSRF_SECRET":  base64.StdEncoding.EncodeToString(sc.CSRFSecret),
+			"NUM_FETCHERS": fmt.Sprintf("%d", numFetchers),
+		})
+		if err != nil {
+			log.Println("Could not encode new .env dotfile for writing", err)
+		} else {
+			if err = ioutil.WriteFile(".env", []byte(encoded), 0644); err != nil {
+				log.Println("Could not write out new .env dotfile", err)
+			}
+		}
+	}
+
+	return sc
 }
 
 // displayErrorPage writes a basic text error message to the http response

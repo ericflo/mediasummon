@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/userconfig"
 )
@@ -18,15 +17,14 @@ const defaultDurationBetweenSyncChecks = time.Duration(time.Second * 5)
 
 // RunSync runs a 'sync' command line application that syncs a service to a directory
 func RunSync() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
-
 	serviceOptions := strings.Join(serviceOptions(), ", ")
 	var configPath string
+	var adminPath string
 	var serviceName string
 	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
 	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&adminPath, "admin", userconfig.DefaultUserConfigPath, "path to admin site files")
+	flag.StringVar(&adminPath, "a", userconfig.DefaultUserConfigPath, "path to admin site files [shorthand]")
 	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
 	flag.Parse()
@@ -45,14 +43,14 @@ func RunSync() {
 	}
 
 	if serviceName == "all" {
-		runSyncList(userConfig, serviceConfig)
+		runSyncList(adminPath, userConfig, serviceConfig)
 	} else {
-		runSyncService(serviceName, userConfig, serviceConfig)
+		runSyncService(serviceName, adminPath, userConfig, serviceConfig)
 	}
 }
 
 // runSyncList runs sync on all the services that have credentials
-func runSyncList(userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+func runSyncList(adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
 	for serviceName, svc := range serviceMap {
@@ -66,7 +64,7 @@ func runSyncList(userConfig *userconfig.UserConfig, serviceConfig *services.Serv
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, userConfig, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, adminPath, []*userconfig.UserConfig{userConfig}, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
@@ -84,7 +82,7 @@ func runSyncList(userConfig *userconfig.UserConfig, serviceConfig *services.Serv
 }
 
 // runSyncService runs sync for an individual service, requesting credentials from the user if needed
-func runSyncService(serviceName string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+func runSyncService(serviceName, adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	svc, exists := serviceMap[serviceName]
 	if !exists {
 		log.Println("Could not find service: " + serviceName)
@@ -96,7 +94,7 @@ func runSyncService(serviceName string, userConfig *userconfig.UserConfig, servi
 		mux.HandleFunc(key, handler)
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, userConfig, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, adminPath, []*userconfig.UserConfig{userConfig}, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}

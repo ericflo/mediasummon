@@ -8,7 +8,6 @@ import (
 	"os"
 	"sort"
 
-	"github.com/joho/godotenv"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
@@ -24,9 +23,6 @@ func getTargetConfigPath() string {
 
 // RunTargetAdd runs an 'target add' command which adds a new sync target to the list
 func RunTargetAdd() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
 	if len(os.Args) < 2 {
 		log.Println("Must include a target to add, i.e. 'EXE target add path/to/my/folder'")
 		return
@@ -46,9 +42,6 @@ func RunTargetAdd() {
 
 // RunTargetRemove runs a 'target remove' command which removes a sync target from the list
 func RunTargetRemove() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
 	if len(os.Args) < 2 {
 		log.Println("Must include a target to remove, i.e. 'EXE target remove path/to/my/folder'")
 		return
@@ -68,9 +61,6 @@ func RunTargetRemove() {
 
 // RunTargetList runs a 'target list' command which lists the current sync targets from the list
 func RunTargetList() {
-	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Could not load .env file in current directory %v", err)
-	}
 	configPath := getTargetConfigPath()
 	userConfig, err := runTargetPreamble(configPath)
 	if err != nil {

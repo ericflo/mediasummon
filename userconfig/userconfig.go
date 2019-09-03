@@ -47,7 +47,6 @@ type UserConfig struct {
 	Targets      []string           `json:"targets"`
 	HoursPerSync map[string]float32 `json:"hours_per_sync"`
 
-	AdminPath   string `json:"admin_path"`
 	Format      string `json:"format"`
 	NumFetchers int64  `json:"num_fetchers"`
 	MaxPages    int    `json:"max_pages"`
@@ -81,7 +80,6 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 		Role:         UserRoleStandard,
 		TimeCreated:  time.Now().UTC(),
 		Targets:      []string{storage.NormalizeStorageURL("~/mediasummon")},
-		AdminPath:    "admin",
 		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
 		NumFetchers:  6,
 		MaxPages:     0,
