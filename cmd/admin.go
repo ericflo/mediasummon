@@ -77,7 +77,9 @@ func RunAdmin() {
 }
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
-	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(adminPath, "out")))))
+	static := CSRFHandler(http.FileServer(http.Dir(filepath.Join(adminPath, "out"))))
+	mux.Handle("/", static)
+	mux.Handle("/login", http.StripPrefix("/login", static))
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
 	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))

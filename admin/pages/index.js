@@ -75,6 +75,7 @@ export default function Home() {
     }
     fullSetup(token, setServices, setTargets, setErrorMessage);
   }, [userConfig, token, isAdding]);
+
   useEffect(() => {
     if (userConfig === undefined) {
       return;
@@ -84,6 +85,7 @@ export default function Home() {
     }, 1000);
     return () => clearInterval(timer);
   }, [userConfig]);
+
   const removeTargetClickCallback = useCallback(target => {
     handleTargetRemoveClick(target, targets, setTargets, setErrorMessage);
   }, [targets]);
@@ -91,6 +93,11 @@ export default function Home() {
     ev.preventDefault();
     setIsAdding(true);
   }, []);
+
+  if (userConfig === undefined) {
+    return null;
+  }
+
   return (
     <div className="uk-container">
       <Header title="Mediasummon" />
