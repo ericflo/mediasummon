@@ -24137,18 +24137,23 @@ function Home() {
     ev.preventDefault();
     setIsAdding(true);
   }, []);
+
+  if (userConfig === undefined) {
+    return null;
+  }
+
   return __jsx("div", {
     className: "uk-container",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 95
+      lineNumber: 102
     },
     __self: this
   }, __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_12__["default"], {
     title: "Mediasummon",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 96
+      lineNumber: 103
     },
     __self: this
   }), __jsx(_components_AddTargetModal__WEBPACK_IMPORTED_MODULE_11__["default"], {
@@ -24156,7 +24161,7 @@ function Home() {
     enabled: isAdding,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 97
+      lineNumber: 104
     },
     __self: this
   }), errorMessage ? __jsx("div", {
@@ -24164,7 +24169,7 @@ function Home() {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 99
+      lineNumber: 106
     },
     __self: this
   }, __jsx("a", {
@@ -24172,33 +24177,33 @@ function Home() {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 100
+      lineNumber: 107
     },
     __self: this
   }), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 101
+      lineNumber: 108
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 101
+      lineNumber: 108
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 103
+      lineNumber: 110
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 104
+      lineNumber: 111
     },
     __self: this
   }, "Summoning your media to these locations"), targets.map(function (target) {
@@ -24208,7 +24213,7 @@ function Home() {
       onRemoveClick: removeTargetClickCallback,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 107
+        lineNumber: 114
       },
       __self: this
     });
@@ -24216,7 +24221,7 @@ function Home() {
     className: "uk-flex uk-flex-center",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 113
+      lineNumber: 120
     },
     __self: this
   }, __jsx("a", {
@@ -24225,20 +24230,20 @@ function Home() {
     onClick: addTargetClickCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 114
+      lineNumber: 121
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 120
+      lineNumber: 127
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 121
+      lineNumber: 128
     },
     __self: this
   }, "Summoning media from these services"), services.map(function (service) {
@@ -24247,7 +24252,7 @@ function Home() {
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 123
+        lineNumber: 130
       },
       __self: this
     });
