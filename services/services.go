@@ -18,15 +18,10 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
 )
-
-// DefaultNumFetchers is the default number of http fetchers to run per service
-const DefaultNumFetchers = 6
-
-// MaxAllowablePages is the maximum allowable number of pages that a user can request
-const MaxAllowablePages = 1000000
 
 // ErrNeedSecrets is the error returned when we can't find secrets for a service
 var ErrNeedSecrets = errors.New("Could not find secrets for service")
@@ -61,6 +56,7 @@ type ServiceMetadata struct {
 // ServiceConfig is a struct that can configure a service
 type ServiceConfig struct {
 	NumFetchers int64
+	WebPort     string
 	IsDebug     bool
 	CSRFSecret  []byte
 }
@@ -88,17 +84,18 @@ func NewServiceConfig() *ServiceConfig {
 		rewrite = true
 	}
 
-	numFetchersStr := GetenvDefault("NUM_FETCHERS", fmt.Sprintf("%d", DefaultNumFetchers))
+	numFetchersStr := GetenvDefault("NUM_FETCHERS", fmt.Sprintf("%d", constants.DefaultNumFetchers))
 	numFetchers, err := strconv.ParseUint(numFetchersStr, 10, 64)
 	if err != nil || numFetchers <= 0 {
 		if err != nil {
-			log.Println("Warning: Could not parse NUM_FETCHERS", err, "...defaulting to default", DefaultNumFetchers)
+			log.Println("Warning: Could not parse NUM_FETCHERS", err, "...defaulting to default", constants.DefaultNumFetchers)
 		}
-		sc.NumFetchers = DefaultNumFetchers
+		sc.NumFetchers = constants.DefaultNumFetchers
 	} else {
 		sc.NumFetchers = int64(numFetchers)
 	}
 	sc.IsDebug = os.Getenv("IS_DEBUG") != ""
+	sc.WebPort = GetenvDefault("PORT", constants.DefaultWebPort)
 	sc.CSRFSecret, _ = base64.StdEncoding.DecodeString(os.Getenv("CSRF_SECRET"))
 	if sc.CSRFSecret == nil || len(sc.CSRFSecret) == 0 {
 		bSecret := make([]byte, 32)

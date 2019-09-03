@@ -5,32 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/storage"
 )
 
-// DefaultUserConfigPath is the default path to the config json
-const DefaultUserConfigPath = "mediasummon.config.json"
-
-// DefaultHoursPerSync is the default number of hours between syncing each searvice
-const DefaultHoursPerSync = 24.0
-
-// DefaultWebPort is the default port for the web service
-const DefaultWebPort = "5000"
-
 // bCryptCost is the computational cost of the bcrypt algorithm
 const bCryptCost = 12
-
-// UserRoleStandard is a role for the user that means they have standard access
-const UserRoleStandard = "standard"
-
-// UserRoleAdmin is a role for the user that means they have administrative access
-const UserRoleAdmin = "admin"
 
 // storageCache stores a cache of storage.Multi instances per config
 var storageCache = map[string]*storage.Multi{}
@@ -48,9 +35,6 @@ type UserConfig struct {
 	HoursPerSync map[string]float32 `json:"hours_per_sync"`
 
 	Format      string `json:"format"`
-	NumFetchers int64  `json:"num_fetchers"`
-	MaxPages    int    `json:"max_pages"`
-	WebPort     string `json:"web_port"`
 	FrontendURL string `json:"frontend_url"`
 
 	Secrets map[string]map[string]string `json:"secrets"`
@@ -61,7 +45,7 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 	hps := make(map[string]float32, len(serviceNames))
 	secrets := make(map[string]map[string]string, len(serviceNames))
 	for _, serviceName := range serviceNames {
-		hps[serviceName] = DefaultHoursPerSync
+		hps[serviceName] = constants.DefaultHoursPerSync
 		switch serviceName {
 		case "facebook", "google", "instagram":
 			secrets[serviceName] = map[string]string{
@@ -73,18 +57,21 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 			secrets[serviceName] = map[string]string{}
 		}
 	}
+	configPath := constants.DefaultUserConfigPath
+	if absPath, err := filepath.Abs(configPath); err != nil {
+		log.Println("Could not get absolute filename for", configPath, err, "...using non-abs version.")
+	} else {
+		configPath = absPath
+	}
 	return &UserConfig{
-		Path:         DefaultUserConfigPath,
+		Path:         configPath,
 		Username:     "mediasummon",
 		PasswordHash: "$2a$12$J0mZDHUs36dP7Chh5juN8OMp0Fe5I4y1ZTbuuBR4aeJx4pIdsJBDm", // Default password is 'admin'
-		Role:         UserRoleStandard,
+		Role:         constants.DefaultUserRole,
 		TimeCreated:  time.Now().UTC(),
 		Targets:      []string{storage.NormalizeStorageURL("~/mediasummon")},
 		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-		NumFetchers:  6,
-		MaxPages:     0,
-		WebPort:      DefaultWebPort,
-		FrontendURL:  fmt.Sprintf("http://localhost:%s", DefaultWebPort),
+		FrontendURL:  fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
 		HoursPerSync: hps,
 		Secrets:      secrets,
 	}
@@ -147,12 +134,12 @@ func (uc *UserConfig) CheckPassword(password string) error {
 // the default if the requested service name has no registered amount
 func (uc *UserConfig) GetHoursPerSync(serviceName string) float32 {
 	if uc.HoursPerSync == nil {
-		return DefaultHoursPerSync
+		return constants.DefaultHoursPerSync
 	}
 	if h, exists := uc.HoursPerSync[serviceName]; exists {
 		return h
 	}
-	return DefaultHoursPerSync
+	return constants.DefaultHoursPerSync
 }
 
 // GetMultiStore instantiates, caches, and returns a *storage.Multi struct for this user config

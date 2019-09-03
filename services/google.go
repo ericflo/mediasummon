@@ -16,6 +16,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
 )
@@ -172,7 +173,7 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 	}
 
 	if svc.CurrentSyncData(userConfig) == nil {
-		go svc.Sync(userConfig, MaxAllowablePages)
+		go svc.Sync(userConfig, constants.MaxAllowablePages)
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -203,7 +204,7 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 	hasRequested := false
 	for svc.NeedsCredentials(userConfig) {
 		if maxPages == 0 {
-			maxPages = MaxAllowablePages
+			maxPages = constants.MaxAllowablePages
 		}
 		if !hasRequested {
 			redir, err := svc.CredentialRedirectURL(userConfig)

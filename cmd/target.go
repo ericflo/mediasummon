@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
@@ -15,8 +16,8 @@ import (
 
 func getTargetConfigPath() string {
 	var configPath string
-	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&configPath, "config", constants.DefaultUserConfigPath, "path to config file")
+	flag.StringVar(&configPath, "c", constants.DefaultUserConfigPath, "path to config file [shorthand]")
 	flag.Parse()
 	return configPath
 }

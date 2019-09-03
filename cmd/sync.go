@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/userconfig"
 )
-
-const defaultServiceName = "all"
-const defaultDurationBetweenSyncChecks = time.Duration(time.Second * 5)
 
 // RunSync runs a 'sync' command line application that syncs a service to a directory
 func RunSync() {
@@ -21,12 +19,15 @@ func RunSync() {
 	var configPath string
 	var adminPath string
 	var serviceName string
-	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
-	flag.StringVar(&adminPath, "admin", userconfig.DefaultUserConfigPath, "path to admin site files")
-	flag.StringVar(&adminPath, "a", userconfig.DefaultUserConfigPath, "path to admin site files [shorthand]")
-	flag.StringVar(&serviceName, "service", defaultServiceName, "which service to sync ("+serviceOptions+")")
-	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
+	var maxPages int
+	flag.StringVar(&configPath, "config", constants.DefaultUserConfigPath, "path to config file")
+	flag.StringVar(&configPath, "c", constants.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&adminPath, "admin", constants.DefaultUserConfigPath, "path to admin site files")
+	flag.StringVar(&adminPath, "a", constants.DefaultUserConfigPath, "path to admin site files [shorthand]")
+	flag.StringVar(&serviceName, "service", constants.DefaultServiceName, "which service to sync ("+serviceOptions+")")
+	flag.StringVar(&serviceName, "s", constants.DefaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
+	flag.IntVar(&maxPages, "max-pages", 0, "maximum number of pages to sync in this run (per service)")
+	flag.IntVar(&maxPages, "m", 0, "maximum number of pages to sync in this run (per service) [shorthand]")
 	flag.Parse()
 
 	serviceConfig := services.NewServiceConfig()
@@ -43,14 +44,14 @@ func RunSync() {
 	}
 
 	if serviceName == "all" {
-		runSyncList(adminPath, userConfig, serviceConfig)
+		runSyncList(adminPath, userConfig, serviceConfig, maxPages)
 	} else {
-		runSyncService(serviceName, adminPath, userConfig, serviceConfig)
+		runSyncService(serviceName, adminPath, userConfig, serviceConfig, maxPages)
 	}
 }
 
 // runSyncList runs sync on all the services that have credentials
-func runSyncList(adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+func runSyncList(adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig, maxPages int) {
 	svcs := map[string]services.SyncService{}
 	mux := http.NewServeMux()
 	for serviceName, svc := range serviceMap {
@@ -68,12 +69,12 @@ func runSyncList(adminPath string, userConfig *userconfig.UserConfig, serviceCon
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
-	go http.ListenAndServe(":"+userConfig.WebPort, handler)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 
 	i := 1
 	for serviceName, svc := range svcs {
 		log.Println("Running sync for", serviceName, "(", i, "/", len(svcs), ")")
-		if err := svc.Sync(userConfig, userConfig.MaxPages); err != nil {
+		if err := svc.Sync(userConfig, maxPages); err != nil {
 			log.Println("Error syncing", serviceName, err)
 			return
 		}
@@ -82,7 +83,7 @@ func runSyncList(adminPath string, userConfig *userconfig.UserConfig, serviceCon
 }
 
 // runSyncService runs sync for an individual service, requesting credentials from the user if needed
-func runSyncService(serviceName, adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+func runSyncService(serviceName, adminPath string, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig, maxPages int) {
 	svc, exists := serviceMap[serviceName]
 	if !exists {
 		log.Println("Could not find service: " + serviceName)
@@ -98,9 +99,9 @@ func runSyncService(serviceName, adminPath string, userConfig *userconfig.UserCo
 	if err != nil {
 		log.Println("Error: Could not attach admin HTTP handlers", err)
 	}
-	go http.ListenAndServe(":"+userConfig.WebPort, handler)
+	go http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 
-	if err := svc.Sync(userConfig, userConfig.MaxPages); err != nil {
+	if err := svc.Sync(userConfig, maxPages); err != nil {
 		log.Println("Error syncing", serviceName, err)
 	}
 }
@@ -123,7 +124,7 @@ func runScheduledServiceSync(userConfig *userconfig.UserConfig) error {
 
 		// If we haven't synced before, we know we can sync right away
 		if lastSync == nil {
-			go service.Sync(userConfig, services.MaxAllowablePages)
+			go service.Sync(userConfig, constants.MaxAllowablePages)
 			continue
 		}
 
@@ -131,7 +132,7 @@ func runScheduledServiceSync(userConfig *userconfig.UserConfig) error {
 		if !lastSync.Ended.Valid {
 			// If we're not currently running a sync for it, start one
 			if service.CurrentSyncData(userConfig) == nil {
-				go service.Sync(userConfig, userConfig.MaxPages)
+				go service.Sync(userConfig, 1)
 			}
 			// Either way, either we were running a sync or we're running one now,
 			// so let's continue on
@@ -144,7 +145,7 @@ func runScheduledServiceSync(userConfig *userconfig.UserConfig) error {
 
 		// If it's after now, start up a sync and continue on
 		if time.Now().UTC().After(nextSyncTime) {
-			go service.Sync(userConfig, userConfig.MaxPages)
+			go service.Sync(userConfig, 1)
 			continue
 		}
 	}
@@ -159,6 +160,6 @@ func runServiceSyncLoop(userConfig *userconfig.UserConfig) {
 		if err := runScheduledServiceSync(userConfig); err != nil {
 			log.Println("Error running scheduled service sync:", err)
 		}
-		time.Sleep(defaultDurationBetweenSyncChecks)
+		time.Sleep(constants.DefaultDurationBetweenSyncChecks)
 	}
 }

@@ -3,20 +3,21 @@ package cmd
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
 	"github.com/rs/cors"
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/userconfig"
 )
-
-const defaultAdminPath = "admin"
 
 type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
@@ -39,10 +40,10 @@ type AdminTargetDescription struct {
 func RunAdmin() {
 	var configPath string
 	var adminPath string
-	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
-	flag.StringVar(&adminPath, "admin", defaultAdminPath, "path to admin site files")
-	flag.StringVar(&adminPath, "a", defaultAdminPath, "path to admin site files [shorthand]")
+	flag.StringVar(&configPath, "config", constants.DefaultUserConfigPath, "path to config file")
+	flag.StringVar(&configPath, "c", constants.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.StringVar(&adminPath, "admin", constants.DefaultAdminPath, "path to admin site files")
+	flag.StringVar(&adminPath, "a", constants.DefaultAdminPath, "path to admin site files [shorthand]")
 	flag.Parse()
 
 	serviceConfig := services.NewServiceConfig()
@@ -73,7 +74,7 @@ func RunAdmin() {
 
 	go runServiceSyncLoop(userConfig)
 
-	http.ListenAndServe(":"+userConfig.WebPort, handler)
+	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 }
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
@@ -278,7 +279,20 @@ func handleAdminServiceSync(w http.ResponseWriter, r *http.Request, userConfig *
 		renderJSONErrorMessage(w, "Service with id '"+serviceID+"' was not found.", http.StatusNotFound)
 		return
 	}
-	go svc.Sync(userConfig, userConfig.MaxPages)
+	maxPagesStr := r.URL.Query().Get("max_pages")
+	var maxPages uint64
+	if maxPagesStr != "" {
+		var err error
+		if maxPages, err = strconv.ParseUint(maxPagesStr, 10, 64); err != nil {
+			msg := fmt.Sprintf("Invalid max_pages parameter (%v): %v", maxPagesStr, err)
+			renderJSONErrorMessage(w, msg, http.StatusBadRequest)
+			return
+		}
+		if maxPages > constants.MaxAllowablePages {
+			maxPages = constants.MaxAllowablePages
+		}
+	}
+	go svc.Sync(userConfig, int(maxPages))
 	renderStatusOK(w)
 }
 
