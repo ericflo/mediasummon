@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -41,10 +40,10 @@ type AdminTargetDescription struct {
 
 // RunAdmin runs an 'admin' command line application that serves the mediasummon admin site
 func RunAdmin() {
-	var configPath string
+	var configPath configPathsFlags
 	var adminPath string
-	flag.StringVar(&configPath, "config", constants.DefaultUserConfigPath, "path to config file")
-	flag.StringVar(&configPath, "c", constants.DefaultUserConfigPath, "path to config file [shorthand]")
+	flag.Var(&configPath, "config", "path to config file")
+	flag.Var(&configPath, "c", "path to config file [shorthand]")
 	flag.StringVar(&adminPath, "admin", constants.DefaultAdminPath, "path to admin site files")
 	flag.StringVar(&adminPath, "a", constants.DefaultAdminPath, "path to admin site files [shorthand]")
 	flag.Parse()
@@ -52,14 +51,10 @@ func RunAdmin() {
 	serviceConfig := services.NewServiceConfig()
 	populateServiceMap(serviceConfig)
 
-	userConfig, err := userconfig.LoadUserConfig(configPath)
+	userConfigs, err := userconfig.LoadUserConfigs(configPath.Strings(), sortedServiceNames())
 	if err != nil {
-		if os.IsNotExist(err) {
-			userConfig = userconfig.NewUserConfig(sortedServiceNames())
-		} else {
-			log.Println("Error reading config", err)
-			return
-		}
+		log.Println("Error reading config", err)
+		return
 	}
 
 	mux := http.NewServeMux()
@@ -69,13 +64,15 @@ func RunAdmin() {
 		}
 	}
 
-	handler, err := attachAdminHTTPHandlers(mux, adminPath, []*userconfig.UserConfig{userConfig}, serviceConfig)
+	handler, err := attachAdminHTTPHandlers(mux, adminPath, userConfigs, serviceConfig)
 	if err != nil {
 		log.Println("Error: Could not attach Admin HTTP Handlers", err)
 		return
 	}
 
-	go runServiceSyncLoop(userConfig)
+	for _, userConfig := range userConfigs {
+		go runServiceSyncLoop(userConfig)
+	}
 
 	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
 }

@@ -39,13 +39,14 @@ export default function ServiceSummary({service}) {
     const id = clientID ? clientID.value : null;
     const secret = clientSecret ? clientSecret.value : null;
     handleSaveClick(service.metadata.id, id, secret, setConfiguring);
-  }, [clientID, clientSecret]);
+  }, [service.metadata.id, clientID, clientSecret]);
   const clientIDLoaded = useCallback(ref => {
     setClientID(ref);
   }, []);
   const clientSecretLoaded = useCallback(ref => {
     setClientSecret(ref);
   }, []);
+  const tooltipString = service.app_create_url.split('/')[2]
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
@@ -66,9 +67,13 @@ export default function ServiceSummary({service}) {
       </div>
       {configuring ?
         <div className="uk-card-body uk-padding-remove-vertical uk-margin">
-          <p>
-            Visit {service.metadata.name} to <a href={service.app_create_url} target="_blank">create an app</a>, then return here and enter the credentials below:
-          </p>
+          {service.needs_app ?
+            <p>
+              Visit {service.metadata.name} to <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>, then return here and enter the credentials below:
+            </p> :
+            <p>
+              You already have credentials set up for {service.metadata.name}. If you would like to set new app credentials, head over to their site to <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>, then return here and enter the credentials below:
+            </p>}
           <form className="uk-form-stacked" onSubmit={handleSaveClicked}>
             <div className="uk-margin">
               <label className="uk-form-label">Client ID</label>

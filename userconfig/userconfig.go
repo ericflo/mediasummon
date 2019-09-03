@@ -96,6 +96,23 @@ func LoadUserConfig(configPath string) (*UserConfig, error) {
 	return config, err
 }
 
+// LoadUserConfigs loads the user configs at the given paths, which defaults to
+// a default user config if it doesn't exist
+func LoadUserConfigs(configPaths []string, serviceNames []string) ([]*UserConfig, error) {
+	userConfigs := make([]*UserConfig, 0, len(configPaths))
+	for _, configPath := range configPaths {
+		userConfig, err := LoadUserConfig(configPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return nil, err
+			}
+			userConfig = NewUserConfig(serviceNames)
+		}
+		userConfigs = append(userConfigs, userConfig)
+	}
+	return userConfigs, nil
+}
+
 // Save persists a the sending UserConfig to disk
 func (uc *UserConfig) Save() error {
 	if uc.Path == "" {

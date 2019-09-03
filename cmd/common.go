@@ -3,7 +3,9 @@ package cmd
 import (
 	"log"
 	"sort"
+	"strings"
 
+	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
 )
 
@@ -13,6 +15,27 @@ var serviceCreatorMap map[string]services.ServiceCreator = map[string]services.S
 	"facebook":  services.NewFacebookService,
 }
 var serviceMap = map[string]services.SyncService{}
+
+type configPathsFlags []string
+
+func (i *configPathsFlags) String() string {
+	return "[" + strings.Join(i.Strings(), ", ") + "]"
+}
+
+func (i *configPathsFlags) Strings() []string {
+	val := *i
+	if val == nil {
+		val = []string{constants.DefaultUserConfigPath}
+	} else if len(val) == 0 {
+		val = append(val, constants.DefaultUserConfigPath)
+	}
+	return val
+}
+
+func (i *configPathsFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
 
 // populateServiceMap populates the service map with the initialized SyncService given the
 // provided ServiceConfig
