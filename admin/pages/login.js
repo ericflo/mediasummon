@@ -1,12 +1,14 @@
 import '../node_modules/uikit/dist/css/uikit.min.css';
 import { useState, useEffect, useCallback } from 'react';
-import { ensureInstalled } from '../setup';
+import { ensureInstalled, useRequiredUserConfig } from '../setup';
 import Header from '../components/Header';
 import { fetchLogin } from '../fetchers/login';
 import { setAuthToken } from '../fetchers/common';
 import Router from 'next/router';
+import Navbar from '../components/Navbar';
 
 export default function Login() {
+  const {userConfig} = useRequiredUserConfig();
   const [errorMessage, setErrorMessage] = useState(null);
   const [usernameField, setUsernameField] = useState(null);
   const [passwordField, setPasswordField] = useState(null);
@@ -36,6 +38,7 @@ export default function Login() {
   }, []);
   return (
     <div className="uk-container">
+      <Navbar userConfig={userConfig} />
       <Header title="Mediasummon" />
       {errorMessage ? 
         <div className="uk-alert-danger" uk-alert="true">

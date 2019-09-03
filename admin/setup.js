@@ -1,4 +1,8 @@
+import { useState, useEffect } from 'react';
 import config from './config';
+import { loadAuthToken } from './fetchers/common';
+import { fetchCurrentUserConfig } from './fetchers/userconfig';
+import Router from 'next/router';
 
 var installed = false;
 var installedCSRF = null;
@@ -32,4 +36,21 @@ export function ensureInstalled(token) {
 
 export function getInstalledCSRF() {
   return installedCSRF;
+}
+
+export function useRequiredUserConfig() {
+  const [state, setState] = useState({userConfig: undefined, token: undefined});
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const token = await loadAuthToken();
+        const userConfig = await fetchCurrentUserConfig();
+        setState({userConfig, token});
+      } catch (err) {
+        Router.push('/login');
+      }
+    }
+    fetchConfig();
+  }, []);
+  return state;
 }

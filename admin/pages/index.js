@@ -1,15 +1,13 @@
 import '../node_modules/uikit/dist/css/uikit.min.css';
 import { useState, useEffect, useCallback } from 'react';
-import { ensureInstalled } from '../setup';
-import { loadAuthToken } from '../fetchers/common';
+import { ensureInstalled, useRequiredUserConfig } from '../setup';
 import { fetchServices } from '../fetchers/services';
 import { fetchTargets, fetchTargetRemove } from '../fetchers/targets';
-import { fetchCurrentUserConfig } from '../fetchers/userconfig';
 import ServiceSummary from '../components/ServiceSummary';
 import TargetSummary from '../components/TargetSummary';
 import AddTargetModal from '../components/AddTargetModal';
 import Header from '../components/Header';
-import Router from 'next/router';
+import Navbar from '../components/Navbar';
 
 async function handleTargetRemoveClick(target, targets, setTargets, setErrorMessage) {
   const UIKit = require('uikit');
@@ -43,23 +41,6 @@ async function updateServices(setServices, setErrorMessage) {
   } catch (err) {
     setErrorMessage('' + err);
   }
-}
-
-function useRequiredUserConfig() {
-  const [state, setState] = useState({userConfig: undefined, token: undefined});
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const token = await loadAuthToken();
-        const userConfig = await fetchCurrentUserConfig();
-        setState({userConfig, token});
-      } catch (err) {
-        Router.push('/login');
-      }
-    }
-    fetchConfig();
-  }, []);
-  return state;
 }
 
 export default function Home() {
@@ -100,6 +81,7 @@ export default function Home() {
 
   return (
     <div className="uk-container">
+      <Navbar userConfig={userConfig} />
       <Header title="Mediasummon" />
       <AddTargetModal setIsAdding={setIsAdding} enabled={isAdding} />
       {errorMessage ? 
