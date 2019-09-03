@@ -29,6 +29,9 @@ func RunAdmin() {
 	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
 	flag.Parse()
 
+	serviceConfig := services.NewServiceConfig()
+	populateServiceMap(serviceConfig)
+
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -38,9 +41,6 @@ func RunAdmin() {
 			return
 		}
 	}
-
-	serviceConfig := services.NewServiceConfig()
-	populateServiceMap(serviceConfig)
 
 	mux := http.NewServeMux()
 	for _, svc := range serviceMap {

@@ -81,6 +81,8 @@ func RunTargetList() {
 }
 
 func runTargetPreamble(configPath string) (*userconfig.UserConfig, error) {
+	serviceConfig := services.NewServiceConfig()
+	populateServiceMap(serviceConfig)
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -90,8 +92,6 @@ func runTargetPreamble(configPath string) (*userconfig.UserConfig, error) {
 			return nil, err
 		}
 	}
-	serviceConfig := services.NewServiceConfig()
-	populateServiceMap(serviceConfig)
 	return userConfig, nil
 }
 

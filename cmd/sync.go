@@ -31,6 +31,9 @@ func RunSync() {
 	flag.StringVar(&serviceName, "s", defaultServiceName, "which service to sync ("+serviceOptions+") [shorthand]")
 	flag.Parse()
 
+	serviceConfig := services.NewServiceConfig()
+	populateServiceMap(serviceConfig)
+
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -40,9 +43,6 @@ func RunSync() {
 			return
 		}
 	}
-
-	serviceConfig := services.NewServiceConfig()
-	populateServiceMap(serviceConfig)
 
 	if serviceName == "all" {
 		runSyncList(userConfig, serviceConfig)

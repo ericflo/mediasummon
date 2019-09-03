@@ -86,7 +86,7 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 		NumFetchers:  6,
 		MaxPages:     0,
 		WebPort:      DefaultWebPort,
-		FrontendURL:  fmt.Sprintf("http://localhost:%d", DefaultWebPort),
+		FrontendURL:  fmt.Sprintf("http://localhost:%s", DefaultWebPort),
 		HoursPerSync: hps,
 		Secrets:      secrets,
 	}

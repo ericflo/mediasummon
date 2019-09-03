@@ -183,6 +183,22 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 		log.Println("Warning: called Sync() while already syncing")
 	}
 
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
+
+	syncData := &ServiceSyncData{
+		UserConfigPath: userConfig.Path,
+		Started:        time.Now().UTC(),
+		PageMax:        maxPages,
+		Hashes:         map[string]string{},
+	}
+	svc.syncDatas[userConfig.Path] = syncData
+	if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
+		return sdErr
+	}
+
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials(userConfig) {
@@ -203,22 +219,6 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 	client, err := oAuth2Client(userConfig, "google", google.Endpoint, googleScopes)
 	if err != nil {
 		return err
-	}
-
-	store, err := userConfig.GetMultiStore()
-	if err != nil {
-		return err
-	}
-
-	syncData := &ServiceSyncData{
-		UserConfigPath: userConfig.Path,
-		Started:        time.Now().UTC(),
-		PageMax:        maxPages,
-		Hashes:         map[string]string{},
-	}
-	svc.syncDatas[userConfig.Path] = syncData
-	if sdErr := persistSyncData(store, "google", syncData); sdErr != nil {
-		return sdErr
 	}
 
 	pageToken := ""

@@ -155,6 +155,22 @@ func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages in
 		log.Println("Warning: called Sync() while already syncing")
 	}
 
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
+
+	syncData := &ServiceSyncData{
+		UserConfigPath: userConfig.Path,
+		Started:        time.Now().UTC(),
+		PageMax:        maxPages,
+		Hashes:         map[string]string{},
+	}
+	svc.syncDatas[userConfig.Path] = syncData
+	if sdErr := persistSyncData(store, "instagram", syncData); sdErr != nil {
+		return sdErr
+	}
+
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
 	for svc.NeedsCredentials(userConfig) {
@@ -179,22 +195,6 @@ func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages in
 	client, err := oAuth2Client(userConfig, "instagram", instagram.Endpoint, nil)
 	if err != nil {
 		return err
-	}
-
-	store, err := userConfig.GetMultiStore()
-	if err != nil {
-		return err
-	}
-
-	syncData := &ServiceSyncData{
-		UserConfigPath: userConfig.Path,
-		Started:        time.Now().UTC(),
-		PageMax:        maxPages,
-		Hashes:         map[string]string{},
-	}
-	svc.syncDatas[userConfig.Path] = syncData
-	if sdErr := persistSyncData(store, "instagram", syncData); sdErr != nil {
-		return sdErr
 	}
 
 	maxID := ""

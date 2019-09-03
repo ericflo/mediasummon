@@ -167,9 +167,25 @@ func (svc *facebookService) Sync(userConfig *userconfig.UserConfig, maxPages int
 		log.Println("Warning: called Sync() while already syncing")
 	}
 
+	store, err := userConfig.GetMultiStore()
+	if err != nil {
+		return err
+	}
+
+	syncData := &ServiceSyncData{
+		UserConfigPath: userConfig.Path,
+		Started:        time.Now().UTC(),
+		PageMax:        maxPages,
+		Hashes:         map[string]string{},
+	}
+	svc.syncDatas[userConfig.Path] = syncData
+	if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
+		return sdErr
+	}
+
 	// Wait until we have a client set up, requesting credentials if needed
 	hasRequested := false
-	if svc.NeedsCredentials(userConfig) {
+	for svc.NeedsCredentials(userConfig) {
 		if !hasRequested {
 			redir, err := svc.CredentialRedirectURL(userConfig)
 			if err != nil {
@@ -187,22 +203,6 @@ func (svc *facebookService) Sync(userConfig *userconfig.UserConfig, maxPages int
 	client, err := oAuth2Client(userConfig, "facebook", facebook.Endpoint, facebookScopes)
 	if err != nil {
 		return err
-	}
-
-	store, err := userConfig.GetMultiStore()
-	if err != nil {
-		return err
-	}
-
-	syncData := &ServiceSyncData{
-		UserConfigPath: userConfig.Path,
-		Started:        time.Now().UTC(),
-		PageMax:        maxPages,
-		Hashes:         map[string]string{},
-	}
-	svc.syncDatas[userConfig.Path] = syncData
-	if sdErr := persistSyncData(store, "facebook", syncData); sdErr != nil {
-		return sdErr
 	}
 
 	nextURL := ""
