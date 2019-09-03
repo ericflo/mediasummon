@@ -1,12 +1,15 @@
 import '../node_modules/uikit/dist/css/uikit.min.css';
 import { useState, useEffect, useCallback } from 'react';
 import { ensureInstalled } from '../setup';
+import { loadAuthToken } from '../fetchers/common';
 import { fetchServices } from '../fetchers/services';
 import { fetchTargets, fetchTargetRemove } from '../fetchers/targets';
+import { fetchCurrentUserConfig } from '../fetchers/userconfig';
 import ServiceSummary from '../components/ServiceSummary';
 import TargetSummary from '../components/TargetSummary';
 import AddTargetModal from '../components/AddTargetModal';
 import Header from '../components/Header';
+import Router from 'next/router';
 
 async function handleTargetRemoveClick(target, targets, setTargets, setErrorMessage) {
   const UIKit = require('uikit');
@@ -24,9 +27,9 @@ async function handleTargetRemoveClick(target, targets, setTargets, setErrorMess
   return false;
 }
 
-async function fullSetup(setServices, setTargets, setErrorMessage) {
-  ensureInstalled();
+async function fullSetup(token, setServices, setTargets, setErrorMessage) {
   try {
+    ensureInstalled(token);
     setServices(await fetchServices());
     setTargets(await fetchTargets());
   } catch (err) {
@@ -42,20 +45,45 @@ async function updateServices(setServices, setErrorMessage) {
   }
 }
 
+function useRequiredUserConfig() {
+  const [state, setState] = useState({userConfig: undefined, token: undefined});
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const token = await loadAuthToken();
+        const userConfig = await fetchCurrentUserConfig();
+        setState({userConfig, token});
+      } catch (err) {
+        Router.push('/login');
+      }
+    }
+    fetchConfig();
+  }, []);
+  return state;
+}
+
 export default function Home() {
   const [services, setServices] = useState([]);
   const [targets, setTargets] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
+  const {userConfig, token} = useRequiredUserConfig();
+
   useEffect(() => {
-    fullSetup(setServices, setTargets, setErrorMessage);
-  }, [isAdding]);
+    if (userConfig === undefined) {
+      return;
+    }
+    fullSetup(token, setServices, setTargets, setErrorMessage);
+  }, [userConfig, token, isAdding]);
   useEffect(() => {
+    if (userConfig === undefined) {
+      return;
+    }
     const timer = setInterval(() => {
       updateServices(setServices, setErrorMessage);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [userConfig]);
   const removeTargetClickCallback = useCallback(target => {
     handleTargetRemoveClick(target, targets, setTargets, setErrorMessage);
   }, [targets]);

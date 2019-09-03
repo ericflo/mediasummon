@@ -8,12 +8,15 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/csrf"
 	"github.com/rs/cors"
 	"maxint.co/mediasummon/services"
 	"maxint.co/mediasummon/userconfig"
 )
+
+const defaultAdminPath = "admin"
 
 type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
@@ -38,8 +41,8 @@ func RunAdmin() {
 	var adminPath string
 	flag.StringVar(&configPath, "config", userconfig.DefaultUserConfigPath, "path to config file")
 	flag.StringVar(&configPath, "c", userconfig.DefaultUserConfigPath, "path to config file [shorthand]")
-	flag.StringVar(&adminPath, "admin", userconfig.DefaultUserConfigPath, "path to admin site files")
-	flag.StringVar(&adminPath, "a", userconfig.DefaultUserConfigPath, "path to admin site files [shorthand]")
+	flag.StringVar(&adminPath, "admin", defaultAdminPath, "path to admin site files")
+	flag.StringVar(&adminPath, "a", defaultAdminPath, "path to admin site files [shorthand]")
 	flag.Parse()
 
 	serviceConfig := services.NewServiceConfig()
@@ -76,11 +79,12 @@ func RunAdmin() {
 func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	mux.Handle("/", CSRFHandler(http.FileServer(http.Dir(filepath.Join(adminPath, "out")))))
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
-	mux.HandleFunc("/resources/services.json", wrapHandler(handleAdminServices, serviceConfig))
-	mux.HandleFunc("/resources/service/sync.json", wrapHandler(handleAdminServiceSync, serviceConfig))
-	mux.HandleFunc("/resources/targets.json", wrapHandler(handleAdminTargets, serviceConfig))
-	mux.HandleFunc("/resources/target/remove.json", wrapHandler(handleAdminTargetRemove, serviceConfig))
-	mux.HandleFunc("/resources/target/add.json", wrapHandler(handleAdminTargetAdd, serviceConfig))
+	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
+	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))
+	mux.HandleFunc("/resources/service/sync.json", wrapHandler(authRequired(handleAdminServiceSync), serviceConfig))
+	mux.HandleFunc("/resources/targets.json", wrapHandler(authRequired(handleAdminTargets), serviceConfig))
+	mux.HandleFunc("/resources/target/remove.json", wrapHandler(authRequired(handleAdminTargetRemove), serviceConfig))
+	mux.HandleFunc("/resources/target/add.json", wrapHandler(authRequired(handleAdminTargetAdd), serviceConfig))
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -109,9 +113,32 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 }
 
 func wrapHandler(handler handlerFunc, serviceConfig *services.ServiceConfig) http.HandlerFunc {
-	var user *userconfig.UserConfig
 	return func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r, user, serviceConfig)
+		var token string
+		if tokens, ok := r.Header["Authorization"]; ok && len(tokens) >= 1 {
+			token = strings.TrimPrefix(tokens[0], "Bearer ")
+		}
+		var userConfig *userconfig.UserConfig
+		if token != "" {
+			// TODO: This should be put in a hmac or something and verified rather than trusted
+			userConfigPath := token
+			if conf, err := userconfig.LoadUserConfig(userConfigPath); err != nil {
+				log.Println("Error loading user config", userConfigPath, err)
+			} else {
+				userConfig = conf
+			}
+		}
+		handler(w, r, userConfig, serviceConfig)
+	}
+}
+
+func authRequired(handler handlerFunc) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+		if userConfig == nil {
+			renderAuthFailure(w, r)
+			return
+		}
+		handler(w, r, userConfig, serviceConfig)
 	}
 }
 
@@ -157,7 +184,6 @@ func renderAuthFailure(w http.ResponseWriter, r *http.Request) {
 }
 
 // makeLoginHandler makes a login handler which handles http requests for auth
-
 func makeLoginHandler(userConfigs []*userconfig.UserConfig) http.HandlerFunc {
 	paths := make(map[string]string, len(userConfigs))
 	for _, config := range userConfigs {
@@ -188,8 +214,12 @@ func makeLoginHandler(userConfigs []*userconfig.UserConfig) http.HandlerFunc {
 		renderJSON(w, map[string]string{
 			"token": userConfig.Path,
 		})
-		renderStatusOK(w)
 	}
+}
+
+// handleAdminUserConfig handles http requests for the requesting user's config
+func handleAdminUserConfig(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	renderJSON(w, userConfig)
 }
 
 // handleAdminServices handles http requests for the service map

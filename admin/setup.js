@@ -3,7 +3,7 @@ import config from './config';
 var installed = false;
 var installedCSRF = null;
 
-export function ensureInstalled() {
+export function ensureInstalled(token) {
   if (installed) {
     return;
   }
@@ -21,7 +21,10 @@ export function ensureInstalled() {
   req.addEventListener('load', function() {
     installedCSRF = req.getResponseHeader('x-csrf-token');
   });
-  req.open('HEAD', config.apiPrefix, true);
+  req.open('GET', config.apiPrefix, true);
+  if (token) {
+    req.setRequestHeader("Authorization", "Bearer " + token);
+  }
   req.send(null);
 
   installed = true;

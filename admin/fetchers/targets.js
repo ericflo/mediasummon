@@ -1,10 +1,13 @@
 import httpFetch from '../fetch';
 import config from '../config';
 import { getInstalledCSRF } from '../setup';
+import { throwMessageFromJSONError, withAuthHeaders } from './common';
 
 export async function fetchTargets() {
   try {
-    const result = await httpFetch(config.apiPrefix + '/resources/targets.json');
+    const result = await httpFetch(config.apiPrefix + '/resources/targets.json', {
+      headers: withAuthHeaders({'Content-Type': 'application/json'}),
+    });
     if (result.ok) {
       const targets = await result.json();
       for (let i = 0; i < targets.length; ++i) {
@@ -15,7 +18,7 @@ export async function fetchTargets() {
       }
       return targets
     } else {
-      throw 'Completed fetch but got bad status from resource: ' + result.status;
+      await throwMessageFromJSONError(result);
     }
   } catch (err) {
     throw 'Could not complete fetch: ' + err;
@@ -28,25 +31,14 @@ async function fetchTargetOperation(operation, url) {
   try {
     resp = await httpFetch(apiURL, {
       method: 'POST',
-      headers: {
+      headers: withAuthHeaders({
         'Content-Type': 'application/json',
         'X-CSRF-Token': getInstalledCSRF(),
-      },
+      }),
       credentials: 'include',
     });
     if (!resp.ok) {
-      var errorToThrow = null;
-      try {
-        const errJson = await resp.json();
-        if (errJson.error) {
-          errorToThrow = errJson.error;
-        } else {
-          errorToThrow = 'Completed fetch but got error from resource: ' + errJson;
-        }
-      } catch (err) {
-        throw 'Completed fetch but got bad status from resource: ' + resp.status + ' (' + err + ')';
-      }
-      throw errorToThrow;
+      await throwMessageFromJSONError(resp);
     }
   } catch (err) {
     throw 'Could not complete fetch: ' + err;
