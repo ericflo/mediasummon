@@ -70,11 +70,3 @@ func serviceOptions() []string {
 	}
 	return serviceOptionList
 }
-
-// sortedProtocols returns a sorted list of supported protocols
-func sortedProtocols(serviceConfig *services.ServiceConfig) []string {
-	// TODO: whitelist/blacklist using a new property we introduce in serviceConfig?
-	protocols := []string{"file", "s3"}
-	sort.Strings(protocols)
-	return protocols
-}
