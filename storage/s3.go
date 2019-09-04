@@ -71,7 +71,7 @@ func (store *s3Storage) Protocol() string {
 
 // Exists returns true if the path refers to a file that exists on S3
 func (store *s3Storage) Exists(path string) (bool, error) {
-	key := filepath.Join(store.directory, path)
+	key := normalizePath(filepath.Join(store.directory, path))
 	_, err := store.svc.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(store.bucketName),
 		Key:    aws.String(key),
@@ -94,7 +94,7 @@ func (store *s3Storage) Exists(path string) (bool, error) {
 // the current time in it. When S3 is listing keys, it will see this one and know the directory exists,
 // but we will otherwise ignore the file.
 func (store *s3Storage) EnsureDirectoryExists(path string) error {
-	fullPath := filepath.Join(store.directory, path)
+	fullPath := normalizePath(filepath.Join(store.directory, path))
 	if !strings.HasSuffix(fullPath, "/") {
 		fullPath += "/"
 	}
@@ -147,7 +147,7 @@ func (store *s3Storage) DownloadFromURL(url, path string) (string, error) {
 	}
 	_, err = store.uploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(store.bucketName),
-		Key:         aws.String(filepath.Join(store.directory, path)),
+		Key:         aws.String(normalizePath(filepath.Join(store.directory, path))),
 		Body:        tmpFile,
 		ContentType: aws.String(contentType),
 	})
@@ -166,7 +166,7 @@ func (store *s3Storage) DownloadFromURL(url, path string) (string, error) {
 func (store *s3Storage) ReadBlob(path string) ([]byte, error) {
 	objOut, err := store.svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(store.bucketName),
-		Key:    aws.String(filepath.Join(store.directory, path)),
+		Key:    aws.String(normalizePath(filepath.Join(store.directory, path))),
 	})
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (store *s3Storage) ReadBlob(path string) ([]byte, error) {
 func (store *s3Storage) WriteBlob(path string, blob []byte) error {
 	_, err := store.uploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(store.bucketName),
-		Key:         aws.String(filepath.Join(store.directory, path)),
+		Key:         aws.String(normalizePath(filepath.Join(store.directory, path))),
 		Body:        bytes.NewBuffer(blob),
 		ContentType: aws.String("application/octet-stream"),
 	})
@@ -187,10 +187,14 @@ func (store *s3Storage) WriteBlob(path string, blob []byte) error {
 
 // ListDirectoryFiles lists the names of all the files contained in a directory
 func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
+	prefix := normalizePath(filepath.Join(store.directory, path))
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
 	objOut, err := store.svc.ListObjects(&s3.ListObjectsInput{
 		Bucket:    aws.String(store.bucketName),
 		Delimiter: aws.String("/"),
-		Prefix:    aws.String(filepath.Join(store.directory, path)),
+		Prefix:    aws.String(prefix),
 	})
 	if err != nil {
 		return nil, err
@@ -204,4 +208,11 @@ func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
 		resp = append(resp, filename)
 	}
 	return resp, nil
+}
+
+func normalizePath(pth string) string {
+	if os.PathSeparator == '\\' {
+		return strings.ReplaceAll(pth, "\\", "/")
+	}
+	return pth
 }
