@@ -25,13 +25,19 @@ import (
 
 type s3Storage struct {
 	storageConfig *Config
+	bucketName    string
 	directory     string
 	svc           *s3.S3
 	uploader      *s3manager.Uploader
 }
 
 // NewS3Storage creates a new storage interface that can talk to S3
-func NewS3Storage(storageConfig *Config, directory string) (Storage, error) {
+func NewS3Storage(storageConfig *Config, fullPath string) (Storage, error) {
+	splitPath := strings.Split(fullPath, "/")
+	if len(splitPath) == 0 {
+		return nil, fmt.Errorf("Your bucket cannot be empty: %v", fullPath)
+	}
+	bucketName := splitPath[0]
 	svc := s3.New(session.New(&aws.Config{
 		Region: aws.String(storageConfig.S3.Region),
 		Credentials: credentials.NewStaticCredentials(
@@ -42,7 +48,8 @@ func NewS3Storage(storageConfig *Config, directory string) (Storage, error) {
 	}))
 	return &s3Storage{
 		storageConfig: storageConfig,
-		directory:     directory,
+		bucketName:    bucketName,
+		directory:     strings.Join(splitPath[1:], "/"),
 		svc:           svc,
 		uploader:      s3manager.NewUploaderWithClient(svc),
 	}, nil
@@ -50,7 +57,11 @@ func NewS3Storage(storageConfig *Config, directory string) (Storage, error) {
 
 // URL returns the string of the url to this storage interface
 func (store *s3Storage) URL() string {
-	return NormalizeStorageURL("s3://" + store.directory)
+	ret := "s3://" + store.bucketName
+	if store.directory != "" {
+		ret += "/" + store.directory
+	}
+	return NormalizeStorageURL(ret)
 }
 
 // Protocol returns the protocol of the url to this storage interface
@@ -62,7 +73,7 @@ func (store *s3Storage) Protocol() string {
 func (store *s3Storage) Exists(path string) (bool, error) {
 	key := filepath.Join(store.directory, path)
 	_, err := store.svc.HeadObject(&s3.HeadObjectInput{
-		Bucket: aws.String(store.storageConfig.S3.Bucket),
+		Bucket: aws.String(store.bucketName),
 		Key:    aws.String(key),
 	})
 	if err == nil {
@@ -135,7 +146,7 @@ func (store *s3Storage) DownloadFromURL(url, path string) (string, error) {
 		contentType = "image/jpeg"
 	}
 	_, err = store.uploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(store.storageConfig.S3.Bucket),
+		Bucket:      aws.String(store.bucketName),
 		Key:         aws.String(filepath.Join(store.directory, path)),
 		Body:        tmpFile,
 		ContentType: aws.String(contentType),
@@ -154,7 +165,7 @@ func (store *s3Storage) DownloadFromURL(url, path string) (string, error) {
 // ReadBlob reads the S3 blob at the given path into memory and returns it as a slice of bytes
 func (store *s3Storage) ReadBlob(path string) ([]byte, error) {
 	objOut, err := store.svc.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(store.storageConfig.S3.Bucket),
+		Bucket: aws.String(store.bucketName),
 		Key:    aws.String(filepath.Join(store.directory, path)),
 	})
 	if err != nil {
@@ -166,7 +177,7 @@ func (store *s3Storage) ReadBlob(path string) ([]byte, error) {
 // WriteBlob takes the given slice of bytes and writes it to the given path
 func (store *s3Storage) WriteBlob(path string, blob []byte) error {
 	_, err := store.uploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(store.storageConfig.S3.Bucket),
+		Bucket:      aws.String(store.bucketName),
 		Key:         aws.String(filepath.Join(store.directory, path)),
 		Body:        bytes.NewBuffer(blob),
 		ContentType: aws.String("application/octet-stream"),
@@ -177,7 +188,7 @@ func (store *s3Storage) WriteBlob(path string, blob []byte) error {
 // ListDirectoryFiles lists the names of all the files contained in a directory
 func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
 	objOut, err := store.svc.ListObjects(&s3.ListObjectsInput{
-		Bucket:    aws.String(store.storageConfig.S3.Bucket),
+		Bucket:    aws.String(store.bucketName),
 		Delimiter: aws.String("/"),
 		Prefix:    aws.String(filepath.Join(store.directory, path)),
 	})

@@ -34,7 +34,7 @@ func NewStorageSingle(storageConfig *Config, url string) (Storage, error) {
 	}
 	switch parsedURL.Scheme {
 	case "s3":
-		return NewS3Storage(storageConfig, parsedURL.Path)
+		return NewS3Storage(storageConfig, parsedURL.Host+parsedURL.Path)
 	case "file":
 		if len(parsedURL.Path) == 0 {
 			return nil, fmt.Errorf("Invalid URL: %v", url)
@@ -124,5 +124,5 @@ func NormalizeStorageURL(orig string) string {
 		return "file:///" + orig
 	}
 
-	return parsedURL.Scheme + "://" + parsedURL.Path
+	return parsedURL.Scheme + "://" + parsedURL.Host + parsedURL.Path
 }

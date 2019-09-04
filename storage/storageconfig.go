@@ -2,7 +2,6 @@ package storage
 
 // ConfigS3 is a struct that can configure an S3 storage interface
 type ConfigS3 struct {
-	Bucket             string `json:"bucket"`
 	Region             string `json:"region"`
 	AWSAccessKeyID     string `json:"aws_access_key_id"`
 	AWSSecretAccessKey string `json:"aws_secret_access_key"`

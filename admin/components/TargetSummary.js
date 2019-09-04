@@ -11,7 +11,10 @@ export default function TargetSummary({target, onRemoveClick}) {
       <div className="uk-card-header">
         <div className="uk-grid-small uk-flex-middle" uk-grid="true">
           <div className="uk-width-auto">
-            <span className="uk-border" uk-icon="icon: folder; ratio: 2" />
+            {target.kind === 'file' ?
+              <span className="uk-border" uk-icon="icon: folder; ratio: 2" /> :
+              <img width="40" height="40" className="uk-border" src="/static/images/logo-dropbox.png" alt="Dropbox logo" />}
+            
           </div>
           <div className="uk-width-expand">
             <h3 className="uk-card-title uk-margin-remove-bottom uk-text-middle">{target.path}</h3>

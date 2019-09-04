@@ -14,7 +14,7 @@ export async function fetchTargets() {
         const target = targets[i];
         const split = target.url.split('://');
         target.kind = split[0];
-        target.path = decodeURIComponent(split[1].substring(1));
+        target.path = decodeURIComponent(target.kind === 'file' ? split[1].substring(1) :  split[1]);
       }
       return targets
     } else {

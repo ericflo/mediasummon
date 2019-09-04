@@ -31,6 +31,20 @@ function nameForProtocol(protocol) {
   return 'Unknown';
 }
 
+function placeholderForProtocol(protocol) {
+  switch (protocol) {
+    case 'file':
+      return '/path/to/your/media/directory';
+    case 'gdrive':
+      return 'Google Drive Directory';
+    case 'dropbox':
+      return 'Dropbox Directory';
+    case 's3':
+      return 'bucketname';
+    }
+    return 'Unknown';
+}
+
 export default function AddTargetModal({ enabled, setIsAdding }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selfVal, setSelfVal] = useState(null);
@@ -88,17 +102,17 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
               <input className="uk-input uk-width-auto" type="text" placeholder={nameForProtocol(protocol)} />
               <select className="uk-select" onChange={protocolChangeCallback} value={protocol}>
                 <option value="file">{nameForProtocol('file')}</option>
+                <option value="s3">{nameForProtocol('s3')}</option>
                 {/*
                 <option value="gdrive">{nameForProtocol('gdrive')}</option>
                 <option value="dropbox">{nameForProtocol('dropbox')}</option>
-                <option value="s3">{nameForProtocol('s3')}</option>
                 */}
               </select>
             </span>
             <input
               type="text"
               className="uk-input uk-width-expand" 
-              placeholder="/path/to/your/media/directory"
+              placeholder={placeholderForProtocol(protocol)}
               onChange={pathValueChangeCallback}
               value={pathVal} />
           </form>
