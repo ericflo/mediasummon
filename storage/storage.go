@@ -3,7 +3,6 @@ package storage
 import (
 	"fmt"
 	"log"
-	"net/url"
 	netURL "net/url"
 	"path/filepath"
 	"strings"
@@ -125,10 +124,5 @@ func NormalizeStorageURL(orig string) string {
 		return "file:///" + orig
 	}
 
-	unescaped, err := url.PathUnescape(parsedURL.String())
-	if err != nil {
-		log.Println("Failed to normalize url - could not unescape final url:", parsedURL.String(), err)
-		return parsedURL.String()
-	}
-	return unescaped
+	return parsedURL.Scheme + "://" + parsedURL.Path
 }

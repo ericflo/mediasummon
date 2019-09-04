@@ -88,12 +88,7 @@ func runTargetPreamble(configPath string) (*userconfig.UserConfig, error) {
 
 func printTargetList(userConfig *userconfig.UserConfig) {
 	for i, target := range userConfig.Targets {
-		unescaped, err := url.PathUnescape(storage.NormalizeStorageURL(target))
-		if err != nil {
-			log.Printf("%d) %s {error: %v}", i+1, target, err)
-		} else {
-			log.Printf("%d) %s", i+1, unescaped)
-		}
+		log.Printf("%d) %s", i+1, target)
 	}
 }
 
@@ -105,7 +100,7 @@ func fullyNormalizeTarget(userConfig *userconfig.UserConfig, target string) (str
 	parsedURL, err := url.Parse(target)
 	if err != nil {
 		return target, err
-	} else if parsedURL.Path == "" || (parsedURL.Scheme == "file" && parsedURL.Path == "/") {
+	} else if parsedURL.Scheme == "file" && parsedURL.Path == "/" {
 		return target, fmt.Errorf("Invalid target URL: must have a path. (%v)", target)
 	}
 
