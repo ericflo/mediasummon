@@ -97,7 +97,7 @@ func printTargetList(userConfig *userconfig.UserConfig) {
 	}
 }
 
-func fullyNormalizeTarget(target string) (string, error) {
+func fullyNormalizeTarget(userConfig *userconfig.UserConfig, target string) (string, error) {
 	// First we normalize our new target into a full URL with scheme prefix and everything
 	target = storage.NormalizeStorageURL(target)
 
@@ -110,7 +110,7 @@ func fullyNormalizeTarget(target string) (string, error) {
 	}
 
 	// Now we actually instantiate a storage engine based on it to make sure it doesn't error out
-	store, err := storage.NewStorageSingle(target)
+	store, err := storage.NewStorageSingle(userConfig.StorageConfig, target)
 	if err != nil {
 		return target, fmt.Errorf("Invalid sync target %v", err)
 	}
@@ -119,7 +119,7 @@ func fullyNormalizeTarget(target string) (string, error) {
 }
 
 func addTarget(userConfig *userconfig.UserConfig, target string) error {
-	target, err := fullyNormalizeTarget(target)
+	target, err := fullyNormalizeTarget(userConfig, target)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func addTarget(userConfig *userconfig.UserConfig, target string) error {
 }
 
 func removeTarget(userConfig *userconfig.UserConfig, target string) error {
-	target, err := fullyNormalizeTarget(target)
+	target, err := fullyNormalizeTarget(userConfig, target)
 	if err != nil {
 		return err
 	}

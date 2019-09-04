@@ -22,7 +22,7 @@ type fileStorage struct {
 }
 
 // NewFileStorage creates a new storage interface that can talk to the local filesystems
-func NewFileStorage(directory string) (Storage, error) {
+func NewFileStorage(storageConfig *Config, directory string) (Storage, error) {
 	fullDir, err := filepath.Abs(directory)
 	if err != nil {
 		return nil, err
@@ -40,6 +40,11 @@ func NewFileStorage(directory string) (Storage, error) {
 // URL returns the string of the url to this storage interface
 func (store *fileStorage) URL() string {
 	return NormalizeStorageURL("file:///" + store.directory)
+}
+
+// Protocol returns the protocol of the url to this storage interface
+func (store *fileStorage) Protocol() string {
+	return "file"
 }
 
 // Exists returns true if the path refers to a file that exists on the local filesystem

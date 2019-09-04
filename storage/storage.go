@@ -16,6 +16,7 @@ var filePrefixes = []string{".", "./", "/"}
 // Storage represents a a method of storing and retrieving data
 type Storage interface {
 	URL() string
+	Protocol() string
 	Exists(path string) (bool, error)
 	EnsureDirectoryExists(path string) error
 	DownloadFromURL(url, path string) (string, error)
@@ -26,31 +27,29 @@ type Storage interface {
 
 // NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,
 // which is to take in a slice of urls and return a Multi storage interface)
-func NewStorageSingle(url string) (Storage, error) {
+func NewStorageSingle(storageConfig *Config, url string) (Storage, error) {
 	normalized := NormalizeStorageURL(url)
 	parsedURL, err := netURL.Parse(normalized)
 	if err != nil {
 		return nil, err
 	}
 	switch parsedURL.Scheme {
+	case "s3":
+		return NewS3Storage(storageConfig, parsedURL.Path)
 	case "file":
 		if len(parsedURL.Path) == 0 {
 			return nil, fmt.Errorf("Invalid URL: %v", url)
 		}
-		store, err := NewFileStorage(parsedURL.Path[1:])
-		if err != nil {
-			return nil, err
-		}
-		return store, nil
+		return NewFileStorage(storageConfig, parsedURL.Path[1:])
 	}
 	return nil, fmt.Errorf("Could not load storage for scheme: %v (%v) ((%v))", parsedURL.Scheme, url, normalized)
 }
 
 // NewStorage takes the given URLs and returns the appropriate configured storage interface
-func NewStorage(urls []string) (*Multi, error) {
+func NewStorage(storageConfig *Config, urls []string) (*Multi, error) {
 	stores := []Storage{}
 	for _, url := range urls {
-		store, err := NewStorageSingle(url)
+		store, err := NewStorageSingle(storageConfig, url)
 		if err != nil {
 			return nil, err
 		}

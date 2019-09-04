@@ -381,7 +381,7 @@ func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *us
 		renderJSONErrorMessage(w, "Could not add sync target: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err = store.AddTarget(urlString); err != nil {
+	if err = store.AddTarget(userConfig.StorageConfig, urlString); err != nil {
 		renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

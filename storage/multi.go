@@ -27,6 +27,11 @@ func (m *Multi) URL() string {
 	return ""
 }
 
+// Protocol returns the protocol of the url to this storage interface
+func (m *Multi) Protocol() string {
+	return "multi"
+}
+
 func (m *Multi) clippedQuorumCount() int {
 	if m.quorum == 0 {
 		m.quorum = 1
@@ -230,8 +235,8 @@ func (m *Multi) RemoveTarget(urlStr string) error {
 }
 
 // AddTarget adds a target to the current set of stores
-func (m *Multi) AddTarget(urlStr string) error {
-	store, err := NewStorageSingle(urlStr)
+func (m *Multi) AddTarget(storageConfig *Config, urlStr string) error {
+	store, err := NewStorageSingle(storageConfig, urlStr)
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,8 @@ type UserConfig struct {
 	FrontendURL string `json:"frontend_url"`
 
 	Secrets map[string]map[string]string `json:"secrets"`
+
+	StorageConfig *storage.Config `json:"storage_config"`
 }
 
 // NewUserConfig takes a list of service names and returns a new default user config
@@ -64,16 +66,17 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 		configPath = absPath
 	}
 	return &UserConfig{
-		Path:         configPath,
-		Username:     "mediasummon",
-		PasswordHash: "$2a$12$J0mZDHUs36dP7Chh5juN8OMp0Fe5I4y1ZTbuuBR4aeJx4pIdsJBDm", // Default password is 'admin'
-		Role:         constants.DefaultUserRole,
-		TimeCreated:  time.Now().UTC(),
-		Targets:      []string{storage.NormalizeStorageURL("~/mediasummon")},
-		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-		FrontendURL:  fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
-		HoursPerSync: hps,
-		Secrets:      secrets,
+		Path:          configPath,
+		Username:      "mediasummon",
+		PasswordHash:  "$2a$12$J0mZDHUs36dP7Chh5juN8OMp0Fe5I4y1ZTbuuBR4aeJx4pIdsJBDm", // Default password is 'admin'
+		Role:          constants.DefaultUserRole,
+		TimeCreated:   time.Now().UTC(),
+		Targets:       []string{storage.NormalizeStorageURL("~/mediasummon")},
+		Format:        strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
+		FrontendURL:   fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
+		HoursPerSync:  hps,
+		Secrets:       secrets,
+		StorageConfig: storage.NewConfig(),
 	}
 }
 
@@ -176,7 +179,7 @@ func (uc *UserConfig) GetMultiStore() (*storage.Multi, error) {
 	if store != nil {
 		return store, nil
 	}
-	store, err := storage.NewStorage(uc.Targets)
+	store, err := storage.NewStorage(uc.StorageConfig, uc.Targets)
 	if err != nil || store == nil {
 		return nil, fmt.Errorf("Could not initialize storage driver: %v", err)
 	}
