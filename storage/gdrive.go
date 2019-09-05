@@ -1,30 +1,28 @@
 package storage
 
 import (
-	"encoding/json"
 	"errors"
+	"log"
 	"time"
 
-	"golang.org/x/oauth2"
 	"maxint.co/mediasummon/userconfig"
 )
 
 type gdriveStorage struct {
-	storageConfig *Config
-	directory     string
+	userConfig *userconfig.UserConfig
+	directory  string
 }
 
 // NewGDriveStorage creates a new storage interface that can talk to Google Drive
 func NewGDriveStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
-	storageConfig := ConfigFromSecrets(userConfig.Secrets)
-	var tok *oauth2.Token
-	err := json.Unmarshal([]byte(storageConfig.GDrive.Token), &tok)
+	tok, err := loadOAuthData(userConfig, "gdrive")
 	if err != nil {
 		return nil, err
 	}
+	log.Println("Token", tok)
 	store := &gdriveStorage{
-		storageConfig: storageConfig,
-		directory:     directory,
+		userConfig: userConfig,
+		directory:  directory,
 	}
 	return store, nil
 }
@@ -82,17 +80,13 @@ func (store *gdriveStorage) ListDirectoryFiles(path string) ([]string, error) {
 
 // NeedsCredentials returns an error if it needs credentials, nil if it does not
 func (store *gdriveStorage) NeedsCredentials() error {
-	cID := secretOrEnv(store.storageConfig.GDrive.ClientID, "GDRIVE_CLIENT_ID")
-	cSecret := secretOrEnv(store.storageConfig.GDrive.ClientSecret, "GDRIVE_CLIENT_SECRET")
+	cID, _ := store.userConfig.GetSecret("gdrive", "client_id")
+	cSecret, _ := store.userConfig.GetSecret("gdrive", "client_secret")
 	if cID == "" || cSecret == "" {
-		return ErrNeedSecrets
+		return userconfig.ErrNeedSecrets
 	}
-	var tok *oauth2.Token
-	err := json.Unmarshal([]byte(store.storageConfig.GDrive.Token), &tok)
-	if err != nil {
-		return ErrNeedAuth
-	}
-	if tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+	tok, err := loadOAuthData(store.userConfig, "gdrive")
+	if err != nil || tok == nil || tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
 		return ErrNeedAuth
 	}
 	return nil

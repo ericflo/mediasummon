@@ -90,6 +90,9 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	mux.HandleFunc("/resources/targets.json", wrapHandler(authRequired(handleAdminTargets), serviceConfig))
 	mux.HandleFunc("/resources/target/remove.json", wrapHandler(authRequired(handleAdminTargetRemove), serviceConfig))
 	mux.HandleFunc("/resources/target/add.json", wrapHandler(authRequired(handleAdminTargetAdd), serviceConfig))
+	for path, handler := range storage.HTTPHandlers() {
+		mux.Handle(path, handler)
+	}
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -267,7 +270,7 @@ func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *use
 		redir, err := svc.CredentialRedirectURL(userConfig)
 		needsApp := false
 		if err != nil {
-			if err == services.ErrNeedSecrets {
+			if err == userconfig.ErrNeedSecrets {
 				needsApp = true
 				redir = ""
 			} else {

@@ -15,6 +15,9 @@ import (
 	"maxint.co/mediasummon/constants"
 )
 
+// ErrNeedSecrets is the error returned when we can't find secret
+var ErrNeedSecrets = errors.New("Could not find secret")
+
 // bCryptCost is the computational cost of the bcrypt algorithm
 const bCryptCost = 12
 
@@ -156,4 +159,26 @@ func (uc *UserConfig) GetHoursPerSync(serviceName string) float32 {
 		return h
 	}
 	return constants.DefaultHoursPerSync
+}
+
+// GetSecret returns a secret value, or attempts to get a default from the environment using a default env name
+func (uc *UserConfig) GetSecret(name, key string) (string, error) {
+	return uc.GetSecretOrEnv(name, key, strings.ToUpper(fmt.Sprintf("%s_%s", name, key)))
+}
+
+// GetSecretOrEnv returns a secret value, or attempts to get a default from the environment
+func (uc *UserConfig) GetSecretOrEnv(name, key, env string) (secret string, err error) {
+	secrets, _ := uc.Secrets[name]
+	if secrets != nil {
+		if sec, exists := secrets[name]; exists {
+			secret = sec
+		}
+	}
+	if secret == "" {
+		secret = os.Getenv(env)
+	}
+	if secret == "" {
+		err = ErrNeedSecrets
+	}
+	return
 }

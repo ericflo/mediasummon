@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,13 +18,12 @@ import (
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/users"
-	"golang.org/x/oauth2"
 	"golang.org/x/sync/semaphore"
 	"maxint.co/mediasummon/userconfig"
 )
 
 type dropboxStorage struct {
-	storageConfig *Config
+	userConfig    *userconfig.UserConfig
 	directory     string
 	dropboxConfig dropbox.Config
 	usersClient   users.Client
@@ -35,9 +33,7 @@ type dropboxStorage struct {
 
 // NewDropboxStorage creates a new storage interface that can talk to Dropbox
 func NewDropboxStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
-	storageConfig := ConfigFromSecrets(userConfig.Secrets)
-	var tok *oauth2.Token
-	err := json.Unmarshal([]byte(storageConfig.Dropbox.Token), &tok)
+	tok, err := loadOAuthData(userConfig, "dropbox")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +42,7 @@ func NewDropboxStorage(userConfig *userconfig.UserConfig, directory string) (Sto
 		//LogLevel: dropbox.LogDebug,
 	}
 	store := &dropboxStorage{
-		storageConfig: storageConfig,
+		userConfig:    userConfig,
 		directory:     directory,
 		dropboxConfig: dropboxConfig,
 		usersClient:   users.New(dropboxConfig),
@@ -231,17 +227,13 @@ func (store *dropboxStorage) ListDirectoryFiles(path string) ([]string, error) {
 
 // NeedsCredentials returns an error if it needs credentials, nil if it does not
 func (store *dropboxStorage) NeedsCredentials() error {
-	cID := secretOrEnv(store.storageConfig.Dropbox.ClientID, "DROPBOX_CLIENT_ID")
-	cSecret := secretOrEnv(store.storageConfig.Dropbox.ClientSecret, "DROPBOX_CLIENT_SECRET")
+	cID, _ := store.userConfig.GetSecret("dropbox", "client_id")
+	cSecret, _ := store.userConfig.GetSecret("dropbox", "client_secret")
 	if cID == "" || cSecret == "" {
-		return ErrNeedSecrets
+		return userconfig.ErrNeedSecrets
 	}
-	var tok *oauth2.Token
-	err := json.Unmarshal([]byte(store.storageConfig.Dropbox.Token), &tok)
-	if err != nil {
-		return ErrNeedAuth
-	}
-	if tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+	tok, err := loadOAuthData(store.userConfig, "gdrive")
+	if err != nil || tok == nil || tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
 		return ErrNeedAuth
 	}
 	return nil

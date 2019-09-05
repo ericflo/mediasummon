@@ -25,35 +25,35 @@ import (
 )
 
 type s3Storage struct {
-	storageConfig *Config
-	bucketName    string
-	directory     string
-	svc           *s3.S3
-	uploader      *s3manager.Uploader
+	userConfig *userconfig.UserConfig
+	bucketName string
+	directory  string
+	svc        *s3.S3
+	uploader   *s3manager.Uploader
 }
 
 // NewS3Storage creates a new storage interface that can talk to S3
 func NewS3Storage(userConfig *userconfig.UserConfig, fullPath string) (Storage, error) {
-	storageConfig := ConfigFromSecrets(userConfig.Secrets)
 	splitPath := strings.Split(fullPath, "/")
 	if len(splitPath) == 0 {
 		return nil, fmt.Errorf("Your bucket cannot be empty: %v", fullPath)
 	}
 	bucketName := splitPath[0]
+
+	cID, _ := userConfig.GetSecretOrEnv("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
+	cSecret, _ := userConfig.GetSecretOrEnv("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
+	cRegion, _ := userConfig.GetSecretOrEnv("s3", "region", "AWS_DEFAULT_REGION")
+
 	svc := s3.New(session.New(&aws.Config{
-		Region: aws.String(storageConfig.S3.Region),
-		Credentials: credentials.NewStaticCredentials(
-			storageConfig.S3.AWSAccessKeyID,
-			storageConfig.S3.AWSSecretAccessKey,
-			"",
-		),
+		Region:      aws.String(cRegion),
+		Credentials: credentials.NewStaticCredentials(cID, cSecret, ""),
 	}))
 	return &s3Storage{
-		storageConfig: storageConfig,
-		bucketName:    bucketName,
-		directory:     strings.Join(splitPath[1:], "/"),
-		svc:           svc,
-		uploader:      s3manager.NewUploaderWithClient(svc),
+		userConfig: userConfig,
+		bucketName: bucketName,
+		directory:  strings.Join(splitPath[1:], "/"),
+		svc:        svc,
+		uploader:   s3manager.NewUploaderWithClient(svc),
 	}, nil
 }
 
@@ -214,11 +214,11 @@ func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
 
 // NeedsCredentials returns an error if it needs secrets, nil if it does not
 func (store *s3Storage) NeedsCredentials() error {
-	cID := secretOrEnv(store.storageConfig.S3.AWSAccessKeyID, "AWS_ACCESS_KEY_ID")
-	cSecret := secretOrEnv(store.storageConfig.S3.AWSSecretAccessKey, "AWS_SECRET_ACCESS_KEY")
-	cRegion := secretOrEnv(store.storageConfig.S3.Region, "AWS_DEFAULT_REGION")
+	cID, _ := store.userConfig.GetSecretOrEnv("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
+	cSecret, _ := store.userConfig.GetSecretOrEnv("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
+	cRegion, _ := store.userConfig.GetSecretOrEnv("s3", "region", "AWS_DEFAULT_REGION")
 	if cID == "" || cSecret == "" || cRegion == "" {
-		return ErrNeedSecrets
+		return userconfig.ErrNeedSecrets
 	}
 	return nil
 }

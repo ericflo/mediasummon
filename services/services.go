@@ -11,14 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/oauth2"
 	"gopkg.in/guregu/null.v3"
 	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
 )
-
-// ErrNeedSecrets is the error returned when we can't find secrets for a service
-var ErrNeedSecrets = errors.New("Could not find secrets for service")
 
 // ErrNeedAuthentication is the error returned when we can't build an oauth client from what we have saved
 var ErrNeedAuthentication = errors.New("We need permission to access this service on your behalf")
@@ -51,84 +47,6 @@ type ServiceMetadata struct {
 // displayErrorPage writes a basic text error message to the http response
 func displayErrorPage(w http.ResponseWriter, msg string) {
 	w.Write([]byte("Error: " + msg))
-}
-
-func saveOAuthData(userConfig *userconfig.UserConfig, serviceName string, tok *oauth2.Token) error {
-	secrets, _ := userConfig.Secrets[serviceName]
-	if secrets == nil {
-		secrets = map[string]string{}
-	}
-	encodedTok, err := json.Marshal(tok)
-	if err != nil {
-		return fmt.Errorf("Could not encode authentication token to save: %v", err)
-	}
-	secrets["token"] = string(encodedTok)
-	userConfig.Secrets[serviceName] = secrets
-	return userConfig.Save()
-}
-
-func loadOAuthData(userConfig *userconfig.UserConfig, serviceName string) (*oauth2.Token, error) {
-	secrets, _ := userConfig.Secrets[serviceName]
-	if secrets == nil {
-		return nil, nil
-	}
-	var tok *oauth2.Token
-	var err error
-	if encodedToken, exists := secrets["token"]; exists {
-		err = json.Unmarshal([]byte(encodedToken), &tok)
-	}
-	return tok, err
-}
-
-func getServiceAppSecret(userConfig *userconfig.UserConfig, serviceName, secretName, backup string) (secret string, err error) {
-	secrets, _ := userConfig.Secrets[serviceName]
-	if secrets != nil {
-		if sec, exists := secrets[secretName]; exists {
-			secret = sec
-		}
-	}
-	if secret == "" {
-		secret = os.Getenv(backup)
-	}
-	if secret == "" {
-		err = ErrNeedSecrets
-	}
-	return
-}
-
-func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
-	caps := strings.ToUpper(serviceName)
-	clientID, err := getServiceAppSecret(userConfig, serviceName, "client_id", caps+"_CLIENT_ID")
-	if err != nil {
-		return nil, err
-	}
-	clientSecret, err := getServiceAppSecret(userConfig, serviceName, "client_secret", caps+"_CLIENT_SECRET")
-	if err != nil {
-		return nil, err
-	}
-
-	return &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURL:  userConfig.FrontendURL + "/auth/" + serviceName + "/return",
-		Scopes:       scopes,
-		Endpoint:     endpoint,
-	}, nil
-}
-
-func oAuth2Client(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*http.Client, error) {
-	oauthConf, err := oAuth2Conf(userConfig, serviceName, endpoint, scopes)
-	if err != nil {
-		return nil, err
-	}
-	tok, err := loadOAuthData(userConfig, serviceName)
-	if err != nil {
-		return nil, err
-	}
-	if tok == nil {
-		return nil, ErrNeedAuthentication
-	}
-	return oauthConf.Client(oauth2.NoContext, tok), nil
 }
 
 func persistSyncData(store storage.Storage, serviceName string, syncData *ServiceSyncData) error {

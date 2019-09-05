@@ -15,9 +15,6 @@ import (
 
 var filePrefixes = []string{".", "./", "/"}
 
-// ErrNeedSecrets is the error returned when we can't find secrets for a storage interface
-var ErrNeedSecrets = errors.New("Could not find secrets for storage interface")
-
 // ErrNeedAuth is the error returned when we can't find authentication for a storage interface
 var ErrNeedAuth = errors.New("Could not find authentication for storage interface")
 
