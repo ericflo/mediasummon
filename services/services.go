@@ -62,7 +62,7 @@ func saveOAuthData(userConfig *userconfig.UserConfig, serviceName string, tok *o
 	if err != nil {
 		return fmt.Errorf("Could not encode authentication token to save: %v", err)
 	}
-	secrets["Token"] = string(encodedTok)
+	secrets["token"] = string(encodedTok)
 	userConfig.Secrets[serviceName] = secrets
 	return userConfig.Save()
 }
@@ -74,7 +74,7 @@ func loadOAuthData(userConfig *userconfig.UserConfig, serviceName string) (*oaut
 	}
 	var tok *oauth2.Token
 	var err error
-	if encodedToken, exists := secrets["Token"]; exists {
+	if encodedToken, exists := secrets["token"]; exists {
 		err = json.Unmarshal([]byte(encodedToken), &tok)
 	}
 	return tok, err
@@ -98,11 +98,11 @@ func getServiceAppSecret(userConfig *userconfig.UserConfig, serviceName, secretN
 
 func oAuth2Conf(userConfig *userconfig.UserConfig, serviceName string, endpoint oauth2.Endpoint, scopes []string) (*oauth2.Config, error) {
 	caps := strings.ToUpper(serviceName)
-	clientID, err := getServiceAppSecret(userConfig, serviceName, "ClientID", caps+"_CLIENT_ID")
+	clientID, err := getServiceAppSecret(userConfig, serviceName, "client_id", caps+"_CLIENT_ID")
 	if err != nil {
 		return nil, err
 	}
-	clientSecret, err := getServiceAppSecret(userConfig, serviceName, "ClientSecret", caps+"_CLIENT_SECRET")
+	clientSecret, err := getServiceAppSecret(userConfig, serviceName, "client_secret", caps+"_CLIENT_SECRET")
 	if err != nil {
 		return nil, err
 	}

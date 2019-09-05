@@ -242,8 +242,8 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 	if !exists {
 		secrets = map[string]string{}
 	}
-	secrets["ClientID"] = r.FormValue("client_id")
-	secrets["ClientSecret"] = r.FormValue("client_secret")
+	secrets["client_id"] = r.FormValue("client_id")
+	secrets["client_secret"] = r.FormValue("client_secret")
 	userConfig.Secrets[serviceID] = secrets
 
 	if err := userConfig.Save(); err != nil {

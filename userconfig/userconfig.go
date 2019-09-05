@@ -51,8 +51,8 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 		switch serviceName {
 		case "facebook", "google", "instagram":
 			secrets[serviceName] = map[string]string{
-				"ClientID":     "",
-				"ClientSecret": "",
+				"client_id":     "",
+				"client_secret": "",
 			}
 			break
 		default:
@@ -92,7 +92,6 @@ func LoadUserConfig(configPath string) (*UserConfig, error) {
 		// Normalize storage target urls after successful load
 		newTargets := make([]string, 0, len(config.Targets))
 		for _, target := range config.Targets {
-			log.Println("TARGET", target)
 			newTargets = append(newTargets, storage.NormalizeStorageURL(target))
 		}
 		config.Targets = newTargets
