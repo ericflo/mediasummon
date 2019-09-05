@@ -137,7 +137,7 @@ func persistSyncData(store storage.Storage, serviceName string, syncData *Servic
 		log.Printf("Error: Could not encode data to save: %v", err)
 		return fmt.Errorf("Could not encode data to save: %v", err)
 	}
-	datadir := filepath.Join(".meta", serviceName, "syncdata")
+	datadir := filepath.Join("metadata", serviceName, "syncdata")
 	if err = store.EnsureDirectoryExists(datadir); err != nil {
 		log.Printf("Error: Could not create syncdata directory: %v", err)
 		return fmt.Errorf("Could not create syncdata directory: %v", err)
@@ -172,7 +172,7 @@ func ListServiceSyncDataPaths(userConfig *userconfig.UserConfig, serviceName str
 	if err != nil {
 		return nil, nil, err
 	}
-	names, err := store.ListDirectoryFiles(filepath.Join(".meta", serviceName, "syncdata"))
+	names, err := store.ListDirectoryFiles(filepath.Join("metadata", serviceName, "syncdata"))
 	if err != nil {
 		return nil, nil, err
 	}

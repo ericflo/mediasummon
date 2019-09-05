@@ -2,8 +2,10 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +18,8 @@ import (
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/users"
+	"golang.org/x/oauth2"
+	"golang.org/x/sync/semaphore"
 )
 
 // SStorage represents a a method of storing and retrieving data
@@ -36,13 +40,19 @@ type dropboxStorage struct {
 	dropboxConfig dropbox.Config
 	usersClient   users.Client
 	filesClient   files.Client
+	sem           *semaphore.Weighted
 }
 
 // NewDropboxStorage creates a new storage interface that can talk to Dropbox
 func NewDropboxStorage(storageConfig *Config, directory string) (Storage, error) {
+	var tok *oauth2.Token
+	err := json.Unmarshal([]byte(storageConfig.Dropbox.Token), &tok)
+	if err != nil {
+		return nil, err
+	}
 	dropboxConfig := dropbox.Config{
-		Token:    storageConfig.Dropbox.Token,
-		LogLevel: dropbox.LogInfo, // if needed, set the desired logging level. Default is off
+		Token: tok.AccessToken,
+		//LogLevel: dropbox.LogDebug,
 	}
 	store := &dropboxStorage{
 		storageConfig: storageConfig,
@@ -50,6 +60,7 @@ func NewDropboxStorage(storageConfig *Config, directory string) (Storage, error)
 		dropboxConfig: dropboxConfig,
 		usersClient:   users.New(dropboxConfig),
 		filesClient:   files.New(dropboxConfig),
+		sem:           semaphore.NewWeighted(4),
 	}
 	return store, nil
 }
@@ -66,11 +77,18 @@ func (store *dropboxStorage) Protocol() string {
 
 // Exists returns true if the path refers to a file that exists in the Dropbox folder
 func (store *dropboxStorage) Exists(path string) (bool, error) {
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return false, err
+	}
+	defer store.sem.Release(1)
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	arg := files.NewGetMetadataArg(fullPath)
 	resp, err := store.filesClient.GetMetadata(arg)
 	if err != nil {
-		return false, err
+		if strings.Contains(err.Error(), "not_found") {
+			err = nil
+		}
+		return false, nil
 	}
 	return resp != nil, nil
 }
@@ -82,9 +100,13 @@ func (store *dropboxStorage) EnsureDirectoryExists(path string) error {
 	} else if exists {
 		return nil
 	}
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return err
+	}
+	defer store.sem.Release(1)
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	arg := files.NewCreateFolderArg(fullPath)
-	_, err := store.filesClient.CreateFolder(arg)
+	_, err := store.filesClient.CreateFolderV2(arg)
 	return err
 }
 
@@ -121,14 +143,17 @@ func (store *dropboxStorage) DownloadFromURL(url, path string) (string, error) {
 		return "", err
 	}
 
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return "", err
+	}
+	defer store.sem.Release(1)
+
 	arg := files.NewCommitInfo(fullPath)
+	arg.StrictConflict = false
+	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{files.WriteModeOverwrite}}
 	_, err = store.filesClient.Upload(arg, tmpFile)
 	if err != nil {
 		return "", err
-	}
-
-	if err = tmpFile.Close(); err != nil {
-		log.Println("Could not close temporary file:", err)
 	}
 
 	return hex.EncodeToString(sha512.Sum(nil)), nil
@@ -136,10 +161,17 @@ func (store *dropboxStorage) DownloadFromURL(url, path string) (string, error) {
 
 // ReadBlob reads the Dropbox blob at the given path into memory and returns it as a slice of bytes
 func (store *dropboxStorage) ReadBlob(path string) ([]byte, error) {
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return nil, err
+	}
+	defer store.sem.Release(1)
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	arg := files.NewDownloadArg(fullPath)
 	_, body, err := store.filesClient.Download(arg)
 	if err != nil {
+		if strings.Contains(err.Error(), "not_found") {
+			return []byte{}, nil
+		}
 		return nil, err
 	}
 	defer body.Close()
@@ -148,15 +180,26 @@ func (store *dropboxStorage) ReadBlob(path string) ([]byte, error) {
 
 // WriteBlob takes the given slice of bytes and writes it to the given path
 func (store *dropboxStorage) WriteBlob(path string, blob []byte) error {
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return err
+	}
+	defer store.sem.Release(1)
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	arg := files.NewCommitInfo(fullPath)
+	arg.StrictConflict = false
+	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{files.WriteModeOverwrite}}
 	_, err := store.filesClient.Upload(arg, bytes.NewBuffer(blob))
 	return err
 }
 
 // ListDirectoryFiles lists the names of all the files contained in a directory
 func (store *dropboxStorage) ListDirectoryFiles(path string) ([]string, error) {
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return nil, err
+	}
+	defer store.sem.Release(1)
 	fullPath := normalizePath(filepath.Join(store.directory, path))
+	lowerDir := strings.ToLower(store.directory)
 	paths := []string{}
 	hasMore := true
 	cursor := ""
@@ -165,11 +208,14 @@ func (store *dropboxStorage) ListDirectoryFiles(path string) ([]string, error) {
 			arg := files.NewListFolderArg(fullPath)
 			resp, err := store.filesClient.ListFolder(arg)
 			if err != nil {
+				if strings.Contains(err.Error(), "not_found") {
+					err = nil
+				}
 				return nil, err
 			}
 			for _, entry := range resp.Entries {
 				if meta, ok := entry.(*files.FileMetadata); ok {
-					paths = append(paths, strings.TrimPrefix(meta.PathLower, path))
+					paths = append(paths, strings.TrimPrefix(strings.TrimPrefix(meta.PathLower, lowerDir), "/"))
 				}
 			}
 			hasMore = resp.HasMore
@@ -182,7 +228,7 @@ func (store *dropboxStorage) ListDirectoryFiles(path string) ([]string, error) {
 			}
 			for _, entry := range resp.Entries {
 				if meta, ok := entry.(*files.FileMetadata); ok {
-					paths = append(paths, strings.TrimPrefix(meta.PathLower, path))
+					paths = append(paths, strings.TrimPrefix(strings.TrimPrefix(meta.PathLower, lowerDir), "/"))
 				}
 			}
 			hasMore = resp.HasMore
