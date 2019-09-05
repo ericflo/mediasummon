@@ -33,43 +33,62 @@ function nameForProtocol(protocol) {
 
 function placeholderForProtocol(protocol) {
   switch (protocol) {
-    case 'file':
-      return '/path/to/your/media/directory';
-    case 'gdrive':
-      return 'Google Drive Directory';
-    case 'dropbox':
-      return 'Dropbox Directory';
-    case 's3':
-      return 'bucketname';
-    }
-    return 'Unknown';
+  case 'file':
+    return '/path/to/your/media/directory';
+  case 'gdrive':
+    return '/Mediasummon';
+  case 'dropbox':
+    return '/Mediasummon';
+  case 's3':
+    return 'bucketname';
+  }
+  return 'Unknown';
+}
+
+function initialPathForProtocol(protocol) {
+  switch (protocol) {
+  case 'gdrive':
+    return '/Mediasummon';
+  case 'dropbox':
+    return '/Mediasummon';
+  }
+  return '';
 }
 
 export default function AddTargetModal({ enabled, setIsAdding }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selfVal, setSelfVal] = useState(null);
   const [protocol, setProtocol] = useState('file');
-  const [pathVal, setPathVal] = useState('');
+  const [pathVal, setPathVal] = useState(initialPathForProtocol(protocol));
+  const closeListener = useCallback(() => {
+    dismissSelf(setProtocol, setPathVal, setIsAdding);
+  }, []);
   useEffect(() => {
     const showing = selfVal && enabled;
-    if (showing) {
-      require('uikit').modal(selfVal).show();
+    var modal = null;
+    if (selfVal) {
+      modal = require('uikit').modal(selfVal);
+      selfVal.addEventListener('hidden', closeListener);
+    }
+    if (modal && showing) {
+      modal.show();
     }
     return () => {
-      if (showing) {
-        require('uikit').modal(selfVal).hide();
+      if (modal && showing) {
+        modal.hide();
       }
     };
   }, [selfVal, enabled]);
   const closeCallback = useCallback(ev => {
     ev.preventDefault();
     dismissSelf(setProtocol, setPathVal, setIsAdding);
-  }, [selfVal]);
+  }, []);
   const refCallback = useCallback(ref => {
     setSelfVal(ref);
   }, []);
   const protocolChangeCallback = useCallback(ev => {
     setProtocol(ev.target.value);
+    setPathVal(initialPathForProtocol(ev.target.value));
   }, []);
   const pathValueChangeCallback = useCallback(ev => {
     setPathVal(ev.target.value);
@@ -85,8 +104,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
         <button
           className="uk-modal-close-default"
           type="button"
-          uk-close="true"
-          onClick={closeCallback} />
+          uk-close="true" />
         <div className="uk-modal-header">
           <h2 className="uk-modal-title">Summon your media to an additional location</h2>
         </div>
@@ -103,9 +121,9 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
               <select className="uk-select" onChange={protocolChangeCallback} value={protocol}>
                 <option value="file">{nameForProtocol('file')}</option>
                 <option value="s3">{nameForProtocol('s3')}</option>
+                <option value="dropbox">{nameForProtocol('dropbox')}</option>
                 {/*
                 <option value="gdrive">{nameForProtocol('gdrive')}</option>
-                <option value="dropbox">{nameForProtocol('dropbox')}</option>
                 */}
               </select>
             </span>

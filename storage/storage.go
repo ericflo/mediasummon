@@ -35,6 +35,8 @@ func NewStorageSingle(storageConfig *Config, url string) (Storage, error) {
 	switch parsedURL.Scheme {
 	case "s3":
 		return NewS3Storage(storageConfig, parsedURL.Host+parsedURL.Path)
+	case "dropbox":
+		return NewDropboxStorage(storageConfig, parsedURL.Host+parsedURL.Path)
 	case "file":
 		if len(parsedURL.Path) == 0 {
 			return nil, fmt.Errorf("Invalid URL: %v", url)
