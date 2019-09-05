@@ -168,7 +168,7 @@ func persistSyncDataPostFetch(store storage.Storage, serviceName string, syncDat
 
 // ListServiceSyncDataPaths lists the paths to the ServiceSyncData
 func ListServiceSyncDataPaths(userConfig *userconfig.UserConfig, serviceName string) ([]string, []int64, error) {
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -208,7 +208,7 @@ func GetLatestServiceSyncData(userConfig *userconfig.UserConfig, serviceName str
 	if largestValue == int64(-1) {
 		return nil, nil
 	}
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		return nil, err
 	}

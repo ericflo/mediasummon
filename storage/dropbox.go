@@ -21,6 +21,7 @@ import (
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/users"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/semaphore"
+	"maxint.co/mediasummon/userconfig"
 )
 
 type dropboxStorage struct {
@@ -33,7 +34,8 @@ type dropboxStorage struct {
 }
 
 // NewDropboxStorage creates a new storage interface that can talk to Dropbox
-func NewDropboxStorage(storageConfig *Config, directory string) (Storage, error) {
+func NewDropboxStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
+	storageConfig := ConfigFromSecrets(userConfig.Secrets)
 	var tok *oauth2.Token
 	err := json.Unmarshal([]byte(storageConfig.Dropbox.Token), &tok)
 	if err != nil {

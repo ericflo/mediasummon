@@ -188,7 +188,7 @@ func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) 
 		log.Println("Warning: called Sync() while already syncing")
 	}
 
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		return err
 	}

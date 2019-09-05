@@ -14,6 +14,8 @@ import (
 	"maxint.co/mediasummon/userconfig"
 )
 
+var defaultTargets = []string{storage.NormalizeStorageURL("~/mediasummon")}
+
 func getTargetConfigPath() string {
 	var configPath string
 	flag.StringVar(&configPath, "config", constants.DefaultUserConfigPath, "path to config file")
@@ -77,7 +79,7 @@ func runTargetPreamble(configPath string) (*userconfig.UserConfig, error) {
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			userConfig = userconfig.NewUserConfig(sortedServiceNames())
+			userConfig = userconfig.NewUserConfig(sortedServiceNames(), defaultTargets)
 		} else {
 			log.Println("Error reading config", err)
 			return nil, err
@@ -105,7 +107,7 @@ func fullyNormalizeTarget(userConfig *userconfig.UserConfig, target string) (str
 	}
 
 	// Now we actually instantiate a storage engine based on it to make sure it doesn't error out
-	store, err := storage.NewStorageSingle(userConfig.StorageConfig, target)
+	store, err := storage.NewStorageSingle(userConfig, target)
 	if err != nil {
 		return target, fmt.Errorf("Invalid sync target %v", err)
 	}

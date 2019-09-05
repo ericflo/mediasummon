@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"maxint.co/mediasummon/userconfig"
 )
 
 type s3Storage struct {
@@ -32,7 +33,8 @@ type s3Storage struct {
 }
 
 // NewS3Storage creates a new storage interface that can talk to S3
-func NewS3Storage(storageConfig *Config, fullPath string) (Storage, error) {
+func NewS3Storage(userConfig *userconfig.UserConfig, fullPath string) (Storage, error) {
+	storageConfig := ConfigFromSecrets(userConfig.Secrets)
 	splitPath := strings.Split(fullPath, "/")
 	if len(splitPath) == 0 {
 		return nil, fmt.Errorf("Your bucket cannot be empty: %v", fullPath)

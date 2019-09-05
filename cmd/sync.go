@@ -36,7 +36,7 @@ func RunSync() {
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			userConfig = userconfig.NewUserConfig(sortedServiceNames())
+			userConfig = userconfig.NewUserConfig(sortedServiceNames(), defaultTargets)
 		} else {
 			log.Println("Error reading config", err)
 			return

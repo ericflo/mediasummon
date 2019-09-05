@@ -16,6 +16,7 @@ import (
 	"github.com/rs/cors"
 	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
+	"maxint.co/mediasummon/storage"
 	"maxint.co/mediasummon/userconfig"
 )
 
@@ -51,7 +52,7 @@ func RunAdmin() {
 	serviceConfig := services.NewServiceConfig()
 	populateServiceMap(serviceConfig)
 
-	userConfigs, err := userconfig.LoadUserConfigs(configPath.Strings(), sortedServiceNames())
+	userConfigs, err := userconfig.LoadUserConfigs(configPath.Strings(), sortedServiceNames(), defaultTargets)
 	if err != nil {
 		log.Println("Error reading config", err)
 		return
@@ -291,7 +292,7 @@ func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *use
 // makeAdminTargets handles http requests for the service map
 func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	adminTargets := make([]*AdminTargetDescription, 0, len(serviceMap))
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
 		return
@@ -338,7 +339,7 @@ func handleAdminTargetRemove(w http.ResponseWriter, r *http.Request, userConfig 
 		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
 		return
 	}
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		renderJSONError(w, err, http.StatusBadRequest)
 		return
@@ -366,7 +367,7 @@ func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *us
 		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
 		return
 	}
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		renderJSONError(w, err, http.StatusBadRequest)
 		return
@@ -381,7 +382,7 @@ func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *us
 		renderJSONErrorMessage(w, "Could not add sync target: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err = store.AddTarget(userConfig.StorageConfig, urlString); err != nil {
+	if err = store.AddTarget(userConfig, urlString); err != nil {
 		renderJSONErrorMessage(w, "Could not add sync target from in-progress multi store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

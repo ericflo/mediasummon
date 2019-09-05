@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"maxint.co/mediasummon/userconfig"
 )
 
 type gdriveStorage struct {
@@ -14,7 +15,8 @@ type gdriveStorage struct {
 }
 
 // NewGDriveStorage creates a new storage interface that can talk to Google Drive
-func NewGDriveStorage(storageConfig *Config, directory string) (Storage, error) {
+func NewGDriveStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
+	storageConfig := ConfigFromSecrets(userConfig.Secrets)
 	var tok *oauth2.Token
 	err := json.Unmarshal([]byte(storageConfig.GDrive.Token), &tok)
 	if err != nil {

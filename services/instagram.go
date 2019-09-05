@@ -160,7 +160,7 @@ func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages in
 		log.Println("Warning: called Sync() while already syncing")
 	}
 
-	store, err := userConfig.GetMultiStore()
+	store, err := storage.CachedStorage(userConfig)
 	if err != nil {
 		return err
 	}

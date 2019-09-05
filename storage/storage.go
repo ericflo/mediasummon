@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"maxint.co/mediasummon/userconfig"
 )
 
 var filePrefixes = []string{".", "./", "/"}
@@ -19,6 +20,9 @@ var ErrNeedSecrets = errors.New("Could not find secrets for storage interface")
 
 // ErrNeedAuth is the error returned when we can't find authentication for a storage interface
 var ErrNeedAuth = errors.New("Could not find authentication for storage interface")
+
+// storageCache stores a cache of storage.Multi instances per userConfig
+var storageCache = map[string]*Multi{}
 
 // Storage represents a a method of storing and retrieving data
 type Storage interface {
@@ -36,7 +40,7 @@ type Storage interface {
 
 // NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,
 // which is to take in a slice of urls and return a Multi storage interface)
-func NewStorageSingle(storageConfig *Config, url string) (Storage, error) {
+func NewStorageSingle(userConfig *userconfig.UserConfig, url string) (Storage, error) {
 	normalized := NormalizeStorageURL(url)
 	parsedURL, err := netURL.Parse(normalized)
 	if err != nil {
@@ -44,31 +48,45 @@ func NewStorageSingle(storageConfig *Config, url string) (Storage, error) {
 	}
 	switch parsedURL.Scheme {
 	case "s3":
-		return NewS3Storage(storageConfig, parsedURL.Host+parsedURL.Path)
+		return NewS3Storage(userConfig, parsedURL.Host+parsedURL.Path)
 	case "dropbox":
-		return NewDropboxStorage(storageConfig, parsedURL.Host+parsedURL.Path)
+		return NewDropboxStorage(userConfig, parsedURL.Host+parsedURL.Path)
 	case "gdrive":
-		return NewGDriveStorage(storageConfig, parsedURL.Host+parsedURL.Path)
+		return NewGDriveStorage(userConfig, parsedURL.Host+parsedURL.Path)
 	case "file":
 		if len(parsedURL.Path) == 0 {
 			return nil, fmt.Errorf("Invalid URL: %v", url)
 		}
-		return NewFileStorage(storageConfig, parsedURL.Path[1:])
+		return NewFileStorage(userConfig, parsedURL.Path[1:])
 	}
 	return nil, fmt.Errorf("Could not load storage for scheme: %v (%v) ((%v))", parsedURL.Scheme, url, normalized)
 }
 
 // NewStorage takes the given URLs and returns the appropriate configured storage interface
-func NewStorage(storageConfig *Config, urls []string) (*Multi, error) {
+func NewStorage(userConfig *userconfig.UserConfig) (*Multi, error) {
 	stores := []Storage{}
-	for _, url := range urls {
-		store, err := NewStorageSingle(storageConfig, url)
+	for _, url := range userConfig.Targets {
+		store, err := NewStorageSingle(userConfig, url)
 		if err != nil {
 			return nil, err
 		}
 		stores = append(stores, store)
 	}
 	return &Multi{Stores: stores}, nil
+}
+
+// CachedStorage instantiates, caches, and returns a *Multi struct for the given user config
+func CachedStorage(userConfig *userconfig.UserConfig) (*Multi, error) {
+	store, _ := storageCache[userConfig.Path]
+	if store != nil {
+		return store, nil
+	}
+	store, err := NewStorage(userConfig)
+	if err != nil || store == nil {
+		return nil, fmt.Errorf("Could not initialize storage interface: %v", err)
+	}
+	storageCache[userConfig.Path] = store
+	return store, nil
 }
 
 // NormalizeStorageURL takes any path or url and normalizes it into a canonical url for use in the system

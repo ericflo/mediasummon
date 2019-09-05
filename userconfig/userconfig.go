@@ -13,14 +13,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"maxint.co/mediasummon/constants"
-	"maxint.co/mediasummon/storage"
 )
 
 // bCryptCost is the computational cost of the bcrypt algorithm
 const bCryptCost = 12
-
-// storageCache stores a cache of storage.Multi instances per config
-var storageCache = map[string]*storage.Multi{}
 
 // UserConfig is a struct that represents a user's configuration of Mediasummon
 type UserConfig struct {
@@ -38,12 +34,10 @@ type UserConfig struct {
 	FrontendURL string `json:"frontend_url"`
 
 	Secrets map[string]map[string]string `json:"secrets"`
-
-	StorageConfig *storage.Config `json:"storage_config"`
 }
 
 // NewUserConfig takes a list of service names and returns a new default user config
-func NewUserConfig(serviceNames []string) *UserConfig {
+func NewUserConfig(serviceNames, targets []string) *UserConfig {
 	hps := make(map[string]float32, len(serviceNames))
 	secrets := make(map[string]map[string]string, len(serviceNames))
 	for _, serviceName := range serviceNames {
@@ -66,17 +60,16 @@ func NewUserConfig(serviceNames []string) *UserConfig {
 		configPath = absPath
 	}
 	return &UserConfig{
-		Path:          configPath,
-		Username:      "mediasummon",
-		PasswordHash:  "$2a$12$J0mZDHUs36dP7Chh5juN8OMp0Fe5I4y1ZTbuuBR4aeJx4pIdsJBDm", // Default password is 'admin'
-		Role:          constants.DefaultUserRole,
-		TimeCreated:   time.Now().UTC(),
-		Targets:       []string{storage.NormalizeStorageURL("~/mediasummon")},
-		Format:        strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-		FrontendURL:   fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
-		HoursPerSync:  hps,
-		Secrets:       secrets,
-		StorageConfig: storage.NewConfig(),
+		Path:         configPath,
+		Username:     "mediasummon",
+		PasswordHash: "$2a$12$J0mZDHUs36dP7Chh5juN8OMp0Fe5I4y1ZTbuuBR4aeJx4pIdsJBDm", // Default password is 'admin'
+		Role:         constants.DefaultUserRole,
+		TimeCreated:  time.Now().UTC(),
+		Targets:      targets,
+		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
+		FrontendURL:  fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
+		HoursPerSync: hps,
+		Secrets:      secrets,
 	}
 }
 
@@ -88,20 +81,12 @@ func LoadUserConfig(configPath string) (*UserConfig, error) {
 	}
 	var config *UserConfig
 	err = json.Unmarshal(encoded, &config)
-	if err != nil {
-		// Normalize storage target urls after successful load
-		newTargets := make([]string, 0, len(config.Targets))
-		for _, target := range config.Targets {
-			newTargets = append(newTargets, storage.NormalizeStorageURL(target))
-		}
-		config.Targets = newTargets
-	}
 	return config, err
 }
 
 // LoadUserConfigs loads the user configs at the given paths, which defaults to
 // a default user config if it doesn't exist
-func LoadUserConfigs(configPaths []string, serviceNames []string) ([]*UserConfig, error) {
+func LoadUserConfigs(configPaths, serviceNames, defaultTargets []string) ([]*UserConfig, error) {
 	defaultCreated := false
 	userConfigs := make([]*UserConfig, 0, len(configPaths))
 	for _, configPath := range configPaths {
@@ -115,7 +100,7 @@ func LoadUserConfigs(configPaths []string, serviceNames []string) ([]*UserConfig
 			if defaultCreated {
 				return nil, errors.New("Cannot have two defaults, check your configPaths")
 			}
-			userConfig = NewUserConfig(serviceNames)
+			userConfig = NewUserConfig(serviceNames, defaultTargets)
 			// Since we created a default one, save it
 			if err = userConfig.Save(); err != nil {
 				defaultCreated = true
@@ -171,18 +156,4 @@ func (uc *UserConfig) GetHoursPerSync(serviceName string) float32 {
 		return h
 	}
 	return constants.DefaultHoursPerSync
-}
-
-// GetMultiStore instantiates, caches, and returns a *storage.Multi struct for this user config
-func (uc *UserConfig) GetMultiStore() (*storage.Multi, error) {
-	store, _ := storageCache[uc.Path]
-	if store != nil {
-		return store, nil
-	}
-	store, err := storage.NewStorage(uc.StorageConfig, uc.Targets)
-	if err != nil || store == nil {
-		return nil, fmt.Errorf("Could not initialize storage driver: %v", err)
-	}
-	storageCache[uc.Path] = store
-	return store, nil
 }

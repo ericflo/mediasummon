@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"golang.org/x/sync/semaphore"
+	"maxint.co/mediasummon/userconfig"
 )
 
 type fileStorage struct {
@@ -22,7 +23,7 @@ type fileStorage struct {
 }
 
 // NewFileStorage creates a new storage interface that can talk to the local filesystems
-func NewFileStorage(storageConfig *Config, directory string) (Storage, error) {
+func NewFileStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
 	fullDir, err := filepath.Abs(directory)
 	if err != nil {
 		return nil, err

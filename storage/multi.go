@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gopkg.in/guregu/null.v3"
+	"maxint.co/mediasummon/userconfig"
 )
 
 // Multi is a struct that binds together a group of storage interfaces, and
@@ -247,8 +248,8 @@ func (m *Multi) RemoveTarget(urlStr string) error {
 }
 
 // AddTarget adds a target to the current set of stores
-func (m *Multi) AddTarget(storageConfig *Config, urlStr string) error {
-	store, err := NewStorageSingle(storageConfig, urlStr)
+func (m *Multi) AddTarget(userConfig *userconfig.UserConfig, urlStr string) error {
+	store, err := NewStorageSingle(userConfig, urlStr)
 	if err != nil {
 		return err
 	}
