@@ -36,7 +36,11 @@ type AdminServiceDescription struct {
 
 // AdminTargetDescription is the response that the admin gives when talking about a sync target
 type AdminTargetDescription struct {
-	URL string `json:"url"`
+	URL                   string `json:"url"`
+	NeedsApp              bool   `json:"needs_app"`
+	NeedsCredentials      bool   `json:"needs_credentials"`
+	CredentialRedirectURL string `json:"credential_redirect_url"`
+	AppCreateURL          string `json:"app_create_url"`
 }
 
 // RunAdmin runs an 'admin' command line application that serves the mediasummon admin site
@@ -301,8 +305,23 @@ func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *user
 		return
 	}
 	for _, store := range store.Stores {
+		err := store.NeedsCredentials()
+		needsApp := err == userconfig.ErrNeedSecrets
+		needsCredentials := err != nil
+		var redir string
+		if !needsApp {
+			redir, err = store.CredentialRedirectURL(userConfig)
+			if err != nil {
+				renderJSONError(w, err, http.StatusInternalServerError)
+				return
+			}
+		}
 		adminTargets = append(adminTargets, &AdminTargetDescription{
-			URL: store.URL(),
+			URL:                   store.URL(),
+			NeedsApp:              needsApp,
+			NeedsCredentials:      needsCredentials,
+			CredentialRedirectURL: redir,
+			AppCreateURL:          store.AppCreateURL(),
 		})
 	}
 	renderJSON(w, adminTargets)

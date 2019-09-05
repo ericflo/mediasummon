@@ -227,3 +227,8 @@ func (store *s3Storage) NeedsCredentials() error {
 func (store *s3Storage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
 	return "", nil
 }
+
+// AppCreateURL returns the URL where the user can create an IAM user to get credentials
+func (store *s3Storage) AppCreateURL() string {
+	return "https://console.aws.amazon.com/iam/home"
+}

@@ -182,3 +182,8 @@ func (store *fileStorage) NeedsCredentials() error {
 func (store *fileStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
 	return "", nil
 }
+
+// AppCreateURL returns empty string for this interface
+func (store *fileStorage) AppCreateURL() string {
+	return ""
+}

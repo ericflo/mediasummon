@@ -263,3 +263,8 @@ func (m *Multi) AddTarget(userConfig *userconfig.UserConfig, urlStr string) erro
 func (m *Multi) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
 	return "", errors.New("Multi does not support CredentialRedirectURL")
 }
+
+// AppCreateURL returns empty string for this interface
+func (m *Multi) AppCreateURL() string {
+	return ""
+}

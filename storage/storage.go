@@ -34,6 +34,7 @@ type Storage interface {
 
 	NeedsCredentials() error
 	CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error)
+	AppCreateURL() string
 }
 
 // NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,

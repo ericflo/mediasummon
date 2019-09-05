@@ -170,7 +170,7 @@ func (uc *UserConfig) GetSecret(name, key string) (string, error) {
 func (uc *UserConfig) GetSecretOrEnv(name, key, env string) (secret string, err error) {
 	secrets, _ := uc.Secrets[name]
 	if secrets != nil {
-		if sec, exists := secrets[name]; exists {
+		if sec, exists := secrets[key]; exists {
 			secret = sec
 		}
 	}

@@ -232,8 +232,8 @@ func (store *dropboxStorage) NeedsCredentials() error {
 	if cID == "" || cSecret == "" {
 		return userconfig.ErrNeedSecrets
 	}
-	tok, err := loadOAuthData(store.userConfig, "gdrive")
-	if err != nil || tok == nil || tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+	tok, err := loadOAuthData(store.userConfig, "dropbox")
+	if err != nil || tok == nil || tok.AccessToken == "" || (tok.Expiry.Before(time.Now()) && !tok.Expiry.IsZero()) {
 		return ErrNeedAuth
 	}
 	return nil
@@ -246,4 +246,9 @@ func (store *dropboxStorage) CredentialRedirectURL(userConfig *userconfig.UserCo
 		return "", err
 	}
 	return oauthConf.AuthCodeURL(userConfig.Path), nil
+}
+
+// AppCreateURL returns the URL where the user can create an app to get credentials
+func (store *dropboxStorage) AppCreateURL() string {
+	return "https://www.dropbox.com/developers/apps/create"
 }

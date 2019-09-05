@@ -89,7 +89,7 @@ func (store *gdriveStorage) NeedsCredentials() error {
 		return userconfig.ErrNeedSecrets
 	}
 	tok, err := loadOAuthData(store.userConfig, "gdrive")
-	if err != nil || tok == nil || tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+	if err != nil || tok == nil || tok.AccessToken == "" || (tok.Expiry.Before(time.Now()) && !tok.Expiry.IsZero()) {
 		return ErrNeedAuth
 	}
 	return nil
@@ -102,4 +102,9 @@ func (store *gdriveStorage) CredentialRedirectURL(userConfig *userconfig.UserCon
 		return "", err
 	}
 	return oauthConf.AuthCodeURL(userConfig.Path), nil
+}
+
+// AppCreateURL returns the URL where the user can create an app to get credentials
+func (store *gdriveStorage) AppCreateURL() string {
+	return "https://console.cloud.google.com/apis/credentials/oauthclient"
 }
