@@ -6187,7 +6187,7 @@ function connect(options) {
       error.name = err.name;
       error.stack = err.stack; // __NEXT_DIST_DIR is provided by webpack
 
-      (0, _sourceMapSupport.rewriteStacktrace)(error, "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\.next");
+      (0, _sourceMapSupport.rewriteStacktrace)(error, "Q:\\Development\\mediasummon\\admin\\.next");
       return error;
     }
   };

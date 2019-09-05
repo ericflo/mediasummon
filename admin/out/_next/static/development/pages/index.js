@@ -18,7 +18,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _fetchers_targets__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../fetchers/targets */ "./fetchers/targets.js");
 
 
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\AddTargetModal.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\AddTargetModal.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
 
@@ -84,6 +84,36 @@ function nameForProtocol(protocol) {
   return 'Unknown';
 }
 
+function placeholderForProtocol(protocol) {
+  switch (protocol) {
+    case 'file':
+      return '/path/to/your/media/directory';
+
+    case 'gdrive':
+      return '/Mediasummon';
+
+    case 'dropbox':
+      return '/Mediasummon';
+
+    case 's3':
+      return 'bucketname';
+  }
+
+  return 'Unknown';
+}
+
+function initialPathForProtocol(protocol) {
+  switch (protocol) {
+    case 'gdrive':
+      return '/Mediasummon';
+
+    case 'dropbox':
+      return '/Mediasummon';
+  }
+
+  return '';
+}
+
 function AddTargetModal(_ref) {
   var enabled = _ref.enabled,
       setIsAdding = _ref.setIsAdding;
@@ -100,32 +130,42 @@ function AddTargetModal(_ref) {
       protocol = _useState3[0],
       setProtocol = _useState3[1];
 
-  var _useState4 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(''),
+  var _useState4 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(initialPathForProtocol(protocol)),
       pathVal = _useState4[0],
       setPathVal = _useState4[1];
 
+  var closeListener = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function () {
+    dismissSelf(setProtocol, setPathVal, setIsAdding);
+  }, []);
   Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
     var showing = selfVal && enabled;
+    var modal = null;
 
-    if (showing) {
-      __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js").modal(selfVal).show();
+    if (selfVal) {
+      modal = __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js").modal(selfVal);
+      selfVal.addEventListener('hidden', closeListener);
+    }
+
+    if (modal && showing) {
+      modal.show();
     }
 
     return function () {
-      if (showing) {
-        __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js").modal(selfVal).hide();
+      if (modal && showing) {
+        modal.hide();
       }
     };
   }, [selfVal, enabled]);
   var closeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     ev.preventDefault();
     dismissSelf(setProtocol, setPathVal, setIsAdding);
-  }, [selfVal]);
+  }, []);
   var refCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
     setSelfVal(ref);
   }, []);
   var protocolChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     setProtocol(ev.target.value);
+    setPathVal(initialPathForProtocol(ev.target.value));
   }, []);
   var pathValueChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     setPathVal(ev.target.value);
@@ -140,45 +180,44 @@ function AddTargetModal(_ref) {
     ref: refCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 69
+      lineNumber: 102
     },
     __self: this
   }, __jsx("div", {
     className: "uk-modal-dialog",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 70
+      lineNumber: 103
     },
     __self: this
   }, __jsx("button", {
     className: "uk-modal-close-default",
     type: "button",
     "uk-close": "true",
-    onClick: closeCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 71
+      lineNumber: 104
     },
     __self: this
   }), __jsx("div", {
     className: "uk-modal-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 76
+      lineNumber: 108
     },
     __self: this
   }, __jsx("h2", {
     className: "uk-modal-title",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 77
+      lineNumber: 109
     },
     __self: this
   }, "Summon your media to an additional location")), __jsx("div", {
     className: "uk-modal-body",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 79
+      lineNumber: 111
     },
     __self: this
   }, errorMessage ? __jsx("div", {
@@ -186,26 +225,26 @@ function AddTargetModal(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 81
+      lineNumber: 113
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 82
+      lineNumber: 114
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 82
+      lineNumber: 114
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 84
+      lineNumber: 116
     },
     __self: this
   }, "Choose the additional location where you would like to save your media"), __jsx("form", {
@@ -213,7 +252,7 @@ function AddTargetModal(_ref) {
     onSubmit: saveCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 85
+      lineNumber: 117
     },
     __self: this
   }, __jsx("input", {
@@ -224,7 +263,7 @@ function AddTargetModal(_ref) {
     },
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 86
+      lineNumber: 118
     },
     __self: this
   }), __jsx("span", {
@@ -232,7 +271,7 @@ function AddTargetModal(_ref) {
     "uk-form-custom": "target: true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 87
+      lineNumber: 119
     },
     __self: this
   }, __jsx("input", {
@@ -241,7 +280,7 @@ function AddTargetModal(_ref) {
     placeholder: nameForProtocol(protocol),
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 88
+      lineNumber: 120
     },
     __self: this
   }), __jsx("select", {
@@ -250,32 +289,46 @@ function AddTargetModal(_ref) {
     value: protocol,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 89
+      lineNumber: 121
     },
     __self: this
   }, __jsx("option", {
     value: "file",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 90
+      lineNumber: 122
     },
     __self: this
-  }, nameForProtocol('file')))), __jsx("input", {
+  }, nameForProtocol('file')), __jsx("option", {
+    value: "s3",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 123
+    },
+    __self: this
+  }, nameForProtocol('s3')), __jsx("option", {
+    value: "dropbox",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 124
+    },
+    __self: this
+  }, nameForProtocol('dropbox')))), __jsx("input", {
     type: "text",
     className: "uk-input uk-width-expand",
-    placeholder: "/path/to/your/media/directory",
+    placeholder: placeholderForProtocol(protocol),
     onChange: pathValueChangeCallback,
     value: pathVal,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 98
+      lineNumber: 130
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-modal-footer uk-text-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 106
+      lineNumber: 138
     },
     __self: this
   }, __jsx("button", {
@@ -284,7 +337,7 @@ function AddTargetModal(_ref) {
     onClick: closeCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 107
+      lineNumber: 139
     },
     __self: this
   }, "Cancel"), __jsx("button", {
@@ -293,7 +346,7 @@ function AddTargetModal(_ref) {
     onClick: saveCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 108
+      lineNumber: 140
     },
     __self: this
   }, "Save"))));
@@ -315,7 +368,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! next/head */ "./node_modules/next-server/dist/lib/head.js");
 /* harmony import */ var next_head__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(next_head__WEBPACK_IMPORTED_MODULE_1__);
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\Header.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\Header.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
 
@@ -442,7 +495,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var next_link__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! next/link */ "./node_modules/next/link.js");
 /* harmony import */ var next_link__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(next_link__WEBPACK_IMPORTED_MODULE_1__);
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\Navbar.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\Navbar.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
 
@@ -642,7 +695,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _fetchers_userconfig__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../fetchers/userconfig */ "./fetchers/userconfig.js");
 
 
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
 
@@ -1107,7 +1160,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TargetSummary; });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\components\\TargetSummary.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\TargetSummary.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
 
 
@@ -1147,33 +1200,44 @@ function TargetSummary(_ref) {
       lineNumber: 13
     },
     __self: this
-  }, __jsx("span", {
+  }, target.kind === 'file' ? __jsx("span", {
     className: "uk-border",
     "uk-icon": "icon: folder; ratio: 2",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 14
+      lineNumber: 15
+    },
+    __self: this
+  }) : __jsx("img", {
+    width: "40",
+    height: "40",
+    className: "uk-border",
+    src: '/static/images/logo-' + target.kind + '.png',
+    alt: "Dropbox logo",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 16
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 16
+      lineNumber: 18
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom uk-text-middle",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 17
+      lineNumber: 19
     },
     __self: this
   }, target.path)), __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 21
     },
     __self: this
   }, __jsx("a", {
@@ -1182,7 +1246,7 @@ function TargetSummary(_ref) {
     onClick: clickCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 22
     },
     __self: this
   })))));
@@ -1650,7 +1714,7 @@ function _fetchTargets() {
               target = targets[i];
               split = target.url.split('://');
               target.kind = split[0];
-              target.path = decodeURIComponent(split[1].substring(1));
+              target.path = decodeURIComponent(target.kind === 'file' ? split[1].substring(1) : split[1]);
             }
 
             return _context.abrupt("return", targets);
@@ -8353,10 +8417,10 @@ exports.SUPPORTS_PERFORMANCE_USER_TIMING = exports.SUPPORTS_PERFORMANCE && typeo
 
 /***/ }),
 
-/***/ "./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=C%3A%5CUsers%5Cflogu_000%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js!./":
-/*!********************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=C%3A%5CUsers%5Cflogu_000%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js ***!
-  \********************************************************************************************************************************************************************************************/
+/***/ "./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=Q%3A%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js!./":
+/*!************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=Q%3A%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js ***!
+  \************************************************************************************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -25586,7 +25650,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_Navbar__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../components/Navbar */ "./components/Navbar.js");
 
 
-var _jsxFileName = "C:\\Users\\flogu_000\\Development\\mediasummon\\admin\\pages\\index.js";
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\pages\\index.js";
 
 var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
 
@@ -26047,13 +26111,13 @@ function useRequiredUserConfig() {
 /***/ }),
 
 /***/ 0:
-/*!************************************************************************************************************************************************!*\
-  !*** multi next-client-pages-loader?page=%2F&absolutePagePath=C%3A%5CUsers%5Cflogu_000%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js ***!
-  \************************************************************************************************************************************************/
+/*!****************************************************************************************************************************!*\
+  !*** multi next-client-pages-loader?page=%2F&absolutePagePath=Q%3A%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js ***!
+  \****************************************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! next-client-pages-loader?page=%2F&absolutePagePath=C%3A%5CUsers%5Cflogu_000%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js! */"./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=C%3A%5CUsers%5Cflogu_000%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js!./");
+module.exports = __webpack_require__(/*! next-client-pages-loader?page=%2F&absolutePagePath=Q%3A%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js! */"./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?page=%2F&absolutePagePath=Q%3A%5CDevelopment%5Cmediasummon%5Cadmin%5Cpages%5Cindex.js!./");
 
 
 /***/ }),
