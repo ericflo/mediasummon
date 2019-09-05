@@ -19,11 +19,12 @@ var gdriveScopes = []string{
 	"https://www.googleapis.com/auth/drive.file",
 	"https://www.googleapis.com/auth/drive.install",
 }
+var dropboxScopes []string
 
 // HTTPHandlers returns a list of HTTP handlers for the storage interfaces
 func HTTPHandlers() map[string]http.HandlerFunc {
 	return map[string]http.HandlerFunc{
-		"/auth/dropbox/return": makeReturnHandler("dropbox", dropboxEndpoint, nil),
+		"/auth/dropbox/return": makeReturnHandler("dropbox", dropboxEndpoint, dropboxScopes),
 		"/auth/gdrive/return":  makeReturnHandler("gdrive", google.Endpoint, gdriveScopes),
 	}
 }

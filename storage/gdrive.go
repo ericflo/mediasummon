@@ -2,7 +2,9 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"maxint.co/mediasummon/userconfig"
@@ -10,7 +12,6 @@ import (
 
 type gdriveStorage struct {
 	userConfig *userconfig.UserConfig
-	directory  string
 }
 
 // NewGDriveStorage creates a new storage interface that can talk to Google Drive
@@ -19,17 +20,19 @@ func NewGDriveStorage(userConfig *userconfig.UserConfig, directory string) (Stor
 	if err != nil {
 		return nil, err
 	}
+	if strings.Trim(directory, "/ ") != "" {
+		return nil, fmt.Errorf("Google Drive does not support directories other than tha app directory")
+	}
 	log.Println("Token", tok)
 	store := &gdriveStorage{
 		userConfig: userConfig,
-		directory:  directory,
 	}
 	return store, nil
 }
 
 // URL returns the string of the url to this storage interface
 func (store *gdriveStorage) URL() string {
-	return NormalizeStorageURL("gdrive://" + store.directory)
+	return NormalizeStorageURL("gdrive://")
 }
 
 // Protocol returns the protocol of the url to this storage interface
@@ -90,4 +93,13 @@ func (store *gdriveStorage) NeedsCredentials() error {
 		return ErrNeedAuth
 	}
 	return nil
+}
+
+// CredentialRedirectURL creates a URL for the user to visit to grant credentials
+func (store *gdriveStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	oauthConf, err := oAuth2Conf(userConfig, "gdrive", dropboxEndpoint, dropboxScopes)
+	if err != nil {
+		return "", err
+	}
+	return oauthConf.AuthCodeURL(userConfig.Path), nil
 }

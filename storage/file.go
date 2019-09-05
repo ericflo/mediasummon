@@ -177,3 +177,8 @@ func (store *fileStorage) ListDirectoryFiles(path string) ([]string, error) {
 func (store *fileStorage) NeedsCredentials() error {
 	return nil
 }
+
+// CredentialRedirectURL always returns an empty string for the file interface
+func (store *fileStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	return "", nil
+}

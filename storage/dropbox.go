@@ -238,3 +238,12 @@ func (store *dropboxStorage) NeedsCredentials() error {
 	}
 	return nil
 }
+
+// CredentialRedirectURL creates a URL for the user to visit to grant credentials
+func (store *dropboxStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	oauthConf, err := oAuth2Conf(userConfig, "dropbox", dropboxEndpoint, dropboxScopes)
+	if err != nil {
+		return "", err
+	}
+	return oauthConf.AuthCodeURL(userConfig.Path), nil
+}

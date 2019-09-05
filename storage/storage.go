@@ -33,6 +33,7 @@ type Storage interface {
 	ListDirectoryFiles(path string) ([]string, error)
 
 	NeedsCredentials() error
+	CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error)
 }
 
 // NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -256,4 +257,9 @@ func (m *Multi) AddTarget(userConfig *userconfig.UserConfig, urlStr string) erro
 	m.Stores = append(m.Stores, store)
 	// TODO: Copy all the data to the new storage drive before returning?
 	return nil
+}
+
+// CredentialRedirectURL really makes no sense here, so we throw an error
+func (m *Multi) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+	return "", errors.New("Multi does not support CredentialRedirectURL")
 }
