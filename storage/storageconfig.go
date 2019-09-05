@@ -1,5 +1,7 @@
 package storage
 
+import "os"
+
 // ConfigS3 is a struct that can configure an S3 storage interface
 type ConfigS3 struct {
 	Region             string `json:"region"`
@@ -28,4 +30,11 @@ func NewConfig() *Config {
 		Dropbox: &ConfigOAuth{},
 		GDrive:  &ConfigOAuth{},
 	}
+}
+
+func secretOrEnv(secret, backup string) string {
+	if secret == "" {
+		secret = os.Getenv(backup)
+	}
+	return secret
 }

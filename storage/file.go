@@ -171,3 +171,8 @@ func (store *fileStorage) ListDirectoryFiles(path string) ([]string, error) {
 	})
 	return paths, err
 }
+
+// NeedsCredentials always returns nil for the file interface
+func (store *fileStorage) NeedsCredentials() error {
+	return nil
+}

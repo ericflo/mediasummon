@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/dropbox/files"
@@ -224,4 +225,22 @@ func (store *dropboxStorage) ListDirectoryFiles(path string) ([]string, error) {
 		}
 	}
 	return paths, nil
+}
+
+// NeedsCredentials returns an error if it needs credentials, nil if it does not
+func (store *dropboxStorage) NeedsCredentials() error {
+	cID := secretOrEnv(store.storageConfig.Dropbox.ClientID, "DROPBOX_CLIENT_ID")
+	cSecret := secretOrEnv(store.storageConfig.Dropbox.ClientSecret, "DROPBOX_CLIENT_SECRET")
+	if cID == "" || cSecret == "" {
+		return ErrNeedSecrets
+	}
+	var tok *oauth2.Token
+	err := json.Unmarshal([]byte(store.storageConfig.Dropbox.Token), &tok)
+	if err != nil {
+		return ErrNeedAuth
+	}
+	if tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+		return ErrNeedAuth
+	}
+	return nil
 }

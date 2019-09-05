@@ -215,6 +215,18 @@ func (m *Multi) ListDirectoryFiles(path string) ([]string, error) {
 	return resps[0], nil
 }
 
+// NeedsCredentials returns an error if any of its set of stores needs credentials
+func (m *Multi) NeedsCredentials() error {
+	for _, store := range m.Stores {
+		if err := store.NeedsCredentials(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+////
+
 // RemoveTarget removes a target represented by the given URL from the current set of stores
 func (m *Multi) RemoveTarget(urlStr string) error {
 	normalized := NormalizeStorageURL(urlStr)

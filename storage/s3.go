@@ -210,9 +210,13 @@ func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
 	return resp, nil
 }
 
-func normalizePath(pth string) string {
-	if os.PathSeparator == '\\' {
-		return strings.ReplaceAll(pth, "\\", "/")
+// NeedsCredentials returns an error if it needs secrets, nil if it does not
+func (store *s3Storage) NeedsCredentials() error {
+	cID := secretOrEnv(store.storageConfig.S3.AWSAccessKeyID, "AWS_ACCESS_KEY_ID")
+	cSecret := secretOrEnv(store.storageConfig.S3.AWSSecretAccessKey, "AWS_SECRET_ACCESS_KEY")
+	cRegion := secretOrEnv(store.storageConfig.S3.Region, "AWS_DEFAULT_REGION")
+	if cID == "" || cSecret == "" || cRegion == "" {
+		return ErrNeedSecrets
 	}
-	return pth
+	return nil
 }

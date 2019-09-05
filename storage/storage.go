@@ -1,9 +1,11 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	netURL "net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -11,6 +13,12 @@ import (
 )
 
 var filePrefixes = []string{".", "./", "/"}
+
+// ErrNeedSecrets is the error returned when we can't find secrets for a storage interface
+var ErrNeedSecrets = errors.New("Could not find secrets for storage interface")
+
+// ErrNeedAuth is the error returned when we can't find authentication for a storage interface
+var ErrNeedAuth = errors.New("Could not find authentication for storage interface")
 
 // Storage represents a a method of storing and retrieving data
 type Storage interface {
@@ -22,6 +30,8 @@ type Storage interface {
 	ReadBlob(path string) ([]byte, error)
 	WriteBlob(path string, blob []byte) error
 	ListDirectoryFiles(path string) ([]string, error)
+
+	NeedsCredentials() error
 }
 
 // NewStorageSingle instantiates a single storage interface from a single URL (rather than the default,
@@ -129,4 +139,11 @@ func NormalizeStorageURL(orig string) string {
 	}
 
 	return parsedURL.Scheme + "://" + parsedURL.Host + parsedURL.Path
+}
+
+func normalizePath(pth string) string {
+	if os.PathSeparator == '\\' {
+		return strings.ReplaceAll(pth, "\\", "/")
+	}
+	return pth
 }

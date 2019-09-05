@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -38,6 +39,16 @@ func (store *gdriveStorage) Protocol() string {
 
 // Exists returns true if the path refers to a file that exists in the Google Drive directory
 func (store *gdriveStorage) Exists(path string) (bool, error) {
+	/*
+		segments := []string{}
+		splitPath := strings.Split(path, "/")
+		if splitPath == nil {
+			return false, errors.New("Cannot access the root of Google Drive")
+		}
+		for _, part := range splitPath {
+
+		}
+	*/
 	return false, errors.New("Not implemented")
 }
 
@@ -65,4 +76,22 @@ func (store *gdriveStorage) WriteBlob(path string, blob []byte) error {
 // ListDirectoryFiles lists the names of all the files contained in a directory
 func (store *gdriveStorage) ListDirectoryFiles(path string) ([]string, error) {
 	return nil, errors.New("Not implemented")
+}
+
+// NeedsCredentials returns an error if it needs credentials, nil if it does not
+func (store *gdriveStorage) NeedsCredentials() error {
+	cID := secretOrEnv(store.storageConfig.GDrive.ClientID, "GDRIVE_CLIENT_ID")
+	cSecret := secretOrEnv(store.storageConfig.GDrive.ClientSecret, "GDRIVE_CLIENT_SECRET")
+	if cID == "" || cSecret == "" {
+		return ErrNeedSecrets
+	}
+	var tok *oauth2.Token
+	err := json.Unmarshal([]byte(store.storageConfig.GDrive.Token), &tok)
+	if err != nil {
+		return ErrNeedAuth
+	}
+	if tok.AccessToken == "" || tok.Expiry.Before(time.Now()) {
+		return ErrNeedAuth
+	}
+	return nil
 }
