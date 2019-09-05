@@ -37,7 +37,7 @@ func NewDropboxStorage(userConfig *userconfig.UserConfig, directory string) (Sto
 		//LogLevel: dropbox.LogDebug,
 	}
 	tok, err := loadOAuthData(userConfig, "dropbox")
-	if err != nil {
+	if err != nil && err != userconfig.ErrNeedSecrets {
 		return nil, err
 	}
 	if tok != nil {

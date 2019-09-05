@@ -85,7 +85,7 @@ func loadOAuthData(userConfig *userconfig.UserConfig, storageName string) (*oaut
 	}
 	var tok *oauth2.Token
 	var err error
-	if encodedToken, exists := secrets["token"]; exists {
+	if encodedToken, exists := secrets["token"]; exists && encodedToken != "" {
 		err = json.Unmarshal([]byte(encodedToken), &tok)
 	}
 	return tok, err
