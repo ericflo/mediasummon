@@ -18,8 +18,9 @@ export async function fetchCurrentUserConfig() {
   }
 }
 
-export async function fetchUpdateSecrets(service, clientID, clientSecret) {
-  const params = {service: service, client_id: clientID, client_secret: clientSecret};
+export async function fetchUpdateSecrets(service, params) {
+  params = params || {};
+  params.service = service;
   const resp = await httpFetch(config.apiPrefix + '/resources/config/secrets.json', {
     method: 'POST',
     headers: withAuthHeaders({

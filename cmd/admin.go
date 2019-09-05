@@ -22,25 +22,27 @@ import (
 
 type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
-// AdminServiceDescription is the response that the admin gives when talking about a service
-type AdminServiceDescription struct {
-	Metadata              *services.ServiceMetadata `json:"metadata"`
-	NeedsApp              bool                      `json:"needs_app"`
-	NeedsCredentials      bool                      `json:"needs_credentials"`
-	CredentialRedirectURL string                    `json:"credential_redirect_url"`
-	AppCreateURL          string                    `json:"app_create_url"`
-	HoursPerSync          float32                   `json:"hours_per_sync"`
-	CurrentSync           *services.ServiceSyncData `json:"current_sync"`
-	LastSync              *services.ServiceSyncData `json:"last_sync"`
-}
-
-// AdminTargetDescription is the response that the admin gives when talking about a sync target
-type AdminTargetDescription struct {
-	URL                   string `json:"url"`
+// AdminAuthAppDescription is the struct that holds stuff related to oauth app auth
+type AdminAuthAppDescription struct {
 	NeedsApp              bool   `json:"needs_app"`
 	NeedsCredentials      bool   `json:"needs_credentials"`
 	CredentialRedirectURL string `json:"credential_redirect_url"`
 	AppCreateURL          string `json:"app_create_url"`
+}
+
+// AdminServiceDescription is the response that the admin gives when talking about a service
+type AdminServiceDescription struct {
+	AdminAuthAppDescription
+	Metadata     *services.ServiceMetadata `json:"metadata"`
+	HoursPerSync float32                   `json:"hours_per_sync"`
+	CurrentSync  *services.ServiceSyncData `json:"current_sync"`
+	LastSync     *services.ServiceSyncData `json:"last_sync"`
+}
+
+// AdminTargetDescription is the response that the admin gives when talking about a sync target
+type AdminTargetDescription struct {
+	AdminAuthAppDescription
+	URL string `json:"url"`
 }
 
 // RunAdmin runs an 'admin' command line application that serves the mediasummon admin site
@@ -89,6 +91,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
 	mux.HandleFunc("/resources/config/secrets.json", wrapHandler(authRequired(handleAdminUpdateSecrets), serviceConfig))
+	mux.HandleFunc("/resources/config/auth.json", wrapHandler(authRequired(handleAdminAuth), serviceConfig))
 	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))
 	mux.HandleFunc("/resources/service/sync.json", wrapHandler(authRequired(handleAdminServiceSync), serviceConfig))
 	mux.HandleFunc("/resources/targets.json", wrapHandler(authRequired(handleAdminTargets), serviceConfig))
@@ -122,77 +125,6 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 		handler = csrfMiddleware(handler)
 	}
 	return handler, nil
-}
-
-func wrapHandler(handler handlerFunc, serviceConfig *services.ServiceConfig) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var token string
-		if tokens, ok := r.Header["Authorization"]; ok && len(tokens) >= 1 {
-			token = strings.TrimPrefix(tokens[0], "Bearer ")
-		}
-		var userConfig *userconfig.UserConfig
-		if token != "" {
-			// TODO: This should be put in a hmac or something and verified rather than trusted
-			userConfigPath, _ := base64.StdEncoding.DecodeString(token)
-			if conf, err := userconfig.LoadUserConfig(string(userConfigPath)); err != nil {
-				log.Println("Error loading user config", string(userConfigPath), err)
-			} else {
-				userConfig = conf
-			}
-		}
-		handler(w, r, userConfig, serviceConfig)
-	}
-}
-
-func authRequired(handler handlerFunc) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
-		if userConfig == nil {
-			renderAuthFailure(w, r)
-			return
-		}
-		handler(w, r, userConfig, serviceConfig)
-	}
-}
-
-func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
-	encoded, err := json.Marshal(map[string]string{"error": message})
-	if err != nil {
-		log.Println("Could not encode JSON error message, sending back plaintext error message instead", err)
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(code)
-		w.Write([]byte(message))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(encoded)
-}
-
-func renderJSON(w http.ResponseWriter, data interface{}) {
-	encoded, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		renderJSONError(w, err, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(encoded)
-}
-
-func renderStatusOK(w http.ResponseWriter) {
-	renderJSON(w, map[string]string{"status": "ok"})
-}
-
-func renderJSONError(w http.ResponseWriter, err error, code int) {
-	renderJSONErrorMessage(w, err.Error(), code)
-}
-
-func renderCORSFailure(w http.ResponseWriter, r *http.Request) {
-	renderJSONError(w, csrf.FailureReason(r), http.StatusForbidden)
-}
-
-func renderAuthFailure(w http.ResponseWriter, r *http.Request) {
-	renderJSONErrorMessage(w, "Must be authenticated to access this resource", http.StatusForbidden)
 }
 
 // makeLoginHandler makes a login handler which handles http requests for auth
@@ -250,8 +182,12 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 	if !exists {
 		secrets = map[string]string{}
 	}
-	secrets["client_id"] = r.FormValue("client_id")
-	secrets["client_secret"] = r.FormValue("client_secret")
+	for key := range r.Form {
+		if key == "service" {
+			continue
+		}
+		secrets[key] = r.FormValue(key)
+	}
 	userConfig.Secrets[serviceID] = secrets
 
 	if err := userConfig.Save(); err != nil {
@@ -262,35 +198,38 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 	renderJSON(w, userConfig)
 }
 
+func handleAdminAuth(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	resp := map[string]*AdminAuthAppDescription{}
+	for _, serviceName := range sortedServiceNames() {
+		desc, err := authDescriptionForService(serviceName, userConfig)
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+			return
+		}
+		resp[serviceName] = desc
+	}
+}
+
 // handleAdminServices handles http requests for the service map
 func handleAdminServices(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	svcs := make([]*AdminServiceDescription, 0, len(serviceMap))
 	for _, serviceName := range sortedServiceNames() {
+		desc, err := authDescriptionForService(serviceName, userConfig)
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+			return
+		}
 		svc := serviceMap[serviceName]
 		lastSync, err := services.GetLatestServiceSyncData(userConfig, serviceName)
 		if err != nil {
 			log.Println("Error getting latest service sync data", err)
 		}
-		redir, err := svc.CredentialRedirectURL(userConfig)
-		needsApp := false
-		if err != nil {
-			if err == userconfig.ErrNeedSecrets {
-				needsApp = true
-				redir = ""
-			} else {
-				renderJSONError(w, err, http.StatusInternalServerError)
-				return
-			}
-		}
 		svcs = append(svcs, &AdminServiceDescription{
-			Metadata:              svc.Metadata(),
-			NeedsApp:              needsApp,
-			NeedsCredentials:      svc.NeedsCredentials(userConfig),
-			CredentialRedirectURL: redir,
-			AppCreateURL:          svc.AppCreateURL(),
-			CurrentSync:           svc.CurrentSyncData(userConfig),
-			LastSync:              lastSync,
-			HoursPerSync:          userConfig.GetHoursPerSync(serviceName),
+			AdminAuthAppDescription: *desc,
+			Metadata:                svc.Metadata(),
+			CurrentSync:             svc.CurrentSyncData(userConfig),
+			LastSync:                lastSync,
+			HoursPerSync:            userConfig.GetHoursPerSync(serviceName),
 		})
 	}
 	renderJSON(w, svcs)
@@ -317,15 +256,16 @@ func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *user
 			}
 		}
 		adminTargets = append(adminTargets, &AdminTargetDescription{
-			URL:                   store.URL(),
-			NeedsApp:              needsApp,
-			NeedsCredentials:      needsCredentials,
-			CredentialRedirectURL: redir,
-			AppCreateURL:          store.AppCreateURL(),
+			AdminAuthAppDescription: AdminAuthAppDescription{
+				NeedsApp:              needsApp,
+				NeedsCredentials:      needsCredentials,
+				CredentialRedirectURL: redir,
+				AppCreateURL:          store.AppCreateURL(),
+			},
+			URL: store.URL(),
 		})
 	}
 	renderJSON(w, adminTargets)
-
 }
 
 func handleAdminServiceSync(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
@@ -409,4 +349,97 @@ func handleAdminTargetAdd(w http.ResponseWriter, r *http.Request, userConfig *us
 		return
 	}
 	renderStatusOK(w)
+}
+
+// Utility functions
+
+func authDescriptionForService(serviceName string, userConfig *userconfig.UserConfig) (*AdminAuthAppDescription, error) {
+	svc := serviceMap[serviceName]
+	redir, err := svc.CredentialRedirectURL(userConfig)
+	needsApp := false
+	if err != nil {
+		if err == userconfig.ErrNeedSecrets {
+			needsApp = true
+			redir = ""
+		} else {
+			return nil, err
+		}
+	}
+	return &AdminAuthAppDescription{
+		NeedsApp:              needsApp,
+		NeedsCredentials:      svc.NeedsCredentials(userConfig),
+		CredentialRedirectURL: redir,
+		AppCreateURL:          svc.AppCreateURL(),
+	}, nil
+}
+
+func authRequired(handler handlerFunc) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+		if userConfig == nil {
+			renderAuthFailure(w, r)
+			return
+		}
+		handler(w, r, userConfig, serviceConfig)
+	}
+}
+
+func renderJSONErrorMessage(w http.ResponseWriter, message string, code int) {
+	encoded, err := json.Marshal(map[string]string{"error": message})
+	if err != nil {
+		log.Println("Could not encode JSON error message, sending back plaintext error message instead", err)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(code)
+		w.Write([]byte(message))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(encoded)
+}
+
+func renderJSON(w http.ResponseWriter, data interface{}) {
+	encoded, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(encoded)
+}
+
+func renderStatusOK(w http.ResponseWriter) {
+	renderJSON(w, map[string]string{"status": "ok"})
+}
+
+func renderJSONError(w http.ResponseWriter, err error, code int) {
+	renderJSONErrorMessage(w, err.Error(), code)
+}
+
+func renderCORSFailure(w http.ResponseWriter, r *http.Request) {
+	renderJSONError(w, csrf.FailureReason(r), http.StatusForbidden)
+}
+
+func renderAuthFailure(w http.ResponseWriter, r *http.Request) {
+	renderJSONErrorMessage(w, "Must be authenticated to access this resource", http.StatusForbidden)
+}
+
+func wrapHandler(handler handlerFunc, serviceConfig *services.ServiceConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var token string
+		if tokens, ok := r.Header["Authorization"]; ok && len(tokens) >= 1 {
+			token = strings.TrimPrefix(tokens[0], "Bearer ")
+		}
+		var userConfig *userconfig.UserConfig
+		if token != "" {
+			// TODO: This should be put in a hmac or something and verified rather than trusted
+			userConfigPath, _ := base64.StdEncoding.DecodeString(token)
+			if conf, err := userconfig.LoadUserConfig(string(userConfigPath)); err != nil {
+				log.Println("Error loading user config", string(userConfigPath), err)
+			} else {
+				userConfig = conf
+			}
+		}
+		handler(w, r, userConfig, serviceConfig)
+	}
 }

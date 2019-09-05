@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTargetAdd } from '../fetchers/targets';
+import OAuthAppForm from './OAuthAppForm';
+import OAuthSetupPrompt from './OAuthSetupPrompt';
 
 function dismissSelf(setProtocol, setPathVal, setIsAdding) {
   setProtocol('file');
@@ -60,6 +62,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
   const [selfVal, setSelfVal] = useState(null);
   const [protocol, setProtocol] = useState('file');
   const [pathVal, setPathVal] = useState(initialPathForProtocol(protocol));
+  const [configuring, setConfiguring] = useState(false);
   const closeListener = useCallback(() => {
     dismissSelf(setProtocol, setPathVal, setIsAdding);
   }, []);
