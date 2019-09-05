@@ -150,7 +150,7 @@ func (store *dropboxStorage) DownloadFromURL(url, path string) (string, error) {
 
 	arg := files.NewCommitInfo(fullPath)
 	arg.StrictConflict = false
-	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{files.WriteModeOverwrite}}
+	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{Tag: files.WriteModeOverwrite}}
 	_, err = store.filesClient.Upload(arg, tmpFile)
 	if err != nil {
 		return "", err
@@ -187,7 +187,7 @@ func (store *dropboxStorage) WriteBlob(path string, blob []byte) error {
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	arg := files.NewCommitInfo(fullPath)
 	arg.StrictConflict = false
-	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{files.WriteModeOverwrite}}
+	arg.Mode = &files.WriteMode{Tagged: dropbox.Tagged{Tag: files.WriteModeOverwrite}}
 	_, err := store.filesClient.Upload(arg, bytes.NewBuffer(blob))
 	return err
 }
