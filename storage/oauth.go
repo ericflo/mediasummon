@@ -6,55 +6,61 @@ import (
 	"net/http"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"maxint.co/mediasummon/userconfig"
 )
+
+var dropboxEndpoint = oauth2.Endpoint{
+	AuthURL:  "https://www.dropbox.com/oauth2/authorize",
+	TokenURL: "https://www.dropbox.com/oauth2/token",
+}
+var gdriveScopes = []string{
+	"https://www.googleapis.com/auth/drive.appfolder",
+	"https://www.googleapis.com/auth/drive.file",
+	"https://www.googleapis.com/auth/drive.install",
+}
 
 // HTTPHandlers returns a list of HTTP handlers for the storage interfaces
 func HTTPHandlers() map[string]http.HandlerFunc {
 	return map[string]http.HandlerFunc{
-		"/auth/dropbox/return": handleDropboxReturn,
-		//"/auth/gdrive/return":  nil,
+		"/auth/dropbox/return": makeReturnHandler("dropbox", dropboxEndpoint, nil),
+		"/auth/gdrive/return":  makeReturnHandler("gdrive", google.Endpoint, gdriveScopes),
 	}
 }
 
-func handleDropboxReturn(w http.ResponseWriter, r *http.Request) {
-	/*
+func makeReturnHandler(name string, endpoint oauth2.Endpoint, scopes []string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			displayErrorPage(w, "Could not parse Google's response")
+			displayErrorPage(w, "Could not parse "+name+"'s response")
 			return
 		}
 		code := r.URL.Query().Get("code")
 		if len(code) == 0 {
-			displayErrorPage(w, "Invalid authentication code from Google")
+			displayErrorPage(w, "Invalid authentication code from "+name)
 			return
 		}
-
 		configPath := r.URL.Query().Get("state")
 		userConfig, err := userconfig.LoadUserConfig(configPath)
 		if err != nil {
 			displayErrorPage(w, "Could not load user config: "+err.Error())
 			return
 		}
-
-		oauthConf, err := oAuth2Conf(userConfig, "google", google.Endpoint, googleScopes)
+		oauthConf, err := oAuth2Conf(userConfig, name, endpoint, scopes)
 		if err != nil {
 			displayErrorPage(w, "Could not load auth conf: "+err.Error())
 			return
 		}
-
 		tok, err := oauthConf.Exchange(oauth2.NoContext, code)
 		if err != nil {
-			displayErrorPage(w, "Could not complete token exchange with Google. "+err.Error())
+			displayErrorPage(w, "Could not complete token exchange with "+name+". "+err.Error())
 			return
 		}
-
-		if err = saveOAuthData(userConfig, "google", tok); err != nil {
+		if err = saveOAuthData(userConfig, name, tok); err != nil {
 			displayErrorPage(w, err.Error())
 			return
 		}
-	*/
-
-	http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
 }
 
 func saveOAuthData(userConfig *userconfig.UserConfig, storageName string, tok *oauth2.Token) error {
@@ -100,4 +106,9 @@ func oAuth2Conf(userConfig *userconfig.UserConfig, storageName string, endpoint 
 		Scopes:       scopes,
 		Endpoint:     endpoint,
 	}, nil
+}
+
+// displayErrorPage writes a basic text error message to the http response
+func displayErrorPage(w http.ResponseWriter, msg string) {
+	w.Write([]byte("Error: " + msg))
 }
