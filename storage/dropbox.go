@@ -22,18 +22,6 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-// SStorage represents a a method of storing and retrieving data
-type SStorage interface {
-	URL() string
-	Protocol() string
-	Exists(path string) (bool, error)
-	EnsureDirectoryExists(path string) error
-	DownloadFromURL(url, path string) (string, error)
-	ReadBlob(path string) ([]byte, error)
-	WriteBlob(path string, blob []byte) error
-	ListDirectoryFiles(path string) ([]string, error)
-}
-
 type dropboxStorage struct {
 	storageConfig *Config
 	directory     string

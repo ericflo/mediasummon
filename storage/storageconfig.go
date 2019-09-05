@@ -18,6 +18,7 @@ type ConfigOAuth struct {
 type Config struct {
 	S3      *ConfigS3    `json:"s3"`
 	Dropbox *ConfigOAuth `json:"dropbox"`
+	GDrive  *ConfigOAuth `json:"gdrive"`
 }
 
 // NewConfig creates and returns an empty storage config
@@ -25,5 +26,6 @@ func NewConfig() *Config {
 	return &Config{
 		S3:      &ConfigS3{},
 		Dropbox: &ConfigOAuth{},
+		GDrive:  &ConfigOAuth{},
 	}
 }
