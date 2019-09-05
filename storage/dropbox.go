@@ -33,14 +33,17 @@ type dropboxStorage struct {
 
 // NewDropboxStorage creates a new storage interface that can talk to Dropbox
 func NewDropboxStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
+	dropboxConfig := dropbox.Config{
+		//LogLevel: dropbox.LogDebug,
+	}
 	tok, err := loadOAuthData(userConfig, "dropbox")
 	if err != nil {
 		return nil, err
 	}
-	dropboxConfig := dropbox.Config{
-		Token: tok.AccessToken,
-		//LogLevel: dropbox.LogDebug,
+	if tok != nil {
+		dropboxConfig.Token = tok.AccessToken
 	}
+
 	store := &dropboxStorage{
 		userConfig:    userConfig,
 		directory:     directory,
