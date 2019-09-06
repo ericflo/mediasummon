@@ -96,12 +96,12 @@ func (store *gdriveStorage) NeedsCredentials() error {
 }
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
-func (store *gdriveStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
-	oauthConf, err := oAuth2Conf(userConfig, "gdrive", dropboxEndpoint, dropboxScopes)
+func (store *gdriveStorage) CredentialRedirectURL() (string, error) {
+	oauthConf, err := oAuth2Conf(store.userConfig, "gdrive", dropboxEndpoint, dropboxScopes)
 	if err != nil {
 		return "", err
 	}
-	return oauthConf.AuthCodeURL(userConfig.Path), nil
+	return oauthConf.AuthCodeURL(store.userConfig.Path), nil
 }
 
 // AppCreateURL returns the URL where the user can create an app to get credentials

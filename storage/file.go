@@ -179,7 +179,7 @@ func (store *fileStorage) NeedsCredentials() error {
 }
 
 // CredentialRedirectURL always returns an empty string for the file interface
-func (store *fileStorage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+func (store *fileStorage) CredentialRedirectURL() (string, error) {
 	return "", nil
 }
 

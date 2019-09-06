@@ -260,7 +260,7 @@ func (m *Multi) AddTarget(userConfig *userconfig.UserConfig, urlStr string) erro
 }
 
 // CredentialRedirectURL really makes no sense here, so we throw an error
-func (m *Multi) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+func (m *Multi) CredentialRedirectURL() (string, error) {
 	return "", errors.New("Multi does not support CredentialRedirectURL")
 }
 

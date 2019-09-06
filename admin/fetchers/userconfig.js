@@ -18,9 +18,9 @@ export async function fetchCurrentUserConfig() {
   }
 }
 
-export async function fetchUpdateSecrets(service, params) {
+export async function fetchUpdateSecrets(secretName, params) {
   params = params || {};
-  params.service = service;
+  params.secret = secretName;
   const resp = await httpFetch(config.apiPrefix + '/resources/config/secrets.json', {
     method: 'POST',
     headers: withAuthHeaders({
@@ -35,4 +35,19 @@ export async function fetchUpdateSecrets(service, params) {
   }
   const data = await resp.json();
   return data;
+}
+
+export async function fetchAppAuth() {
+  try {
+    const result = await httpFetch(config.apiPrefix + '/resources/config/appauth.json', {
+      headers: withAuthHeaders({'Content-Type': 'application/json'}),
+    });
+    if (result.ok) {
+      return await result.json();
+    } else {
+      await throwMessageFromJSONError(result);
+    }
+  } catch (err) {
+    throw 'Could not complete fetch: ' + err;
+  }
 }

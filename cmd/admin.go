@@ -91,7 +91,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
 	mux.HandleFunc("/resources/config/secrets.json", wrapHandler(authRequired(handleAdminUpdateSecrets), serviceConfig))
-	mux.HandleFunc("/resources/config/auth.json", wrapHandler(authRequired(handleAdminAuth), serviceConfig))
+	mux.HandleFunc("/resources/config/appauth.json", wrapHandler(authRequired(handleAdminAppAuth), serviceConfig))
 	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))
 	mux.HandleFunc("/resources/service/sync.json", wrapHandler(authRequired(handleAdminServiceSync), serviceConfig))
 	mux.HandleFunc("/resources/targets.json", wrapHandler(authRequired(handleAdminTargets), serviceConfig))
@@ -171,24 +171,18 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
 		return
 	}
-	serviceID := r.FormValue("service")
-	_, exists := serviceMap[serviceID]
-	if !exists {
-		renderJSONErrorMessage(w, "Service with id '"+serviceID+"' was not found.", http.StatusNotFound)
-		return
-	}
-
-	secrets, exists := userConfig.Secrets[serviceID]
+	secretName := r.FormValue("secret")
+	secrets, exists := userConfig.Secrets[secretName]
 	if !exists {
 		secrets = map[string]string{}
 	}
 	for key := range r.Form {
-		if key == "service" {
+		if key == "secret" {
 			continue
 		}
 		secrets[key] = r.FormValue(key)
 	}
-	userConfig.Secrets[serviceID] = secrets
+	userConfig.Secrets[secretName] = secrets
 
 	if err := userConfig.Save(); err != nil {
 		renderJSONError(w, err, http.StatusInternalServerError)
@@ -198,7 +192,7 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 	renderJSON(w, userConfig)
 }
 
-func handleAdminAuth(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+func handleAdminAppAuth(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
 	resp := map[string]*AdminAuthAppDescription{}
 	for _, serviceName := range sortedServiceNames() {
 		desc, err := authDescriptionForService(serviceName, userConfig)
@@ -208,6 +202,25 @@ func handleAdminAuth(w http.ResponseWriter, r *http.Request, userConfig *usercon
 		}
 		resp[serviceName] = desc
 	}
+	stores := map[string]string{
+		"s3":      "s3://example",
+		"gdrive":  "gdrive://",
+		"dropbox": "dropbox:///Mediasummon",
+	}
+	for storeName, storeURL := range stores {
+		store, err := storage.NewStorageSingle(userConfig, storeURL)
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+			return
+		}
+		if desc, err := authDescriptionForStorage(store); err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+			return
+		} else {
+			resp[storeName] = desc
+		}
+	}
+	renderJSON(w, resp)
 }
 
 // handleAdminServices handles http requests for the service map
@@ -244,25 +257,14 @@ func handleAdminTargets(w http.ResponseWriter, r *http.Request, userConfig *user
 		return
 	}
 	for _, store := range store.Stores {
-		err := store.NeedsCredentials()
-		needsApp := err == userconfig.ErrNeedSecrets
-		needsCredentials := err != nil
-		var redir string
-		if !needsApp {
-			redir, err = store.CredentialRedirectURL(userConfig)
-			if err != nil {
-				renderJSONError(w, err, http.StatusInternalServerError)
-				return
-			}
+		desc, err := authDescriptionForStorage(store)
+		if err != nil {
+			renderJSONError(w, err, http.StatusInternalServerError)
+			return
 		}
 		adminTargets = append(adminTargets, &AdminTargetDescription{
-			AdminAuthAppDescription: AdminAuthAppDescription{
-				NeedsApp:              needsApp,
-				NeedsCredentials:      needsCredentials,
-				CredentialRedirectURL: redir,
-				AppCreateURL:          store.AppCreateURL(),
-			},
-			URL: store.URL(),
+			AdminAuthAppDescription: *desc,
+			URL:                     store.URL(),
 		})
 	}
 	renderJSON(w, adminTargets)
@@ -370,6 +372,25 @@ func authDescriptionForService(serviceName string, userConfig *userconfig.UserCo
 		NeedsCredentials:      svc.NeedsCredentials(userConfig),
 		CredentialRedirectURL: redir,
 		AppCreateURL:          svc.AppCreateURL(),
+	}, nil
+}
+
+func authDescriptionForStorage(store storage.Storage) (*AdminAuthAppDescription, error) {
+	err := store.NeedsCredentials()
+	needsApp := err == userconfig.ErrNeedSecrets
+	needsCredentials := err != nil
+	var redir string
+	if !needsApp {
+		redir, err = store.CredentialRedirectURL()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &AdminAuthAppDescription{
+		NeedsApp:              needsApp,
+		NeedsCredentials:      needsCredentials,
+		CredentialRedirectURL: redir,
+		AppCreateURL:          store.AppCreateURL(),
 	}, nil
 }
 

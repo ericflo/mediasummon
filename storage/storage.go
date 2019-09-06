@@ -33,7 +33,7 @@ type Storage interface {
 	ListDirectoryFiles(path string) ([]string, error)
 
 	NeedsCredentials() error
-	CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error)
+	CredentialRedirectURL() (string, error)
 	AppCreateURL() string
 }
 

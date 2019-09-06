@@ -224,7 +224,7 @@ func (store *s3Storage) NeedsCredentials() error {
 }
 
 // CredentialRedirectURL always returns an empty string for the S3 interface
-func (store *s3Storage) CredentialRedirectURL(userConfig *userconfig.UserConfig) (string, error) {
+func (store *s3Storage) CredentialRedirectURL() (string, error) {
 	return "", nil
 }
 

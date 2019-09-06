@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTargetAdd } from '../fetchers/targets';
+import { fetchAppAuth } from '../fetchers/userconfig';
 import OAuthAppForm from './OAuthAppForm';
 import OAuthSetupPrompt from './OAuthSetupPrompt';
 
@@ -57,11 +58,20 @@ function initialPathForProtocol(protocol) {
   return '';
 }
 
+async function refreshAppAuth(setAppAuth, setErrorMessage) {
+  try {
+    setAppAuth(await fetchAppAuth());
+  } catch (err) {
+    setErrorMessage(err);
+  }
+}
+
 export default function AddTargetModal({ enabled, setIsAdding }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selfVal, setSelfVal] = useState(null);
   const [protocol, setProtocol] = useState('file');
   const [pathVal, setPathVal] = useState(initialPathForProtocol(protocol));
+  const [appAuth, setAppAuth] = useState(undefined);
   const [configuring, setConfiguring] = useState(false);
   const closeListener = useCallback(() => {
     dismissSelf(setProtocol, setPathVal, setIsAdding);
@@ -82,6 +92,9 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
       }
     };
   }, [selfVal, enabled]);
+  useEffect(() => {
+    refreshAppAuth(setAppAuth, setErrorMessage);
+  }, [enabled])
   const closeCallback = useCallback(ev => {
     ev.preventDefault();
     dismissSelf(setProtocol, setPathVal, setIsAdding);
@@ -91,6 +104,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
   }, []);
   const protocolChangeCallback = useCallback(ev => {
     setProtocol(ev.target.value);
+    setConfiguring(false);
     setPathVal(initialPathForProtocol(ev.target.value));
   }, []);
   const pathValueChangeCallback = useCallback(ev => {
@@ -101,6 +115,19 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
     const extra = protocol === 'file' ? '/' : '';
     handleSaveClick(protocol +'://' + extra + pathVal, setErrorMessage, setProtocol, setPathVal, setIsAdding);
   }, [protocol, pathVal]);
+  const handleConfigureClick = useCallback(ev => {
+    ev.preventDefault();
+    setConfiguring(true);
+  }, []);
+  const handleSetShowing = useCallback(showing => {
+    setConfiguring(showing);
+    if (!showing) {
+      refreshAppAuth(setAppAuth, setErrorMessage);
+    }
+  }, []);
+  const protocolAuth = appAuth ? appAuth[protocol] : null;
+  const tooltipString = protocolAuth ? protocolAuth.app_create_url.split('/')[2] : null;
+  const saveEnabled = protocolAuth && !protocolAuth.needs_credentials;
   return (
     <div uk-modal="true" ref={refCallback}>
       <div className="uk-modal-dialog">
@@ -116,7 +143,23 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
             <div className="uk-alert-danger" uk-alert="true">
               <p><span uk-icon="warning" /> {errorMessage}</p>
             </div> : null}
-          <p>Choose the additional location where you would like to save your media</p>
+          {configuring && protocolAuth ?
+            <div className="uk-margin">
+              {protocol === 's3' ? null :
+                (protocolAuth.needs_app ?
+                  <p>
+                    Visit {protocol} to <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>, then return here and enter the credentials below:
+                  </p> :
+                  <p>
+                    You already have credentials set up for {protocol}. If you would like to set new app credentials, head over to their site to <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>, then return here and enter the credentials below:
+                  </p>)}
+              <OAuthAppForm secretName={protocol} setShowing={handleSetShowing} />
+            </div> : null}
+          {!configuring && protocolAuth && (protocolAuth.needs_app || protocolAuth.needs_credentials) ?
+            <div className="uk-margin">
+              <OAuthSetupPrompt kind="target" name={protocol} item={protocolAuth} onConfigureClick={handleConfigureClick} />
+            </div> : null}
+          <p>Choose the location where you would like to save your media</p>
           <form className="uk-form uk-flex" onSubmit={saveCallback}>
             <input type="submit" onSubmit={saveCallback} style={{display: 'none'}} />
             <span className="uk-width-auto" uk-form-custom="target: true">
@@ -135,12 +178,13 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
               className="uk-input uk-width-expand" 
               placeholder={placeholderForProtocol(protocol)}
               onChange={pathValueChangeCallback}
-              value={pathVal} />
+              value={pathVal}
+              disabled={!saveEnabled} />
           </form>
         </div>
         <div className="uk-modal-footer uk-text-right">
           <button className="uk-button uk-button-default" type="button" onClick={closeCallback}>Cancel</button>
-          <button className="uk-button uk-button-primary" type="button" onClick={saveCallback}>Save</button>
+          <button className="uk-button uk-button-primary" type="button" onClick={saveCallback} disabled={!saveEnabled}>Save</button>
         </div>
       </div>
     </div>
