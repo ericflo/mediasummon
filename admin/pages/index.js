@@ -28,16 +28,8 @@ async function handleTargetRemoveClick(target, targets, setTargets, setErrorMess
 async function fullSetup(token, setServices, setTargets, setErrorMessage) {
   try {
     ensureInstalled(token);
-    setServices(await fetchServices());
+    //setServices(await fetchServices());
     setTargets(await fetchTargets());
-  } catch (err) {
-    setErrorMessage('' + err);
-  }
-}
-
-async function updateServices(setServices, setErrorMessage) {
-  try {
-    setServices(await fetchServices());
   } catch (err) {
     setErrorMessage('' + err);
   }
@@ -61,10 +53,17 @@ export default function Home() {
     if (userConfig === undefined) {
       return;
     }
-    const timer = setInterval(() => {
-      updateServices(setServices, setErrorMessage);
-    }, 1000);
-    return () => clearInterval(timer);
+    var timer = null;
+    async function updateServices() {
+      try {
+        setServices(await fetchServices());
+        timer = setTimeout(updateServices, 1000);
+      } catch (err) {
+        setErrorMessage('' + err);
+      }
+    }
+    timer = setTimeout(updateServices, 1000);
+    return () => clearTimeout(timer);
   }, [userConfig]);
 
   const removeTargetClickCallback = useCallback(target => {
