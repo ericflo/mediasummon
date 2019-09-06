@@ -105,7 +105,7 @@ func (store *gdriveStorage) ensureDirectoryExists(path string) (*drive.File, err
 			tmpFile := &drive.File{
 				Name:     pathSegment,
 				MimeType: "application/vnd.google-apps.folder",
-				Parents:  []string{f.Id},
+				Parents:  []string{parent},
 			}
 			f, err = store.srv.Files.Create(tmpFile).Do()
 			if err != nil {
