@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { fetchUpdateSecrets } from '../fetchers/userconfig';
 
 async function handleSaveClick(secretName, params, setShowing) {
+  console.log('hihih');
   await fetchUpdateSecrets(secretName, params);
   setShowing(false);
 }

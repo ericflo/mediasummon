@@ -128,6 +128,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
   const protocolAuth = appAuth ? appAuth[protocol] : null;
   const tooltipString = protocolAuth ? protocolAuth.app_create_url.split('/')[2] : null;
   const saveEnabled = protocolAuth && !protocolAuth.needs_credentials;
+  const showConfigure = configuring || !protocolAuth || protocolAuth.needs_credentials || protocolAuth.needs_app;
   return (
     <div uk-modal="true" ref={refCallback}>
       <div className="uk-modal-dialog">
@@ -159,7 +160,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
             <div className="uk-margin">
               <OAuthSetupPrompt kind="target" name={protocol} item={protocolAuth} onConfigureClick={handleConfigureClick} />
             </div> : null}
-          <p>Choose the location where you would like to save your media</p>
+          <p>Choose the location where you would like to save your media:</p>
           <form className="uk-form uk-flex" onSubmit={saveCallback}>
             <input type="submit" onSubmit={saveCallback} style={{display: 'none'}} />
             <span className="uk-width-auto" uk-form-custom="target: true">
@@ -168,9 +169,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
                 <option value="file">{nameForProtocol('file')}</option>
                 <option value="s3">{nameForProtocol('s3')}</option>
                 <option value="dropbox">{nameForProtocol('dropbox')}</option>
-                {/*
                 <option value="gdrive">{nameForProtocol('gdrive')}</option>
-                */}
               </select>
             </span>
             <input
@@ -180,6 +179,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
               onChange={pathValueChangeCallback}
               value={pathVal}
               disabled={!saveEnabled} />
+            {showConfigure ? null : <a href="#" onClick={handleConfigureClick} className="uk-flex uk-flex-right uk-padding-small uk-padding-remove-vertical uk-padding-remove-right" uk-icon="icon: cog" />}
           </form>
         </div>
         <div className="uk-modal-footer uk-text-right">
