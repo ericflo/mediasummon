@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha512"
+	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2/google"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/api/drive/v3"
 	"maxint.co/mediasummon/userconfig"
 )
@@ -31,11 +33,18 @@ type gdriveStorage struct {
 	userConfig *userconfig.UserConfig
 	directory  string
 	srv        *drive.Service
+	cache      map[string][]byte
+	sem        *semaphore.Weighted
 }
 
 // NewGDriveStorage creates a new storage interface that can talk to Google Drive
 func NewGDriveStorage(userConfig *userconfig.UserConfig, directory string) (Storage, error) {
-	store := &gdriveStorage{userConfig: userConfig, directory: directory}
+	store := &gdriveStorage{
+		userConfig: userConfig,
+		directory:  directory,
+		cache:      map[string][]byte{},
+		sem:        semaphore.NewWeighted(1),
+	}
 
 	tok, err := loadOAuthData(userConfig, "gdrive")
 	if err != nil && err != userconfig.ErrNeedSecrets {
@@ -74,6 +83,9 @@ func (store *gdriveStorage) Exists(path string) (bool, error) {
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	_, err := store.fileObjFromPath(fullPath)
 	if err != nil {
+		if err == ErrGDriveFileNotFound {
+			err = nil
+		}
 		return false, err
 	}
 	return true, nil
@@ -84,39 +96,6 @@ func (store *gdriveStorage) EnsureDirectoryExists(path string) error {
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	_, err := store.ensureDirectoryExists(fullPath)
 	return err
-}
-
-// ensureDirectoryExists is the same as the above, but returns the Google Drive file object along
-// with the error, and does not adjust or normalize the path in any way
-func (store *gdriveStorage) ensureDirectoryExists(path string) (*drive.File, error) {
-	if store.srv == nil {
-		return nil, ErrNeedsAuth
-	}
-	parent := "appDataFolder"
-	var f *drive.File
-	splitPath := strings.Split(path, "/")
-	for _, pathSegment := range splitPath {
-		q := fmt.Sprintf("'%s' in parents and name = '%s'", parent, pathSegment)
-		resp, err := store.srv.Files.List().Q(q).PageSize(10).Fields("nextPageToken, files(id, name)").Do()
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Files) == 0 {
-			tmpFile := &drive.File{
-				Name:     pathSegment,
-				MimeType: "application/vnd.google-apps.folder",
-				Parents:  []string{parent},
-			}
-			f, err = store.srv.Files.Create(tmpFile).Do()
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			f = resp.Files[0]
-		}
-		parent = f.Id
-	}
-	return f, nil
 }
 
 // DownloadFromURL downloads the contents of the given URL and saves it to the given path
@@ -161,6 +140,11 @@ func (store *gdriveStorage) DownloadFromURL(url, path string) (string, error) {
 		return "", err
 	}
 
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return "", err
+	}
+	defer store.sem.Release(1)
+
 	newFile := &drive.File{
 		Name:    filepath.Base(fullPath),
 		Parents: []string{f.Id},
@@ -180,8 +164,15 @@ func (store *gdriveStorage) ReadBlob(path string) ([]byte, error) {
 	fullPath := normalizePath(filepath.Join(store.directory, path))
 	f, err := store.fileObjFromPath(fullPath)
 	if err != nil {
+		if err == ErrGDriveFileNotFound {
+			err = nil
+		}
 		return nil, err
 	}
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return nil, err
+	}
+	defer store.sem.Release(1)
 	resp, err := store.srv.Files.Get(f.Id).Download()
 	if err != nil {
 		return nil, err
@@ -200,6 +191,10 @@ func (store *gdriveStorage) WriteBlob(path string, blob []byte) error {
 	if err != nil {
 		return err
 	}
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return err
+	}
+	defer store.sem.Release(1)
 	newFile := &drive.File{
 		Name:    filepath.Base(fullPath),
 		Parents: []string{f.Id},
@@ -221,6 +216,10 @@ func (store *gdriveStorage) ListDirectoryFiles(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+		return nil, err
+	}
+	defer store.sem.Release(1)
 	q := fmt.Sprintf("'%s' in parents", f.Id)
 	resp, err := store.srv.Files.List().Q(q).PageSize(200).Fields("nextPageToken, files(id, name)").Do()
 	if err != nil {
@@ -263,25 +262,144 @@ func (store *gdriveStorage) AppCreateURL() string {
 }
 
 func (store *gdriveStorage) fileObjFromPath(path string) (*drive.File, error) {
+	return store.fileObj(path, "appDataFolder")
+}
+
+// ensureDirectoryExists is the same as the exported version, but returns the Google Drive file
+// object along with the error, and does not adjust or normalize the path in any way
+func (store *gdriveStorage) ensureDirectoryExists(path string) (*drive.File, error) {
+	return store.ensureDirObj(path, "appDataFolder")
+}
+
+func (store *gdriveStorage) fileObj(path, parent string) (*drive.File, error) {
 	if store.srv == nil {
 		return nil, ErrNeedsAuth
 	}
+	splitPath := strings.Split(normalizePath(path), "/")
+	if len(splitPath) == 0 {
+		return nil, errors.New("Split path by / and got zero element slice")
+	}
 
-	parent := "appDataFolder"
-	var f *drive.File
-	splitPath := strings.Split(path, "/")
-	for _, pathSegment := range splitPath {
-		q := fmt.Sprintf("'%s' in parents and name = '%s'", parent, pathSegment)
-		resp, err := store.srv.Files.List().Q(q).PageSize(10).Fields("nextPageToken, files(id, name)").Do()
+	if len(splitPath) == 1 {
+		cacheKey := splitPath[0] + "|" + parent
+		if data, ok := store.cache[cacheKey]; ok {
+			//log.Println("Cache hit yay", cacheKey)
+			return decodeDriveFile(data)
+		}
+		//log.Println("Cache miss", path, parent)
+
+		if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+			return nil, err
+		}
+		defer store.sem.Release(1)
+
+		q := fmt.Sprintf("'%s' in parents and name = '%s'", parent, splitPath[0])
+		resp, err := store.srv.Files.List().Q(q).PageSize(1).Fields("nextPageToken, files(id, name)").Do()
 		if err != nil {
 			return nil, err
 		}
 		if len(resp.Files) == 0 {
 			return nil, ErrGDriveFileNotFound
 		}
-		f = resp.Files[0]
-		parent = f.Id
+		f := resp.Files[0]
+
+		data, err := encodeDriveFile(f)
+		if err != nil {
+			return nil, err
+		}
+		store.cache[cacheKey] = data
+		return f, nil
 	}
 
+	var f *drive.File
+	var err error
+	for _, pathSegment := range splitPath {
+		f, err = store.fileObj(pathSegment, parent)
+		if err != nil {
+			return nil, err
+		}
+		parent = f.Id
+	}
 	return f, nil
+}
+
+func (store *gdriveStorage) ensureDirObj(path, parent string) (*drive.File, error) {
+	if store.srv == nil {
+		return nil, ErrNeedsAuth
+	}
+	splitPath := strings.Split(normalizePath(path), "/")
+	if len(splitPath) == 0 {
+		return nil, errors.New("Split path by / and got zero element slice")
+	}
+
+	var f *drive.File
+	var err error
+
+	if len(splitPath) == 1 {
+		cacheKey := splitPath[0] + "|" + parent
+		if data, ok := store.cache[cacheKey]; ok {
+			//log.Println("Cache hit yay", cacheKey)
+			return decodeDriveFile(data)
+		}
+		//log.Println("Cache miss", path, parent)
+
+		if err := store.sem.Acquire(context.TODO(), 1); err != nil {
+			return nil, err
+		}
+		defer store.sem.Release(1)
+
+		q := fmt.Sprintf("'%s' in parents and name = '%s'", parent, splitPath[0])
+		resp, err := store.srv.Files.List().Q(q).PageSize(1).Fields("nextPageToken, files(id, name)").Do()
+		if err != nil {
+			return nil, err
+		}
+		if len(resp.Files) == 0 {
+			tmpFile := &drive.File{
+				Name:     splitPath[0],
+				MimeType: "application/vnd.google-apps.folder",
+				Parents:  []string{parent},
+			}
+			f, err = store.srv.Files.Create(tmpFile).Do()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		data, err := encodeDriveFile(f)
+		if err != nil {
+			return nil, err
+		}
+		store.cache[cacheKey] = data
+		return f, nil
+	}
+
+	for _, pathSegment := range splitPath {
+		f, err = store.ensureDirObj(pathSegment, parent)
+		if err != nil {
+			return nil, err
+		}
+		parent = f.Id
+	}
+	return f, nil
+}
+
+func decodeDriveFile(data []byte) (*drive.File, error) {
+	if data == nil || len(data) == 0 {
+		return nil, nil
+	}
+	f := &drive.File{}
+	err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(f)
+	return f, err
+}
+
+func encodeDriveFile(f *drive.File) ([]byte, error) {
+	if f == nil {
+		return nil, nil
+	}
+	buf := bytes.NewBuffer(nil)
+	err := gob.NewEncoder(buf).Encode(f)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
