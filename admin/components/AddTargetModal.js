@@ -127,7 +127,7 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
   }, []);
   const protocolAuth = appAuth ? appAuth[protocol] : null;
   const tooltipString = protocolAuth ? protocolAuth.app_create_url.split('/')[2] : null;
-  const saveEnabled = protocolAuth && !protocolAuth.needs_credentials;
+  const saveEnabled = protocol === 'file' || (protocolAuth && !protocolAuth.needs_credentials);
   const showConfigure = configuring || !protocolAuth || protocolAuth.needs_credentials || protocolAuth.needs_app;
   return (
     <div uk-modal="true" ref={refCallback}>
