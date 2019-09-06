@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/oauth2/google"
 	"maxint.co/mediasummon/userconfig"
 )
 
@@ -97,7 +98,7 @@ func (store *gdriveStorage) NeedsCredentials() error {
 
 // CredentialRedirectURL creates a URL for the user to visit to grant credentials
 func (store *gdriveStorage) CredentialRedirectURL() (string, error) {
-	oauthConf, err := oAuth2Conf(store.userConfig, "gdrive", dropboxEndpoint, dropboxScopes)
+	oauthConf, err := oAuth2Conf(store.userConfig, "gdrive", google.Endpoint, gdriveScopes)
 	if err != nil {
 		return "", err
 	}
@@ -106,5 +107,6 @@ func (store *gdriveStorage) CredentialRedirectURL() (string, error) {
 
 // AppCreateURL returns the URL where the user can create an app to get credentials
 func (store *gdriveStorage) AppCreateURL() string {
-	return "https://console.cloud.google.com/apis/credentials/oauthclient"
+	//return "https://console.cloud.google.com/apis/credentials/oauthclient"
+	return "https://console.developers.google.com/apis/api/drive.googleapis.com/credentials"
 }

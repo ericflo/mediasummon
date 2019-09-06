@@ -39,7 +39,7 @@ function placeholderForProtocol(protocol) {
   case 'file':
     return '/path/to/your/media/directory';
   case 'gdrive':
-    return '/Mediasummon';
+    return '/';
   case 'dropbox':
     return '/Mediasummon';
   case 's3':
@@ -51,7 +51,7 @@ function placeholderForProtocol(protocol) {
 function initialPathForProtocol(protocol) {
   switch (protocol) {
   case 'gdrive':
-    return '/Mediasummon';
+    return '/';
   case 'dropbox':
     return '/Mediasummon';
   }

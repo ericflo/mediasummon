@@ -6,6 +6,8 @@ export default function TargetSummary({target, onRemoveClick}) {
     ev.preventDefault();
     onRemoveClick(target);
   }, [target, onRemoveClick]);
+  const prependSlash = target.kind === 'gdrive';
+  const displayPath = (prependSlash ? '/' : '') + target.path;
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
@@ -16,7 +18,7 @@ export default function TargetSummary({target, onRemoveClick}) {
               <img width="40" height="40" className="uk-border" src={'/static/images/logo-' + target.kind + '.png'} alt="Dropbox logo" />}
           </div>
           <div className="uk-width-expand">
-            <h3 className="uk-card-title uk-margin-remove-bottom uk-text-middle">{target.path}</h3>
+            <h3 className="uk-card-title uk-margin-remove-bottom uk-text-middle">{displayPath}</h3>
           </div>
           <div className="uk-width-auto">
             <a className="uk-close-small" uk-close="true" onClick={clickCallback}></a>
