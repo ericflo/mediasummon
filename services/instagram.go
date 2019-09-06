@@ -157,7 +157,7 @@ func (svc *instagramService) HandleInstagramReturn(w http.ResponseWriter, r *htt
 
 func (svc *instagramService) Sync(userConfig *userconfig.UserConfig, maxPages int) error {
 	if svc.CurrentSyncData(userConfig) != nil {
-		log.Println("Warning: called Sync() while already syncing")
+		log.Println("Warning: called Sync() while already syncing (could be due to error from previous run)")
 	}
 
 	store, err := storage.CachedStorage(userConfig)

@@ -185,7 +185,7 @@ func (svc *googleService) HandleGoogleReturn(w http.ResponseWriter, r *http.Requ
 
 func (svc *googleService) Sync(userConfig *userconfig.UserConfig, maxPages int) error {
 	if svc.CurrentSyncData(userConfig) != nil {
-		log.Println("Warning: called Sync() while already syncing")
+		log.Println("Warning: called Sync() while already syncing (could be due to error from previous run)")
 	}
 
 	store, err := storage.CachedStorage(userConfig)

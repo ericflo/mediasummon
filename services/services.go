@@ -90,7 +90,8 @@ func ListServiceSyncDataPaths(userConfig *userconfig.UserConfig, serviceName str
 	if err != nil {
 		return nil, nil, err
 	}
-	names, err := store.ListDirectoryFiles(filepath.Join("metadata", serviceName, "syncdata"))
+	prefix := filepath.Join("metadata", serviceName, "syncdata")
+	names, err := store.ListDirectoryFiles(prefix)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,9 +105,14 @@ func ListServiceSyncDataPaths(userConfig *userconfig.UserConfig, serviceName str
 		// Check that it parses as a number
 		value, err := strconv.ParseInt(strings.TrimSuffix(name, ".json"), 10, 64)
 		if err != nil {
+			log.Println("Couldn't parse as number", err)
 			continue
 		}
-		paths = append(paths, filePath)
+		if strings.HasPrefix(filePath, prefix) {
+			paths = append(paths, filePath)
+		} else {
+			paths = append(paths, filepath.Join(prefix, filePath))
+		}
 		values = append(values, value)
 	}
 	return paths, values, nil

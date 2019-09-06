@@ -15,9 +15,10 @@ var dropboxEndpoint = oauth2.Endpoint{
 	TokenURL: "https://www.dropbox.com/oauth2/token",
 }
 var gdriveScopes = []string{
-	"https://www.googleapis.com/auth/drive.appfolder",
+	//"https://www.googleapis.com/auth/drive.appfolder",
 	"https://www.googleapis.com/auth/drive.file",
 	"https://www.googleapis.com/auth/drive.install",
+	"https://www.googleapis.com/auth/drive",
 }
 var dropboxScopes []string
 
