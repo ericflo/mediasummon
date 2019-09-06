@@ -83,7 +83,7 @@ func (store *gdriveStorage) Protocol() string {
 
 // Exists returns true if the path refers to a file that exists in the Google Drive directory
 func (store *gdriveStorage) Exists(path string) (bool, error) {
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 	_, err := store.fileObjFromPath(fullPath)
 	if err != nil {
 		if err == ErrGDriveFileNotFound {
@@ -96,7 +96,7 @@ func (store *gdriveStorage) Exists(path string) (bool, error) {
 
 // EnsureDirectoryExists makes sure that the given "directory" exists in Google Drive, or it returns an error.
 func (store *gdriveStorage) EnsureDirectoryExists(path string) error {
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 	_, err := store.ensureDirectoryExists(fullPath)
 	return err
 }
@@ -108,7 +108,7 @@ func (store *gdriveStorage) DownloadFromURL(url, path string) (string, error) {
 		return "", ErrNeedsAuth
 	}
 
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 
 	log.Println("Downloading item", fullPath)
 
@@ -164,7 +164,7 @@ func (store *gdriveStorage) ReadBlob(path string) ([]byte, error) {
 	if store.srv == nil {
 		return nil, ErrNeedsAuth
 	}
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 	f, err := store.fileObjFromPath(fullPath)
 	if err != nil {
 		if err == ErrGDriveFileNotFound {
@@ -190,7 +190,7 @@ func (store *gdriveStorage) WriteBlob(path string, blob []byte) error {
 		return ErrNeedsAuth
 	}
 
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 
 	f, err := store.fileObjFromPath(fullPath)
 	if err != nil && err != ErrGDriveFileNotFound {
@@ -233,7 +233,7 @@ func (store *gdriveStorage) ListDirectoryFiles(path string) ([]string, error) {
 	if store.srv == nil {
 		return nil, ErrNeedsAuth
 	}
-	fullPath := normalizePath(filepath.Join(store.directory, path))
+	fullPath := gdriveNormalizePath(filepath.Join(store.directory, path))
 	f, err := store.ensureDirectoryExists(fullPath)
 	if err != nil {
 		return nil, err
@@ -297,7 +297,7 @@ func (store *gdriveStorage) fileObj(path, parent string) (*drive.File, error) {
 	if store.srv == nil {
 		return nil, ErrNeedsAuth
 	}
-	splitPath := strings.Split(normalizePath(path), "/")
+	splitPath := strings.Split(gdriveNormalizePath(path), "/")
 	if len(splitPath) == 0 {
 		return nil, errors.New("Split path by / and got zero element slice")
 	}
@@ -348,7 +348,7 @@ func (store *gdriveStorage) ensureDirObj(path, parent string) (*drive.File, erro
 	if store.srv == nil {
 		return nil, ErrNeedsAuth
 	}
-	splitPath := strings.Split(normalizePath(path), "/")
+	splitPath := strings.Split(gdriveNormalizePath(path), "/")
 	if len(splitPath) == 0 {
 		return nil, errors.New("Split path by / and got zero element slice")
 	}
@@ -380,7 +380,7 @@ func (store *gdriveStorage) ensureDirObj(path, parent string) (*drive.File, erro
 				MimeType: "application/vnd.google-apps.folder",
 				Parents:  parents,
 			}
-			log.Println("Creating directory (", splitPath[0], ",", parents[0], ")")
+			//log.Println("Creating directory (", splitPath[0], ",", parents[0], ")")
 			f, err = store.srv.Files.Create(tmpFile).Do()
 			if err != nil {
 				return nil, err
@@ -426,4 +426,8 @@ func encodeDriveFile(f *drive.File) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func gdriveNormalizePath(pth string) string {
+	return strings.TrimPrefix(normalizePath(pth), "/")
 }
