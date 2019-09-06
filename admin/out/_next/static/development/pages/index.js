@@ -244,7 +244,7 @@ function AddTargetModal(_ref) {
   }, []);
   var protocolAuth = appAuth ? appAuth[protocol] : null;
   var tooltipString = protocolAuth ? protocolAuth.app_create_url.split('/')[2] : null;
-  var saveEnabled = protocolAuth && !protocolAuth.needs_credentials;
+  var saveEnabled = protocol === 'file' || protocolAuth && !protocolAuth.needs_credentials;
   var showConfigure = configuring || !protocolAuth || protocolAuth.needs_credentials || protocolAuth.needs_app;
   return __jsx("div", {
     "uk-modal": "true",
