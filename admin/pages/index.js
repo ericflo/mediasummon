@@ -25,10 +25,9 @@ async function handleTargetRemoveClick(target, targets, setTargets, setErrorMess
   return false;
 }
 
-async function fullSetup(token, setServices, setTargets, setErrorMessage) {
+async function firstSetup(token, setTargets, setErrorMessage) {
   try {
     ensureInstalled(token);
-    //setServices(await fetchServices());
     setTargets(await fetchTargets());
   } catch (err) {
     setErrorMessage('' + err);
@@ -46,7 +45,7 @@ export default function Home() {
     if (userConfig === undefined) {
       return;
     }
-    fullSetup(token, setServices, setTargets, setErrorMessage);
+    firstSetup(token, setTargets, setErrorMessage);
   }, [userConfig, token, isAdding]);
 
   useEffect(() => {
