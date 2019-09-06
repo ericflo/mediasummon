@@ -16,10 +16,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _fetchers_targets__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../fetchers/targets */ "./fetchers/targets.js");
+/* harmony import */ var _fetchers_userconfig__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../fetchers/userconfig */ "./fetchers/userconfig.js");
+/* harmony import */ var _OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./OAuthAppForm */ "./components/OAuthAppForm.js");
+/* harmony import */ var _OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./OAuthSetupPrompt */ "./components/OAuthSetupPrompt.js");
 
 
 var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\AddTargetModal.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
+
+
+
 
 
 
@@ -114,6 +120,44 @@ function initialPathForProtocol(protocol) {
   return '';
 }
 
+function refreshAppAuth(_x6, _x7) {
+  return _refreshAppAuth.apply(this, arguments);
+}
+
+function _refreshAppAuth() {
+  _refreshAppAuth = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(setAppAuth, setErrorMessage) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            _context2.prev = 0;
+            _context2.t0 = setAppAuth;
+            _context2.next = 4;
+            return Object(_fetchers_userconfig__WEBPACK_IMPORTED_MODULE_4__["fetchAppAuth"])();
+
+          case 4:
+            _context2.t1 = _context2.sent;
+            (0, _context2.t0)(_context2.t1);
+            _context2.next = 11;
+            break;
+
+          case 8:
+            _context2.prev = 8;
+            _context2.t2 = _context2["catch"](0);
+            setErrorMessage(_context2.t2);
+
+          case 11:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2, null, [[0, 8]]);
+  }));
+  return _refreshAppAuth.apply(this, arguments);
+}
+
 function AddTargetModal(_ref) {
   var enabled = _ref.enabled,
       setIsAdding = _ref.setIsAdding;
@@ -133,6 +177,14 @@ function AddTargetModal(_ref) {
   var _useState4 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(initialPathForProtocol(protocol)),
       pathVal = _useState4[0],
       setPathVal = _useState4[1];
+
+  var _useState5 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
+      appAuth = _useState5[0],
+      setAppAuth = _useState5[1];
+
+  var _useState6 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(false),
+      configuring = _useState6[0],
+      setConfiguring = _useState6[1];
 
   var closeListener = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function () {
     dismissSelf(setProtocol, setPathVal, setIsAdding);
@@ -156,6 +208,9 @@ function AddTargetModal(_ref) {
       }
     };
   }, [selfVal, enabled]);
+  Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
+    refreshAppAuth(setAppAuth, setErrorMessage);
+  }, [enabled]);
   var closeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     ev.preventDefault();
     dismissSelf(setProtocol, setPathVal, setIsAdding);
@@ -165,6 +220,7 @@ function AddTargetModal(_ref) {
   }, []);
   var protocolChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     setProtocol(ev.target.value);
+    setConfiguring(false);
     setPathVal(initialPathForProtocol(ev.target.value));
   }, []);
   var pathValueChangeCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
@@ -175,19 +231,34 @@ function AddTargetModal(_ref) {
     var extra = protocol === 'file' ? '/' : '';
     handleSaveClick(protocol + '://' + extra + pathVal, setErrorMessage, setProtocol, setPathVal, setIsAdding);
   }, [protocol, pathVal]);
+  var handleConfigureClick = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    setConfiguring(true);
+  }, []);
+  var handleSetShowing = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (showing) {
+    setConfiguring(showing);
+
+    if (!showing) {
+      refreshAppAuth(setAppAuth, setErrorMessage);
+    }
+  }, []);
+  var protocolAuth = appAuth ? appAuth[protocol] : null;
+  var tooltipString = protocolAuth ? protocolAuth.app_create_url.split('/')[2] : null;
+  var saveEnabled = protocolAuth && !protocolAuth.needs_credentials;
+  var showConfigure = configuring || !protocolAuth || protocolAuth.needs_credentials || protocolAuth.needs_app;
   return __jsx("div", {
     "uk-modal": "true",
     ref: refCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 102
+      lineNumber: 133
     },
     __self: this
   }, __jsx("div", {
     className: "uk-modal-dialog",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 103
+      lineNumber: 134
     },
     __self: this
   }, __jsx("button", {
@@ -196,28 +267,28 @@ function AddTargetModal(_ref) {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 104
+      lineNumber: 135
     },
     __self: this
   }), __jsx("div", {
     className: "uk-modal-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 108
+      lineNumber: 139
     },
     __self: this
   }, __jsx("h2", {
     className: "uk-modal-title",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 109
+      lineNumber: 140
     },
     __self: this
   }, "Summon your media to an additional location")), __jsx("div", {
     className: "uk-modal-body",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 111
+      lineNumber: 142
     },
     __self: this
   }, errorMessage ? __jsx("div", {
@@ -225,34 +296,96 @@ function AddTargetModal(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 113
+      lineNumber: 144
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 114
+      lineNumber: 145
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 114
+      lineNumber: 145
     },
     __self: this
-  }), " ", errorMessage)) : null, __jsx("p", {
+  }), " ", errorMessage)) : null, configuring && protocolAuth ? __jsx("div", {
+    className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 116
+      lineNumber: 148
     },
     __self: this
-  }, "Choose the additional location where you would like to save your media"), __jsx("form", {
+  }, protocol === 's3' ? null : protocolAuth.needs_app ? __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 151
+    },
+    __self: this
+  }, "Visit ", protocol, " to ", __jsx("a", {
+    href: protocolAuth.app_create_url,
+    "uk-tooltip": tooltipString,
+    target: "_blank",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 152
+    },
+    __self: this
+  }, "create an app"), ", then return here and enter the credentials below:") : __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 154
+    },
+    __self: this
+  }, "You already have credentials set up for ", protocol, ". If you would like to set new app credentials, head over to their site to ", __jsx("a", {
+    href: protocolAuth.app_create_url,
+    "uk-tooltip": tooltipString,
+    target: "_blank",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 155
+    },
+    __self: this
+  }, "create or update your app"), ", then return here and enter the credentials below:"), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    secretName: protocol,
+    setShowing: handleSetShowing,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 157
+    },
+    __self: this
+  })) : null, !configuring && protocolAuth && (protocolAuth.needs_app || protocolAuth.needs_credentials) ? __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 160
+    },
+    __self: this
+  }, __jsx(_OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__["default"], {
+    kind: "target",
+    name: protocol,
+    item: protocolAuth,
+    onConfigureClick: handleConfigureClick,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 161
+    },
+    __self: this
+  })) : null, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 163
+    },
+    __self: this
+  }, "Choose the location where you would like to save your media:"), __jsx("form", {
     className: "uk-form uk-flex",
     onSubmit: saveCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 117
+      lineNumber: 164
     },
     __self: this
   }, __jsx("input", {
@@ -263,7 +396,7 @@ function AddTargetModal(_ref) {
     },
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 118
+      lineNumber: 165
     },
     __self: this
   }), __jsx("span", {
@@ -271,7 +404,7 @@ function AddTargetModal(_ref) {
     "uk-form-custom": "target: true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 119
+      lineNumber: 166
     },
     __self: this
   }, __jsx("input", {
@@ -280,7 +413,7 @@ function AddTargetModal(_ref) {
     placeholder: nameForProtocol(protocol),
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 120
+      lineNumber: 167
     },
     __self: this
   }), __jsx("select", {
@@ -289,46 +422,64 @@ function AddTargetModal(_ref) {
     value: protocol,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 121
+      lineNumber: 168
     },
     __self: this
   }, __jsx("option", {
     value: "file",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 122
+      lineNumber: 169
     },
     __self: this
   }, nameForProtocol('file')), __jsx("option", {
     value: "s3",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 123
+      lineNumber: 170
     },
     __self: this
   }, nameForProtocol('s3')), __jsx("option", {
     value: "dropbox",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 124
+      lineNumber: 171
     },
     __self: this
-  }, nameForProtocol('dropbox')))), __jsx("input", {
+  }, nameForProtocol('dropbox')), __jsx("option", {
+    value: "gdrive",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 172
+    },
+    __self: this
+  }, nameForProtocol('gdrive')))), __jsx("input", {
     type: "text",
     className: "uk-input uk-width-expand",
     placeholder: placeholderForProtocol(protocol),
     onChange: pathValueChangeCallback,
     value: pathVal,
+    disabled: !saveEnabled,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 130
+      lineNumber: 175
+    },
+    __self: this
+  }), showConfigure ? null : __jsx("a", {
+    href: "#",
+    onClick: handleConfigureClick,
+    className: "uk-flex uk-flex-right uk-padding-small uk-padding-remove-vertical uk-padding-remove-right",
+    "uk-icon": "icon: cog",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 182
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-modal-footer uk-text-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 138
+      lineNumber: 185
     },
     __self: this
   }, __jsx("button", {
@@ -337,16 +488,17 @@ function AddTargetModal(_ref) {
     onClick: closeCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 139
+      lineNumber: 186
     },
     __self: this
   }, "Cancel"), __jsx("button", {
     className: "uk-button uk-button-primary",
     type: "button",
     onClick: saveCallback,
+    disabled: !saveEnabled,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 140
+      lineNumber: 187
     },
     __self: this
   }, "Save"))));
@@ -674,6 +826,429 @@ function Navbar(_ref) {
 
 /***/ }),
 
+/***/ "./components/OAuthAppForm.js":
+/*!************************************!*\
+  !*** ./components/OAuthAppForm.js ***!
+  \************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return OAuthAppForm; });
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
+/* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _fetchers_userconfig__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../fetchers/userconfig */ "./fetchers/userconfig.js");
+
+
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\OAuthAppForm.js";
+var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
+
+
+
+
+function handleSaveClick(_x, _x2, _x3) {
+  return _handleSaveClick.apply(this, arguments);
+}
+
+function _handleSaveClick() {
+  _handleSaveClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(secretName, params, setShowing) {
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            console.log('hihih');
+            _context.next = 3;
+            return Object(_fetchers_userconfig__WEBPACK_IMPORTED_MODULE_3__["fetchUpdateSecrets"])(secretName, params);
+
+          case 3:
+            setShowing(false);
+
+          case 4:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _handleSaveClick.apply(this, arguments);
+}
+
+function OAuthAppForm(_ref) {
+  var secretName = _ref.secretName,
+      setShowing = _ref.setShowing;
+
+  var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
+      clientID = _useState[0],
+      setClientID = _useState[1];
+
+  var _useState2 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
+      clientSecret = _useState2[0],
+      setClientSecret = _useState2[1];
+
+  var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
+      region = _useState3[0],
+      setRegion = _useState3[1];
+
+  var handleCancelClicked = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    setShowing(false);
+  }, []);
+  var handleSaveClicked = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+    ev.preventDefault();
+    var id = clientID ? clientID.value : null;
+    var secret = clientSecret ? clientSecret.value : null;
+    var reg = region ? region.value : null;
+    var params = null;
+
+    if (secretName === 's3') {
+      params = {
+        aws_access_key_id: id,
+        aws_secret_access_key: secret,
+        region: reg
+      };
+    } else {
+      params = {
+        client_id: id,
+        client_secret: secret
+      };
+    }
+
+    handleSaveClick(secretName, params, setShowing);
+  }, [secretName, clientID, clientSecret]);
+  var clientIDLoaded = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
+    setClientID(ref);
+  }, []);
+  var clientSecretLoaded = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
+    setClientSecret(ref);
+  }, []);
+  var regionLoaded = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
+    setRegion(ref);
+  }, []);
+  return __jsx("form", {
+    className: "uk-form-stacked",
+    onSubmit: handleSaveClicked,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 43
+    },
+    __self: this
+  }, secretName === 's3' ? __jsx(react__WEBPACK_IMPORTED_MODULE_2___default.a.Fragment, {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 45
+    },
+    __self: this
+  }, __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 46
+    },
+    __self: this
+  }, __jsx("label", {
+    className: "uk-form-label",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 47
+    },
+    __self: this
+  }, "AWS Access Key ID"), __jsx("div", {
+    className: "uk-form-controls",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 48
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input",
+    type: "text",
+    placeholder: "AWS Access Key ID",
+    ref: clientIDLoaded,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 49
+    },
+    __self: this
+  }))), __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 52
+    },
+    __self: this
+  }, __jsx("label", {
+    className: "uk-form-label",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 53
+    },
+    __self: this
+  }, "AWS Secret Access Key"), __jsx("div", {
+    className: "uk-form-controls",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 54
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input",
+    type: "text",
+    placeholder: "AWS Secret Access Key",
+    ref: clientSecretLoaded,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 55
+    },
+    __self: this
+  }))), __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 58
+    },
+    __self: this
+  }, __jsx("label", {
+    className: "uk-form-label",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 59
+    },
+    __self: this
+  }, "Region"), __jsx("div", {
+    className: "uk-form-controls",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 60
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input",
+    type: "text",
+    placeholder: "Region",
+    ref: regionLoaded,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 61
+    },
+    __self: this
+  })))) : __jsx(react__WEBPACK_IMPORTED_MODULE_2___default.a.Fragment, {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 65
+    },
+    __self: this
+  }, __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 66
+    },
+    __self: this
+  }, __jsx("label", {
+    className: "uk-form-label",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 67
+    },
+    __self: this
+  }, "Client ID"), __jsx("div", {
+    className: "uk-form-controls",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 68
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input",
+    type: "text",
+    placeholder: "Client ID",
+    ref: clientIDLoaded,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 69
+    },
+    __self: this
+  }))), __jsx("div", {
+    className: "uk-margin",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 72
+    },
+    __self: this
+  }, __jsx("label", {
+    className: "uk-form-label",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 73
+    },
+    __self: this
+  }, "Client Secret"), __jsx("div", {
+    className: "uk-form-controls",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 74
+    },
+    __self: this
+  }, __jsx("input", {
+    className: "uk-input",
+    type: "text",
+    placeholder: "Client Secret",
+    ref: clientSecretLoaded,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 75
+    },
+    __self: this
+  })))), __jsx("div", {
+    className: "uk-flex uk-flex-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 79
+    },
+    __self: this
+  }, __jsx("a", {
+    href: "#",
+    className: "uk-button",
+    onClick: handleCancelClicked,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 80
+    },
+    __self: this
+  }, "Cancel"), __jsx("input", {
+    type: "submit",
+    className: "uk-button uk-button-primary",
+    onSubmit: handleSaveClicked,
+    value: "Save",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 81
+    },
+    __self: this
+  })));
+}
+
+/***/ }),
+
+/***/ "./components/OAuthSetupPrompt.js":
+/*!****************************************!*\
+  !*** ./components/OAuthSetupPrompt.js ***!
+  \****************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return OAuthSetupPrompt; });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\OAuthSetupPrompt.js";
+var __jsx = react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement;
+
+function OAuthSetupPrompt(_ref) {
+  var name = _ref.name,
+      kind = _ref.kind,
+      item = _ref.item,
+      onConfigureClick = _ref.onConfigureClick;
+  var action = kind === 'service' ? 'download' : 'upload';
+  return __jsx(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 6
+    },
+    __self: this
+  }, item.needs_app ? __jsx("div", {
+    className: "uk-alert-warning",
+    "uk-alert": "true",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 8
+    },
+    __self: this
+  }, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 9
+    },
+    __self: this
+  }, "Before you can ", action, " your photos, first you have to set up access. Please visit ", name, " and ", __jsx("a", {
+    href: item.app_create_url,
+    target: "_blank",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 9
+    },
+    __self: this
+  }, "create an app"), ", then return here and enter the credentials in settings."), __jsx("div", {
+    className: "uk-panel",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 10
+    },
+    __self: this
+  }, __jsx("p", {
+    className: "uk-align-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 11
+    },
+    __self: this
+  }, __jsx("a", {
+    href: item.credential_redirect_url,
+    className: "uk-button uk-button-primary",
+    onClick: onConfigureClick,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 12
+    },
+    __self: this
+  }, "Configure ", name)))) : null, !item.needs_app && item.needs_credentials ? __jsx("div", {
+    className: "uk-alert-primary",
+    "uk-alert": "true",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 17
+    },
+    __self: this
+  }, __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 18
+    },
+    __self: this
+  }, "It looks like your permission is required before we can sync this ", kind, " for you. Clicking this button will send you to ", name, "\u2019s website, where you can grant permission, and you\u2019ll be returned here afterwards."), __jsx("div", {
+    className: "uk-panel",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 19
+    },
+    __self: this
+  }, __jsx("p", {
+    className: "uk-align-right",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 20
+    },
+    __self: this
+  }, __jsx("a", {
+    href: item.credential_redirect_url,
+    className: "uk-button uk-button-primary",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 21
+    },
+    __self: this
+  }, "Grant Permission")))) : null);
+}
+
+/***/ }),
+
 /***/ "./components/ServiceSummary.js":
 /*!**************************************!*\
   !*** ./components/ServiceSummary.js ***!
@@ -692,11 +1267,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dayjs */ "./node_modules/dayjs/dayjs.min.js");
 /* harmony import */ var dayjs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(dayjs__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _fetchers_services__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../fetchers/services */ "./fetchers/services.js");
-/* harmony import */ var _fetchers_userconfig__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../fetchers/userconfig */ "./fetchers/userconfig.js");
+/* harmony import */ var _OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./OAuthAppForm */ "./components/OAuthAppForm.js");
+/* harmony import */ var _OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./OAuthSetupPrompt */ "./components/OAuthSetupPrompt.js");
 
 
 var _jsxFileName = "Q:\\Development\\mediasummon\\admin\\components\\ServiceSummary.js";
 var __jsx = react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement;
+
 
 
 
@@ -728,48 +1305,12 @@ function _handleSyncClick() {
   return _handleSyncClick.apply(this, arguments);
 }
 
-function handleSaveClick(_x2, _x3, _x4, _x5) {
-  return _handleSaveClick.apply(this, arguments);
-}
-
-function _handleSaveClick() {
-  _handleSaveClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
-  /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(name, clientID, clientSecret, setConfiguring) {
-    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            _context2.next = 2;
-            return Object(_fetchers_userconfig__WEBPACK_IMPORTED_MODULE_5__["fetchUpdateSecrets"])(name, clientID, clientSecret);
-
-          case 2:
-            setConfiguring(false);
-
-          case 3:
-          case "end":
-            return _context2.stop();
-        }
-      }
-    }, _callee2);
-  }));
-  return _handleSaveClick.apply(this, arguments);
-}
-
 function ServiceSummary(_ref) {
   var service = _ref.service;
 
   var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(false),
       configuring = _useState[0],
       setConfiguring = _useState[1];
-
-  var _useState2 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
-      clientID = _useState2[0],
-      setClientID = _useState2[1];
-
-  var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])(undefined),
-      clientSecret = _useState3[0],
-      setClientSecret = _useState3[1];
 
   var sync = service.last_sync;
   var start = sync ? dayjs__WEBPACK_IMPORTED_MODULE_3___default()(sync.start).fromNow() : 'Never';
@@ -780,39 +1321,23 @@ function ServiceSummary(_ref) {
     ev.stopPropagation();
     handleSyncClick(service);
   }, [service]);
-  var handleConfigureClicked = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
+  var handleConfigureClick = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
     ev.preventDefault();
     setConfiguring(true);
-  }, []);
-  var handleCancelClicked = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
-    ev.preventDefault();
-    setConfiguring(false);
-  }, []);
-  var handleSaveClicked = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ev) {
-    ev.preventDefault();
-    var id = clientID ? clientID.value : null;
-    var secret = clientSecret ? clientSecret.value : null;
-    handleSaveClick(service.metadata.id, id, secret, setConfiguring);
-  }, [service.metadata.id, clientID, clientSecret]);
-  var clientIDLoaded = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
-    setClientID(ref);
-  }, []);
-  var clientSecretLoaded = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (ref) {
-    setClientSecret(ref);
   }, []);
   var tooltipString = service.app_create_url.split('/')[2];
   return __jsx("div", {
     className: "uk-card uk-card-default uk-card-hover uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 51
+      lineNumber: 29
     },
     __self: this
   }, __jsx("div", {
     className: "uk-card-header",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 52
+      lineNumber: 30
     },
     __self: this
   }, __jsx("div", {
@@ -820,14 +1345,14 @@ function ServiceSummary(_ref) {
     "uk-grid": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 53
+      lineNumber: 31
     },
     __self: this
   }, __jsx("div", {
     className: "uk-width-auto",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 54
+      lineNumber: 32
     },
     __self: this
   }, __jsx("img", {
@@ -837,64 +1362,64 @@ function ServiceSummary(_ref) {
     src: '/static/images/logo-' + service.metadata.id + '.png',
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 55
+      lineNumber: 33
     },
     __self: this
   })), __jsx("div", {
     className: "uk-width-expand",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 57
+      lineNumber: 35
     },
     __self: this
   }, __jsx("h3", {
     className: "uk-card-title uk-margin-remove-bottom",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 58
+      lineNumber: 36
     },
     __self: this
   }, service.metadata.name), __jsx("p", {
     className: "uk-text-meta uk-margin-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 59
+      lineNumber: 37
     },
     __self: this
   }, "Last synced: ", __jsx("time", {
     dateTime: startString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 60
+      lineNumber: 38
     },
     __self: this
   }, start), ' ', sync ? '(' + (sync.fetch_count || 0) + ' downloaded) ' : null, "\u2014 Next sync: ", __jsx("time", {
     dateTime: nextString,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 62
+      lineNumber: 40
     },
     __self: this
   }, next.fromNow()))), configuring || !service.needs_credentials && !service.needs_app ? null : __jsx("a", {
     href: "#",
-    onClick: handleConfigureClicked,
+    onClick: handleConfigureClick,
     "uk-icon": "icon: cog",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 65
+      lineNumber: 43
     },
     __self: this
   }))), configuring ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 69
+      lineNumber: 47
     },
     __self: this
   }, service.needs_app ? __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 71
+      lineNumber: 49
     },
     __self: this
   }, "Visit ", service.metadata.name, " to ", __jsx("a", {
@@ -903,13 +1428,13 @@ function ServiceSummary(_ref) {
     target: "_blank",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 72
+      lineNumber: 50
     },
     __self: this
   }, "create an app"), ", then return here and enter the credentials below:") : __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 74
+      lineNumber: 52
     },
     __self: this
   }, "You already have credentials set up for ", service.metadata.name, ". If you would like to set new app credentials, head over to their site to ", __jsx("a", {
@@ -918,205 +1443,39 @@ function ServiceSummary(_ref) {
     target: "_blank",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 75
+      lineNumber: 53
     },
     __self: this
-  }, "create or update your app"), ", then return here and enter the credentials below:"), __jsx("form", {
-    className: "uk-form-stacked",
-    onSubmit: handleSaveClicked,
+  }, "create or update your app"), ", then return here and enter the credentials below:"), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
+    secretName: service.metadata.id,
+    setShowing: setConfiguring,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 77
+      lineNumber: 55
     },
     __self: this
-  }, __jsx("div", {
-    className: "uk-margin",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 78
-    },
-    __self: this
-  }, __jsx("label", {
-    className: "uk-form-label",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 79
-    },
-    __self: this
-  }, "Client ID"), __jsx("div", {
-    className: "uk-form-controls",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 80
-    },
-    __self: this
-  }, __jsx("input", {
-    className: "uk-input",
-    type: "text",
-    placeholder: "Client ID",
-    ref: clientIDLoaded,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 81
-    },
-    __self: this
-  }))), __jsx("div", {
-    className: "uk-margin",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 84
-    },
-    __self: this
-  }, __jsx("label", {
-    className: "uk-form-label",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 85
-    },
-    __self: this
-  }, "Client Secret"), __jsx("div", {
-    className: "uk-form-controls",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 86
-    },
-    __self: this
-  }, __jsx("input", {
-    className: "uk-input",
-    type: "text",
-    placeholder: "Client Secret",
-    ref: clientSecretLoaded,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 87
-    },
-    __self: this
-  }))), __jsx("div", {
-    className: "uk-align-right",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 90
-    },
-    __self: this
-  }, __jsx("a", {
-    href: "#",
-    className: "uk-button",
-    onClick: handleCancelClicked,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 91
-    },
-    __self: this
-  }, "Cancel"), __jsx("input", {
-    type: "submit",
-    className: "uk-button uk-button-primary",
-    onSubmit: handleSaveClicked,
-    value: "Save",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 92
-    },
-    __self: this
-  })))) : null, !configuring && service.needs_app ? __jsx("div", {
+  })) : null, !configuring && (service.needs_app || service.needs_credentials) ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 97
+      lineNumber: 58
     },
     __self: this
-  }, __jsx("div", {
-    className: "uk-alert-warning",
-    "uk-alert": "true",
+  }, __jsx(_OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__["default"], {
+    kind: "service",
+    name: service.metadata.name,
+    item: service,
+    onConfigureClick: handleConfigureClick,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 98
+      lineNumber: 59
     },
     __self: this
-  }, __jsx("p", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 99
-    },
-    __self: this
-  }, "Before you can download your photos, first you have to set up access. Please visit ", service.metadata.name, " and ", __jsx("a", {
-    href: service.app_create_url,
-    target: "_blank",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 99
-    },
-    __self: this
-  }, "create an app"), ", then return here and enter the credentials in settings."), __jsx("div", {
-    className: "uk-panel",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 100
-    },
-    __self: this
-  }, __jsx("p", {
-    className: "uk-align-right",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 101
-    },
-    __self: this
-  }, __jsx("a", {
-    href: service.credential_redirect_url,
-    className: "uk-button uk-button-primary",
-    onClick: handleConfigureClicked,
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 102
-    },
-    __self: this
-  }, "Configure ", service.metadata.name))))) : null, !configuring && !service.needs_app && service.needs_credentials ? __jsx("div", {
-    className: "uk-card-body uk-padding-remove-vertical uk-margin",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 108
-    },
-    __self: this
-  }, __jsx("div", {
-    className: "uk-alert-primary",
-    "uk-alert": "true",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 109
-    },
-    __self: this
-  }, __jsx("p", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 110
-    },
-    __self: this
-  }, "It looks like your permission is required before we can sync this service for you. Clicking this button will send you to ", service.metadata.name, "\u2019s website, where you can grant permission to download these items for you, and you\u2019ll be returned here afterwards."), __jsx("div", {
-    className: "uk-panel",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 111
-    },
-    __self: this
-  }, __jsx("p", {
-    className: "uk-align-right",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 112
-    },
-    __self: this
-  }, __jsx("a", {
-    href: service.credential_redirect_url,
-    className: "uk-button uk-button-primary",
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 113
-    },
-    __self: this
-  }, "Grant Permission"))))) : null, __jsx("div", {
+  })) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 118
+      lineNumber: 61
     },
     __self: this
   }, __jsx("a", {
@@ -1124,14 +1483,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 119
+      lineNumber: 62
     },
     __self: this
   }, "View details"), __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 120
+      lineNumber: 63
     },
     __self: this
   }, service.needs_credentials ? null : __jsx("button", {
@@ -1140,7 +1499,7 @@ function ServiceSummary(_ref) {
     onClick: syncCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 122
+      lineNumber: 65
     },
     __self: this
   }, service.current_sync ? 'Syncing...' : 'Sync now'))));
@@ -1865,13 +2224,14 @@ function _fetchTargetAdd() {
 /*!********************************!*\
   !*** ./fetchers/userconfig.js ***!
   \********************************/
-/*! exports provided: fetchCurrentUserConfig, fetchUpdateSecrets */
+/*! exports provided: fetchCurrentUserConfig, fetchUpdateSecrets, fetchAppAuth */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchCurrentUserConfig", function() { return fetchCurrentUserConfig; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchUpdateSecrets", function() { return fetchUpdateSecrets; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchAppAuth", function() { return fetchAppAuth; });
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime-corejs2/regenerator */ "./node_modules/@babel/runtime-corejs2/regenerator/index.js");
 /* harmony import */ var _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime-corejs2/helpers/esm/asyncToGenerator */ "./node_modules/@babel/runtime-corejs2/helpers/esm/asyncToGenerator.js");
@@ -1943,25 +2303,22 @@ function _fetchCurrentUserConfig() {
   return _fetchCurrentUserConfig.apply(this, arguments);
 }
 
-function fetchUpdateSecrets(_x, _x2, _x3) {
+function fetchUpdateSecrets(_x, _x2) {
   return _fetchUpdateSecrets.apply(this, arguments);
 }
 
 function _fetchUpdateSecrets() {
   _fetchUpdateSecrets = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(service, clientID, clientSecret) {
-    var params, resp, data;
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(secretName, params) {
+    var resp, data;
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            params = {
-              service: service,
-              client_id: clientID,
-              client_secret: clientSecret
-            };
-            _context2.next = 3;
+            params = params || {};
+            params.secret = secretName;
+            _context2.next = 4;
             return Object(_fetch__WEBPACK_IMPORTED_MODULE_2__["default"])(_config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/config/secrets.json', {
               method: 'POST',
               headers: Object(_common__WEBPACK_IMPORTED_MODULE_5__["withAuthHeaders"])({
@@ -1972,26 +2329,26 @@ function _fetchUpdateSecrets() {
               body: Object(_common__WEBPACK_IMPORTED_MODULE_5__["encodeQuery"])(params)
             });
 
-          case 3:
+          case 4:
             resp = _context2.sent;
 
             if (resp.ok) {
-              _context2.next = 7;
+              _context2.next = 8;
               break;
             }
 
-            _context2.next = 7;
+            _context2.next = 8;
             return Object(_common__WEBPACK_IMPORTED_MODULE_5__["throwMessageFromJSONError"])(resp);
 
-          case 7:
-            _context2.next = 9;
+          case 8:
+            _context2.next = 10;
             return resp.json();
 
-          case 9:
+          case 10:
             data = _context2.sent;
             return _context2.abrupt("return", data);
 
-          case 11:
+          case 12:
           case "end":
             return _context2.stop();
         }
@@ -1999,6 +2356,64 @@ function _fetchUpdateSecrets() {
     }, _callee2);
   }));
   return _fetchUpdateSecrets.apply(this, arguments);
+}
+
+function fetchAppAuth() {
+  return _fetchAppAuth.apply(this, arguments);
+}
+
+function _fetchAppAuth() {
+  _fetchAppAuth = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+  /*#__PURE__*/
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3() {
+    var result;
+    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            _context3.prev = 0;
+            _context3.next = 3;
+            return Object(_fetch__WEBPACK_IMPORTED_MODULE_2__["default"])(_config__WEBPACK_IMPORTED_MODULE_3__["default"].apiPrefix + '/resources/config/appauth.json', {
+              headers: Object(_common__WEBPACK_IMPORTED_MODULE_5__["withAuthHeaders"])({
+                'Content-Type': 'application/json'
+              })
+            });
+
+          case 3:
+            result = _context3.sent;
+
+            if (!result.ok) {
+              _context3.next = 10;
+              break;
+            }
+
+            _context3.next = 7;
+            return result.json();
+
+          case 7:
+            return _context3.abrupt("return", _context3.sent);
+
+          case 10:
+            _context3.next = 12;
+            return Object(_common__WEBPACK_IMPORTED_MODULE_5__["throwMessageFromJSONError"])(result);
+
+          case 12:
+            _context3.next = 17;
+            break;
+
+          case 14:
+            _context3.prev = 14;
+            _context3.t0 = _context3["catch"](0);
+            throw 'Could not complete fetch: ' + _context3.t0;
+
+          case 17:
+          case "end":
+            return _context3.stop();
+        }
+      }
+    }, _callee3, null, [[0, 14]]);
+  }));
+  return _fetchAppAuth.apply(this, arguments);
 }
 
 /***/ }),
