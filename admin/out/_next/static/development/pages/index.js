@@ -862,14 +862,13 @@ function _handleSaveClick() {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            console.log('hihih');
-            _context.next = 3;
+            _context.next = 2;
             return Object(_fetchers_userconfig__WEBPACK_IMPORTED_MODULE_3__["fetchUpdateSecrets"])(secretName, params);
 
-          case 3:
+          case 2:
             setShowing(false);
 
-          case 4:
+          case 3:
           case "end":
             return _context.stop();
         }
@@ -935,34 +934,34 @@ function OAuthAppForm(_ref) {
     onSubmit: handleSaveClicked,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 43
+      lineNumber: 42
     },
     __self: this
   }, secretName === 's3' ? __jsx(react__WEBPACK_IMPORTED_MODULE_2___default.a.Fragment, {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 45
+      lineNumber: 44
     },
     __self: this
   }, __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 46
+      lineNumber: 45
     },
     __self: this
   }, __jsx("label", {
     className: "uk-form-label",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 47
+      lineNumber: 46
     },
     __self: this
   }, "AWS Access Key ID"), __jsx("div", {
     className: "uk-form-controls",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 48
+      lineNumber: 47
     },
     __self: this
   }, __jsx("input", {
@@ -972,28 +971,28 @@ function OAuthAppForm(_ref) {
     ref: clientIDLoaded,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 49
+      lineNumber: 48
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 52
+      lineNumber: 51
     },
     __self: this
   }, __jsx("label", {
     className: "uk-form-label",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 53
+      lineNumber: 52
     },
     __self: this
   }, "AWS Secret Access Key"), __jsx("div", {
     className: "uk-form-controls",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 54
+      lineNumber: 53
     },
     __self: this
   }, __jsx("input", {
@@ -1003,28 +1002,28 @@ function OAuthAppForm(_ref) {
     ref: clientSecretLoaded,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 55
+      lineNumber: 54
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 58
+      lineNumber: 57
     },
     __self: this
   }, __jsx("label", {
     className: "uk-form-label",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 59
+      lineNumber: 58
     },
     __self: this
   }, "Region"), __jsx("div", {
     className: "uk-form-controls",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 60
+      lineNumber: 59
     },
     __self: this
   }, __jsx("input", {
@@ -1034,34 +1033,34 @@ function OAuthAppForm(_ref) {
     ref: regionLoaded,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 61
+      lineNumber: 60
     },
     __self: this
   })))) : __jsx(react__WEBPACK_IMPORTED_MODULE_2___default.a.Fragment, {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 65
+      lineNumber: 64
     },
     __self: this
   }, __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 66
+      lineNumber: 65
     },
     __self: this
   }, __jsx("label", {
     className: "uk-form-label",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 67
+      lineNumber: 66
     },
     __self: this
   }, "Client ID"), __jsx("div", {
     className: "uk-form-controls",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 68
+      lineNumber: 67
     },
     __self: this
   }, __jsx("input", {
@@ -1071,28 +1070,28 @@ function OAuthAppForm(_ref) {
     ref: clientIDLoaded,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 69
+      lineNumber: 68
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 72
+      lineNumber: 71
     },
     __self: this
   }, __jsx("label", {
     className: "uk-form-label",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 73
+      lineNumber: 72
     },
     __self: this
   }, "Client Secret"), __jsx("div", {
     className: "uk-form-controls",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 74
+      lineNumber: 73
     },
     __self: this
   }, __jsx("input", {
@@ -1102,14 +1101,14 @@ function OAuthAppForm(_ref) {
     ref: clientSecretLoaded,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 75
+      lineNumber: 74
     },
     __self: this
   })))), __jsx("div", {
     className: "uk-flex uk-flex-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 79
+      lineNumber: 78
     },
     __self: this
   }, __jsx("a", {
@@ -1118,7 +1117,7 @@ function OAuthAppForm(_ref) {
     onClick: handleCancelClicked,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 80
+      lineNumber: 79
     },
     __self: this
   }, "Cancel"), __jsx("input", {
@@ -1128,7 +1127,7 @@ function OAuthAppForm(_ref) {
     value: "Save",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 81
+      lineNumber: 80
     },
     __self: this
   })));
@@ -26086,139 +26085,94 @@ function handleTargetRemoveClick(_x, _x2, _x3, _x4) {
 function _handleTargetRemoveClick() {
   _handleTargetRemoveClick = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee(target, targets, setTargets, setErrorMessage) {
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(target, targets, setTargets, setErrorMessage) {
     var UIKit, result;
-    return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            UIKit = __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js");
-            _context.prev = 1;
-            _context.next = 4;
-            return UIKit.modal.confirm('Are you sure you want to remove this sync target? (' + target.path + ')');
-
-          case 4:
-            _context.next = 9;
-            break;
-
-          case 6:
-            _context.prev = 6;
-            _context.t0 = _context["catch"](1);
-            return _context.abrupt("return");
-
-          case 9:
-            _context.prev = 9;
-            _context.next = 12;
-            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargetRemove"])(target.url);
-
-          case 12:
-            result = _context.sent;
-            setTargets(targets.filter(function (t) {
-              return t.url !== target.url;
-            }));
-            _context.next = 19;
-            break;
-
-          case 16:
-            _context.prev = 16;
-            _context.t1 = _context["catch"](9);
-            setErrorMessage('' + _context.t1);
-
-          case 19:
-            return _context.abrupt("return", false);
-
-          case 20:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee, null, [[1, 6], [9, 16]]);
-  }));
-  return _handleTargetRemoveClick.apply(this, arguments);
-}
-
-function fullSetup(_x5, _x6, _x7, _x8) {
-  return _fullSetup.apply(this, arguments);
-}
-
-function _fullSetup() {
-  _fullSetup = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
-  /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee2(token, setServices, setTargets, setErrorMessage) {
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            _context2.prev = 0;
-            Object(_setup__WEBPACK_IMPORTED_MODULE_4__["ensureInstalled"])(token);
-            _context2.t0 = setServices;
-            _context2.next = 5;
-            return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])();
+            UIKit = __webpack_require__(/*! uikit */ "./node_modules/uikit/dist/js/uikit.js");
+            _context2.prev = 1;
+            _context2.next = 4;
+            return UIKit.modal.confirm('Are you sure you want to remove this sync target? (' + target.path + ')');
 
-          case 5:
-            _context2.t1 = _context2.sent;
-            (0, _context2.t0)(_context2.t1);
-            _context2.t2 = setTargets;
-            _context2.next = 10;
-            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargets"])();
-
-          case 10:
-            _context2.t3 = _context2.sent;
-            (0, _context2.t2)(_context2.t3);
-            _context2.next = 17;
+          case 4:
+            _context2.next = 9;
             break;
 
-          case 14:
-            _context2.prev = 14;
-            _context2.t4 = _context2["catch"](0);
-            setErrorMessage('' + _context2.t4);
+          case 6:
+            _context2.prev = 6;
+            _context2.t0 = _context2["catch"](1);
+            return _context2.abrupt("return");
 
-          case 17:
+          case 9:
+            _context2.prev = 9;
+            _context2.next = 12;
+            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargetRemove"])(target.url);
+
+          case 12:
+            result = _context2.sent;
+            setTargets(targets.filter(function (t) {
+              return t.url !== target.url;
+            }));
+            _context2.next = 19;
+            break;
+
+          case 16:
+            _context2.prev = 16;
+            _context2.t1 = _context2["catch"](9);
+            setErrorMessage('' + _context2.t1);
+
+          case 19:
+            return _context2.abrupt("return", false);
+
+          case 20:
           case "end":
             return _context2.stop();
         }
       }
-    }, _callee2, null, [[0, 14]]);
+    }, _callee2, null, [[1, 6], [9, 16]]);
   }));
-  return _fullSetup.apply(this, arguments);
+  return _handleTargetRemoveClick.apply(this, arguments);
 }
 
-function updateServices(_x9, _x10) {
-  return _updateServices.apply(this, arguments);
+function firstSetup(_x5, _x6, _x7) {
+  return _firstSetup.apply(this, arguments);
 }
 
-function _updateServices() {
-  _updateServices = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+function _firstSetup() {
+  _firstSetup = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
   /*#__PURE__*/
-  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3(setServices, setErrorMessage) {
+  _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee3(token, setTargets, setErrorMessage) {
     return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee3$(_context3) {
       while (1) {
         switch (_context3.prev = _context3.next) {
           case 0:
             _context3.prev = 0;
-            _context3.t0 = setServices;
-            _context3.next = 4;
-            return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])();
+            Object(_setup__WEBPACK_IMPORTED_MODULE_4__["ensureInstalled"])(token);
+            _context3.t0 = setTargets;
+            _context3.next = 5;
+            return Object(_fetchers_targets__WEBPACK_IMPORTED_MODULE_6__["fetchTargets"])();
 
-          case 4:
+          case 5:
             _context3.t1 = _context3.sent;
             (0, _context3.t0)(_context3.t1);
-            _context3.next = 11;
+            _context3.next = 12;
             break;
 
-          case 8:
-            _context3.prev = 8;
+          case 9:
+            _context3.prev = 9;
             _context3.t2 = _context3["catch"](0);
             setErrorMessage('' + _context3.t2);
 
-          case 11:
+          case 12:
           case "end":
             return _context3.stop();
         }
       }
-    }, _callee3, null, [[0, 8]]);
+    }, _callee3, null, [[0, 9]]);
   }));
-  return _updateServices.apply(this, arguments);
+  return _firstSetup.apply(this, arguments);
 }
 
 function Home() {
@@ -26247,18 +26201,57 @@ function Home() {
       return;
     }
 
-    fullSetup(token, setServices, setTargets, setErrorMessage);
+    firstSetup(token, setTargets, setErrorMessage);
   }, [userConfig, token, isAdding]);
   Object(react__WEBPACK_IMPORTED_MODULE_2__["useEffect"])(function () {
     if (userConfig === undefined) {
       return;
     }
 
-    var timer = setInterval(function () {
-      updateServices(setServices, setErrorMessage);
-    }, 1000);
+    var timer = null;
+
+    function updateServices() {
+      return _updateServices.apply(this, arguments);
+    }
+
+    function _updateServices() {
+      _updateServices = Object(_babel_runtime_corejs2_helpers_esm_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])(
+      /*#__PURE__*/
+      _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.mark(function _callee() {
+        return _babel_runtime_corejs2_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.prev = 0;
+                _context.t0 = setServices;
+                _context.next = 4;
+                return Object(_fetchers_services__WEBPACK_IMPORTED_MODULE_5__["fetchServices"])();
+
+              case 4:
+                _context.t1 = _context.sent;
+                (0, _context.t0)(_context.t1);
+                timer = setTimeout(updateServices, 1000);
+                _context.next = 12;
+                break;
+
+              case 9:
+                _context.prev = 9;
+                _context.t2 = _context["catch"](0);
+                setErrorMessage('' + _context.t2);
+
+              case 12:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, null, [[0, 9]]);
+      }));
+      return _updateServices.apply(this, arguments);
+    }
+
+    timer = setTimeout(updateServices, 1000);
     return function () {
-      return clearInterval(timer);
+      return clearTimeout(timer);
     };
   }, [userConfig]);
   var removeTargetClickCallback = Object(react__WEBPACK_IMPORTED_MODULE_2__["useCallback"])(function (target) {
@@ -26277,21 +26270,21 @@ function Home() {
     className: "uk-container",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 83
+      lineNumber: 81
     },
     __self: this
   }, __jsx(_components_Navbar__WEBPACK_IMPORTED_MODULE_11__["default"], {
     userConfig: userConfig,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 84
+      lineNumber: 82
     },
     __self: this
   }), __jsx(_components_Header__WEBPACK_IMPORTED_MODULE_10__["default"], {
     title: "Mediasummon",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 85
+      lineNumber: 83
     },
     __self: this
   }), __jsx(_components_AddTargetModal__WEBPACK_IMPORTED_MODULE_9__["default"], {
@@ -26299,7 +26292,7 @@ function Home() {
     enabled: isAdding,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 86
+      lineNumber: 84
     },
     __self: this
   }), errorMessage ? __jsx("div", {
@@ -26307,7 +26300,7 @@ function Home() {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 88
+      lineNumber: 86
     },
     __self: this
   }, __jsx("a", {
@@ -26315,33 +26308,33 @@ function Home() {
     "uk-close": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 89
+      lineNumber: 87
     },
     __self: this
   }), __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 90
+      lineNumber: 88
     },
     __self: this
   }, __jsx("span", {
     "uk-icon": "warning",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 90
+      lineNumber: 88
     },
     __self: this
   }), " ", errorMessage)) : null, __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove-top",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 92
+      lineNumber: 90
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 93
+      lineNumber: 91
     },
     __self: this
   }, "Summoning your media to these locations"), targets.map(function (target) {
@@ -26351,7 +26344,7 @@ function Home() {
       onRemoveClick: removeTargetClickCallback,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 96
+        lineNumber: 94
       },
       __self: this
     });
@@ -26359,7 +26352,7 @@ function Home() {
     className: "uk-flex uk-flex-center",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 102
+      lineNumber: 100
     },
     __self: this
   }, __jsx("a", {
@@ -26368,20 +26361,20 @@ function Home() {
     onClick: addTargetClickCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 103
+      lineNumber: 101
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-section uk-section-default uk-padding-remove",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 109
+      lineNumber: 107
     },
     __self: this
   }, __jsx("h3", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 110
+      lineNumber: 108
     },
     __self: this
   }, "Summoning media from these services"), services.map(function (service) {
@@ -26390,7 +26383,7 @@ function Home() {
       service: service,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 112
+        lineNumber: 110
       },
       __self: this
     });
