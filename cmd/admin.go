@@ -70,7 +70,7 @@ func RunAdmin() {
 	}
 
 	if err := ensureAdminSite(adminPath); err != nil {
-		log.Println("Error: Admin site files did not exit and could not download it:", err)
+		log.Println("Error: Admin site files did not exist but we could not download them:", err)
 		return
 	}
 
@@ -126,27 +126,39 @@ func downloadAdminSite(adminPath string) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Got status code other than 200: %v", resp.Status)
+	}
+
 	// Stream the request body to the tempfile and then close it
 	if _, err = io.Copy(tmpFile, resp.Body); err != nil {
 		return err
 	}
 	tmpFile.Close()
 
+	log.Println("Finished downloading admin static files, now extracting...")
+
 	// Re-open the file but this time with a zip reader
 	zipFile, err := zip.OpenReader(tmpFile.Name())
 	if err != nil {
-		return nil
-	}
-
-	// Make sure the outDir exists
-	outDir := filepath.Join(adminPath, "out")
-	if err = os.MkdirAll(outDir, os.ModePerm); err != nil {
 		return err
 	}
+
+	log.Println("Ensuring that admin output directory exists...")
+	// Make sure the outDir exists
+	outDir := filepath.Join(adminPath, "out")
+	if err = os.MkdirAll(outDir, 0644); err != nil {
+		return err
+	}
+
 	for _, file := range zipFile.File {
-		if !strings.HasPrefix(file.Name, "admin/out") {
+		if !strings.HasPrefix(file.Name, "mediasummon-master/admin/out") {
 			continue
 		}
+		if strings.HasSuffix(file.Name, "/") { // Skip directories
+			continue
+		}
+		log.Println("Extracting", file.Name)
 
 		zipf, err := file.Open()
 		if err != nil {
@@ -154,18 +166,22 @@ func downloadAdminSite(adminPath string) error {
 		}
 		defer zipf.Close()
 
-		outpath := filepath.Join(outDir, strings.TrimPrefix(file.Name, "admin/out"))
-		outfile, err := os.OpenFile(outpath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644)
+		outpath := filepath.Join(outDir, strings.TrimPrefix(file.Name, "mediasummon-master/admin/out"))
+		if err = os.MkdirAll(filepath.Dir(outpath), 0644); err != nil {
+			return err
+		}
+		outfile, err := os.OpenFile(outpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
 		defer outfile.Close()
 
-		_, err = io.Copy(outfile, zipf)
-		return err
+		if _, err = io.Copy(outfile, zipf); err != nil {
+			return err
+		}
 	}
 
-	log.Println("Finished downloading admin site static files. Continuing on!")
+	log.Println("Finished extracting admin site static files. Continuing on!")
 
 	return nil
 }
