@@ -299,12 +299,12 @@ func handleAdminAppAuth(w http.ResponseWriter, r *http.Request, userConfig *user
 			renderJSONError(w, err, http.StatusInternalServerError)
 			return
 		}
-		if desc, err := authDescriptionForStorage(store); err != nil {
+		desc, err := authDescriptionForStorage(store)
+		if err != nil {
 			renderJSONError(w, err, http.StatusInternalServerError)
 			return
-		} else {
-			resp[storeName] = desc
 		}
+		resp[storeName] = desc
 	}
 	renderJSON(w, resp)
 }
