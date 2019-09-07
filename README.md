@@ -5,7 +5,9 @@ Mediasummon is an open source application that fetches a copy of all your
 photos and videos, and keeps them continuously backed up into one organized
 directory either on your computer or on a cloud storage provider.
 
-![Figure](/admin/static/design/Figure.png?raw=true)
+<p align="center">
+  <img width="800" height="480" src="/admin/static/design/Figure.png?raw=true" />
+</p>
 
 ## Supported Media Services
 
