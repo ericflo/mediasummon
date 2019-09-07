@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"archive/zip"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -64,6 +69,11 @@ func RunAdmin() {
 		return
 	}
 
+	if err := ensureAdminSite(adminPath); err != nil {
+		log.Println("Error: Admin site files did not exit and could not download it:", err)
+		return
+	}
+
 	mux := http.NewServeMux()
 	for _, svc := range serviceMap {
 		for key, handler := range svc.HTTPHandlers() {
@@ -82,6 +92,82 @@ func RunAdmin() {
 	}
 
 	http.ListenAndServe(":"+serviceConfig.WebPort, handler)
+}
+
+func ensureAdminSite(adminPath string) error {
+	if _, err := os.Stat(adminPath); err != nil {
+		if os.IsNotExist(err) {
+			return downloadAdminSite(adminPath)
+		}
+		return err
+	}
+	return nil
+}
+
+func downloadAdminSite(adminPath string) error {
+	url := "https://github.com/ericflo/mediasummon/archive/master.zip"
+
+	log.Println("Could not find admin site static files, downloading them now...")
+
+	// Make a tempfile to download the zip into
+	tmpFile, err := ioutil.TempFile(os.TempDir(), ".tmpdownload-")
+	if err != nil {
+		return err
+	}
+	if tmpFile == nil {
+		return errors.New("Could not create temporary file for admin site to download to")
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// Create the request
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Stream the request body to the tempfile and then close it
+	if _, err = io.Copy(tmpFile, resp.Body); err != nil {
+		return err
+	}
+	tmpFile.Close()
+
+	// Re-open the file but this time with a zip reader
+	zipFile, err := zip.OpenReader(tmpFile.Name())
+	if err != nil {
+		return nil
+	}
+
+	// Make sure the outDir exists
+	outDir := filepath.Join(adminPath, "out")
+	if err = os.MkdirAll(outDir, os.ModePerm); err != nil {
+		return err
+	}
+	for _, file := range zipFile.File {
+		if !strings.HasPrefix(file.Name, "admin/out") {
+			continue
+		}
+
+		zipf, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer zipf.Close()
+
+		outpath := filepath.Join(outDir, strings.TrimPrefix(file.Name, "admin/out"))
+		outfile, err := os.OpenFile(outpath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer outfile.Close()
+
+		_, err = io.Copy(outfile, zipf)
+		return err
+	}
+
+	log.Println("Finished downloading admin site static files. Continuing on!")
+
+	return nil
 }
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {

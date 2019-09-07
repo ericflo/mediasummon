@@ -122,7 +122,7 @@ func (store *s3Storage) DownloadFromURL(url, path string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	tmpFile, err := ioutil.TempFile(filepath.Dir(os.TempDir()), ".tmpdownload-")
+	tmpFile, err := ioutil.TempFile(os.TempDir(), ".tmpdownload-")
 	if err != nil || tmpFile == nil {
 		log.Println("Could not create temporary file:", err)
 		return "", fmt.Errorf("Could not create temporary file: %v", err)
