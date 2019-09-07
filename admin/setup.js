@@ -38,7 +38,7 @@ export function getInstalledCSRF() {
   return installedCSRF;
 }
 
-export function useRequiredUserConfig() {
+export function useRequiredUserConfig(isLogin) {
   const [state, setState] = useState({userConfig: undefined, token: undefined});
   useEffect(() => {
     async function fetchConfig() {
@@ -47,7 +47,9 @@ export function useRequiredUserConfig() {
         const userConfig = await fetchCurrentUserConfig();
         setState({userConfig, token});
       } catch (err) {
-        Router.push('/login');
+        if (!isLogin) {
+          Router.push('/login');
+        }
       }
     }
     fetchConfig();
