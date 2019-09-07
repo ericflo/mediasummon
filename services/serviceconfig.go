@@ -56,7 +56,7 @@ func NewServiceConfig() *ServiceConfig {
 	} else {
 		sc.NumFetchers = int64(numFetchers)
 	}
-	sc.IsDebug = os.Getenv("IS_DEBUG") != ""
+	sc.IsDebug = os.Getenv("IS_DEBUG") == "true"
 	sc.WebPort = GetenvDefault("PORT", constants.DefaultWebPort)
 	sc.CSRFSecret, _ = base64.StdEncoding.DecodeString(os.Getenv("CSRF_SECRET"))
 	if sc.CSRFSecret == nil || len(sc.CSRFSecret) == 0 {
@@ -71,7 +71,7 @@ func NewServiceConfig() *ServiceConfig {
 	if rewrite {
 		debugStr := ""
 		if sc.IsDebug {
-			debugStr += "false"
+			debugStr += "true"
 		}
 		encoded, err := godotenv.Marshal(map[string]string{
 			"IS_DEBUG":                debugStr,
