@@ -188,8 +188,14 @@ func downloadAdminSite(adminPath string) error {
 
 func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs []*userconfig.UserConfig, serviceConfig *services.ServiceConfig) (http.Handler, error) {
 	static := CSRFHandler(http.FileServer(http.Dir(filepath.Join(adminPath, "out"))))
+
+	// Setup static routes
 	mux.Handle("/", static)
-	mux.Handle("/login", http.StripPrefix("/login", static))
+	for _, route := range []string{"/login", "/logout"} {
+		mux.Handle(route, http.StripPrefix(route, static))
+	}
+
+	// Setup admin routes
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
 	mux.HandleFunc("/resources/config/secrets.json", wrapHandler(authRequired(handleAdminUpdateSecrets), serviceConfig))
@@ -202,6 +208,8 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	for path, handler := range storage.HTTPHandlers() {
 		mux.Handle(path, handler)
 	}
+
+	// Setup CORS
 	corsMiddleware := cors.New(cors.Options{
 		AllowOriginFunc: func(origin string) bool {
 			return true
@@ -220,12 +228,15 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 		Debug:          false,
 	})
 	handler := corsMiddleware.Handler(mux)
-	if !serviceConfig.IsDebug {
-		csrfMiddleware := csrf.Protect(serviceConfig.CSRFSecret,
-			csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure)),
-		)
-		handler = csrfMiddleware(handler)
+
+	// Setup CSRF
+	opts := []csrf.Option{csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure))}
+	if !serviceConfig.IsHTTPS {
+		opts = append(opts, csrf.Secure(false))
 	}
+	csrfMiddleware := csrf.Protect(serviceConfig.CSRFSecret, opts...)
+	handler = csrfMiddleware(handler)
+
 	return handler, nil
 }
 

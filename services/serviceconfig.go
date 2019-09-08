@@ -20,6 +20,7 @@ type ServiceConfig struct {
 	NumFetchers int64
 	WebPort     string
 	IsDebug     bool
+	IsHTTPS     bool
 	CSRFSecret  []byte
 }
 
@@ -57,6 +58,7 @@ func NewServiceConfig() *ServiceConfig {
 		sc.NumFetchers = int64(numFetchers)
 	}
 	sc.IsDebug = os.Getenv("IS_DEBUG") == "true"
+	sc.IsHTTPS = os.Getenv("IS_HTTPS") == "true"
 	sc.WebPort = GetenvDefault("PORT", constants.DefaultWebPort)
 	sc.CSRFSecret, _ = base64.StdEncoding.DecodeString(os.Getenv("CSRF_SECRET"))
 	if sc.CSRFSecret == nil || len(sc.CSRFSecret) == 0 {
