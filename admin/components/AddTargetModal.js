@@ -149,10 +149,17 @@ export default function AddTargetModal({ enabled, setIsAdding }) {
               {protocol === 's3' ? null :
                 (protocolAuth.needs_app ?
                   <p>
-                    Visit {protocol} to <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>, then return here and enter the credentials below:
+                    Visit {protocol} to{' '}
+                    <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>,{' '}
+                    then return here and enter the credentials below. Be sure to set the return url to:{' '}
+                    <code>{document.location.protocol + '//' + document.location.host + '/auth/'+protocol+'/return'}</code>
                   </p> :
                   <p>
-                    You already have credentials set up for {protocol}. If you would like to set new app credentials, head over to their site to <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>, then return here and enter the credentials below:
+                    You already have credentials set up for {protocol}. If you would like to set new{' '}
+                    app credentials, head over to their site to{' '}
+                    <a href={protocolAuth.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>,{' '}
+                    then return here and enter the credentials below.  Be sure to set the return url to:{' '}
+                    <code>{document.location.protocol + '//' + document.location.host + '/auth/'+protocol+'/return'}</code>
                   </p>)}
               <OAuthAppForm secretName={protocol} setShowing={handleSetShowing} />
             </div> : null}

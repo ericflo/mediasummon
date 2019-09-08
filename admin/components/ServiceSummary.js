@@ -24,7 +24,7 @@ export default function ServiceSummary({service}) {
     ev.preventDefault();
     setConfiguring(true);
   }, []);
-  const tooltipString = service.app_create_url.split('/')[2]
+  const tooltipString = service.app_create_url.split('/')[2];
   return (
     <div className="uk-card uk-card-default uk-card-hover uk-margin">
       <div className="uk-card-header">
@@ -47,10 +47,17 @@ export default function ServiceSummary({service}) {
         <div className="uk-card-body uk-padding-remove-vertical uk-margin">
           {service.needs_app ?
             <p>
-              Visit {service.metadata.name} to <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>, then return here and enter the credentials below:
+              Visit {service.metadata.name} to
+              <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create an app</a>,{' '}
+              then return here and enter the credentials below. Be sure to set the return url to{' '}
+              <code>{document.location.protocol + '//' + document.location.host + '/auth/'+service.metadata.id+'/return'}</code>
             </p> :
             <p>
-              You already have credentials set up for {service.metadata.name}. If you would like to set new app credentials, head over to their site to <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>, then return here and enter the credentials below:
+              You already have credentials set up for {service.metadata.name}. If you would like to set new{' '}
+              app credentials, head over to their site to{' '}
+              <a href={service.app_create_url} uk-tooltip={tooltipString} target="_blank">create or update your app</a>,{' '}
+              then return here and enter the credentials below. Be sure to set the return url to{' '}
+              <code>{document.location.protocol + '//' + document.location.host + '/auth/'+service.metadata.id+'/return'}</code>
             </p>}
           <OAuthAppForm secretName={service.metadata.id} setShowing={setConfiguring} />
         </div> : null}
