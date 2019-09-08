@@ -325,43 +325,55 @@ function AddTargetModal(_ref) {
       lineNumber: 151
     },
     __self: this
-  }, "Visit ", protocol, " to ", __jsx("a", {
+  }, "Visit ", protocol, " to", ' ', __jsx("a", {
     href: protocolAuth.app_create_url,
     "uk-tooltip": tooltipString,
     target: "_blank",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 152
+      lineNumber: 153
     },
     __self: this
-  }, "create an app"), ", then return here and enter the credentials below:") : __jsx("p", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 154
-    },
-    __self: this
-  }, "You already have credentials set up for ", protocol, ". If you would like to set new app credentials, head over to their site to ", __jsx("a", {
-    href: protocolAuth.app_create_url,
-    "uk-tooltip": tooltipString,
-    target: "_blank",
+  }, "create an app"), ",", ' ', "then return here and enter the credentials below. Be sure to set the return url to:", ' ', __jsx("code", {
     __source: {
       fileName: _jsxFileName,
       lineNumber: 155
     },
     __self: this
-  }, "create or update your app"), ", then return here and enter the credentials below:"), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  }, document.location.protocol + '//' + document.location.host + '/auth/' + protocol + '/return')) : __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 157
+    },
+    __self: this
+  }, "You already have credentials set up for ", protocol, ". If you would like to set new", ' ', "app credentials, head over to their site to", ' ', __jsx("a", {
+    href: protocolAuth.app_create_url,
+    "uk-tooltip": tooltipString,
+    target: "_blank",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 160
+    },
+    __self: this
+  }, "create or update your app"), ",", ' ', "then return here and enter the credentials below.  Be sure to set the return url to:", ' ', __jsx("code", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 162
+    },
+    __self: this
+  }, document.location.protocol + '//' + document.location.host + '/auth/' + protocol + '/return')), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
     secretName: protocol,
     setShowing: handleSetShowing,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 157
+      lineNumber: 164
     },
     __self: this
   })) : null, !configuring && protocolAuth && (protocolAuth.needs_app || protocolAuth.needs_credentials) ? __jsx("div", {
     className: "uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 160
+      lineNumber: 167
     },
     __self: this
   }, __jsx(_OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__["default"], {
@@ -371,13 +383,13 @@ function AddTargetModal(_ref) {
     onConfigureClick: handleConfigureClick,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 161
+      lineNumber: 168
     },
     __self: this
   })) : null, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 163
+      lineNumber: 170
     },
     __self: this
   }, "Choose the location where you would like to save your media:"), __jsx("form", {
@@ -385,7 +397,7 @@ function AddTargetModal(_ref) {
     onSubmit: saveCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 164
+      lineNumber: 171
     },
     __self: this
   }, __jsx("input", {
@@ -396,7 +408,7 @@ function AddTargetModal(_ref) {
     },
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 165
+      lineNumber: 172
     },
     __self: this
   }), __jsx("span", {
@@ -404,7 +416,7 @@ function AddTargetModal(_ref) {
     "uk-form-custom": "target: true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 166
+      lineNumber: 173
     },
     __self: this
   }, __jsx("input", {
@@ -413,7 +425,7 @@ function AddTargetModal(_ref) {
     placeholder: nameForProtocol(protocol),
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 167
+      lineNumber: 174
     },
     __self: this
   }), __jsx("select", {
@@ -422,35 +434,35 @@ function AddTargetModal(_ref) {
     value: protocol,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 168
+      lineNumber: 175
     },
     __self: this
   }, __jsx("option", {
     value: "file",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 169
+      lineNumber: 176
     },
     __self: this
   }, nameForProtocol('file')), __jsx("option", {
     value: "s3",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 170
+      lineNumber: 177
     },
     __self: this
   }, nameForProtocol('s3')), __jsx("option", {
     value: "dropbox",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 171
+      lineNumber: 178
     },
     __self: this
   }, nameForProtocol('dropbox')), __jsx("option", {
     value: "gdrive",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 172
+      lineNumber: 179
     },
     __self: this
   }, nameForProtocol('gdrive')))), __jsx("input", {
@@ -462,7 +474,7 @@ function AddTargetModal(_ref) {
     disabled: !saveEnabled,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 175
+      lineNumber: 182
     },
     __self: this
   }), showConfigure ? null : __jsx("a", {
@@ -472,14 +484,14 @@ function AddTargetModal(_ref) {
     "uk-icon": "icon: cog",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 182
+      lineNumber: 189
     },
     __self: this
   }))), __jsx("div", {
     className: "uk-modal-footer uk-text-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 185
+      lineNumber: 192
     },
     __self: this
   }, __jsx("button", {
@@ -488,7 +500,7 @@ function AddTargetModal(_ref) {
     onClick: closeCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 186
+      lineNumber: 193
     },
     __self: this
   }, "Cancel"), __jsx("button", {
@@ -498,7 +510,7 @@ function AddTargetModal(_ref) {
     disabled: !saveEnabled,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 187
+      lineNumber: 194
     },
     __self: this
   }, "Save"))));
@@ -1181,21 +1193,27 @@ function OAuthSetupPrompt(_ref) {
     target: "_blank",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 9
+      lineNumber: 10
     },
     __self: this
-  }, "create an app"), ", then return here and enter the credentials in settings."), __jsx("div", {
+  }, "create an app"), ", then return here and enter the credentials in settings. Be sure to set the return url to:", ' ', __jsx("code", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 12
+    },
+    __self: this
+  }, document.location.protocol + '//' + document.location.host + '/auth/' + name + '/return')), __jsx("div", {
     className: "uk-panel",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 10
+      lineNumber: 13
     },
     __self: this
   }, __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 11
+      lineNumber: 14
     },
     __self: this
   }, __jsx("a", {
@@ -1204,7 +1222,7 @@ function OAuthSetupPrompt(_ref) {
     onClick: onConfigureClick,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 12
+      lineNumber: 15
     },
     __self: this
   }, "Configure ", name)))) : null, !item.needs_app && item.needs_credentials ? __jsx("div", {
@@ -1212,27 +1230,27 @@ function OAuthSetupPrompt(_ref) {
     "uk-alert": "true",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 17
+      lineNumber: 20
     },
     __self: this
   }, __jsx("p", {
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 18
+      lineNumber: 21
     },
     __self: this
   }, "It looks like your permission is required before we can sync this ", kind, " for you. Clicking this button will send you to ", name, "\u2019s website, where you can grant permission, and you\u2019ll be returned here afterwards."), __jsx("div", {
     className: "uk-panel",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 19
+      lineNumber: 24
     },
     __self: this
   }, __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 20
+      lineNumber: 25
     },
     __self: this
   }, __jsx("a", {
@@ -1240,7 +1258,7 @@ function OAuthSetupPrompt(_ref) {
     className: "uk-button uk-button-primary",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 21
+      lineNumber: 26
     },
     __self: this
   }, "Grant Permission")))) : null);
@@ -1421,43 +1439,55 @@ function ServiceSummary(_ref) {
       lineNumber: 49
     },
     __self: this
-  }, "Visit ", service.metadata.name, " to ", __jsx("a", {
+  }, "Visit ", service.metadata.name, " to", __jsx("a", {
     href: service.app_create_url,
     "uk-tooltip": tooltipString,
     target: "_blank",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 50
+      lineNumber: 51
     },
     __self: this
-  }, "create an app"), ", then return here and enter the credentials below:") : __jsx("p", {
-    __source: {
-      fileName: _jsxFileName,
-      lineNumber: 52
-    },
-    __self: this
-  }, "You already have credentials set up for ", service.metadata.name, ". If you would like to set new app credentials, head over to their site to ", __jsx("a", {
-    href: service.app_create_url,
-    "uk-tooltip": tooltipString,
-    target: "_blank",
+  }, "create an app"), ",", ' ', "then return here and enter the credentials below. Be sure to set the return url to", ' ', __jsx("code", {
     __source: {
       fileName: _jsxFileName,
       lineNumber: 53
     },
     __self: this
-  }, "create or update your app"), ", then return here and enter the credentials below:"), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  }, document.location.protocol + '//' + document.location.host + '/auth/' + service.metadata.id + '/return')) : __jsx("p", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 55
+    },
+    __self: this
+  }, "You already have credentials set up for ", service.metadata.name, ". If you would like to set new", ' ', "app credentials, head over to their site to", ' ', __jsx("a", {
+    href: service.app_create_url,
+    "uk-tooltip": tooltipString,
+    target: "_blank",
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 58
+    },
+    __self: this
+  }, "create or update your app"), ",", ' ', "then return here and enter the credentials below. Be sure to set the return url to", ' ', __jsx("code", {
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 60
+    },
+    __self: this
+  }, document.location.protocol + '//' + document.location.host + '/auth/' + service.metadata.id + '/return')), __jsx(_OAuthAppForm__WEBPACK_IMPORTED_MODULE_5__["default"], {
     secretName: service.metadata.id,
     setShowing: setConfiguring,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 55
+      lineNumber: 62
     },
     __self: this
   })) : null, !configuring && (service.needs_app || service.needs_credentials) ? __jsx("div", {
     className: "uk-card-body uk-padding-remove-vertical uk-margin",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 58
+      lineNumber: 65
     },
     __self: this
   }, __jsx(_OAuthSetupPrompt__WEBPACK_IMPORTED_MODULE_6__["default"], {
@@ -1467,14 +1497,14 @@ function ServiceSummary(_ref) {
     onConfigureClick: handleConfigureClick,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 59
+      lineNumber: 66
     },
     __self: this
   })) : null, __jsx("div", {
     className: "uk-card-footer",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 61
+      lineNumber: 68
     },
     __self: this
   }, __jsx("a", {
@@ -1482,14 +1512,14 @@ function ServiceSummary(_ref) {
     className: "uk-button uk-button-text",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 62
+      lineNumber: 69
     },
     __self: this
   }, "View details"), __jsx("p", {
     className: "uk-align-right",
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 63
+      lineNumber: 70
     },
     __self: this
   }, service.needs_credentials ? null : __jsx("button", {
@@ -1498,7 +1528,7 @@ function ServiceSummary(_ref) {
     onClick: syncCallback,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 65
+      lineNumber: 72
     },
     __self: this
   }, service.current_sync ? 'Syncing...' : 'Sync now'))));
@@ -26192,7 +26222,7 @@ function Home() {
       isAdding = _useState4[0],
       setIsAdding = _useState4[1];
 
-  var _useRequiredUserConfi = Object(_setup__WEBPACK_IMPORTED_MODULE_4__["useRequiredUserConfig"])(),
+  var _useRequiredUserConfi = Object(_setup__WEBPACK_IMPORTED_MODULE_4__["useRequiredUserConfig"])(false),
       userConfig = _useRequiredUserConfi.userConfig,
       token = _useRequiredUserConfi.token;
 
@@ -26456,7 +26486,7 @@ function ensureInstalled(token) {
 function getInstalledCSRF() {
   return installedCSRF;
 }
-function useRequiredUserConfig() {
+function useRequiredUserConfig(isLogin) {
   var _useState = Object(react__WEBPACK_IMPORTED_MODULE_2__["useState"])({
     userConfig: undefined,
     token: undefined
@@ -26499,7 +26529,10 @@ function useRequiredUserConfig() {
               case 10:
                 _context.prev = 10;
                 _context.t0 = _context["catch"](0);
-                next_router__WEBPACK_IMPORTED_MODULE_6___default.a.push('/login');
+
+                if (!isLogin) {
+                  next_router__WEBPACK_IMPORTED_MODULE_6___default.a.push('/login');
+                }
 
               case 13:
               case "end":
