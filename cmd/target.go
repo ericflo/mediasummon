@@ -14,7 +14,15 @@ import (
 	"maxint.co/mediasummon/userconfig"
 )
 
-var defaultTargets = []string{storage.NormalizeStorageURL("~/mediasummon")}
+const defaultDefaultTarget = "~/mediasummon" // lol, the default's default
+
+func getDefaultTargets() []string {
+	defaultTarget := os.Getenv("DEFAULT_TARGET")
+	if defaultTarget == "" {
+		defaultTarget = defaultDefaultTarget
+	}
+	return []string{storage.NormalizeStorageURL(defaultTarget)}
+}
 
 func getTargetConfigPath() string {
 	var configPath string
@@ -79,7 +87,7 @@ func runTargetPreamble(configPath string) (*userconfig.UserConfig, error) {
 	userConfig, err := userconfig.LoadUserConfig(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			userConfig = userconfig.NewUserConfig(sortedServiceNames(), defaultTargets)
+			userConfig = userconfig.NewUserConfig(sortedServiceNames(), getDefaultTargets())
 		} else {
 			log.Println("Error reading config", err)
 			return nil, err

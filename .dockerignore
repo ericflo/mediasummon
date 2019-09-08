@@ -1,0 +1,43 @@
+# Git files
+.git
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/*.exe
+bin/*.exe~
+bin/*.dll
+bin/*.so
+bin/*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Mediasummon config json files
+mediasummon.config.json
+
+# Dotenv
+.env
+
+# Admin files other than in /out
+admin/.next
+admin/components
+admin/fetchers
+admin/node_modules
+admin/pages
+admin/static
+admin/.gitignore
+admin/*.js
+# Also exclude admin development chunks
+admin/out/_next/static/development
+admin/out/_next/static/webpack/static/development
+
+# Ignore the ignorefiles
+.gitignore
+.dockerignore
+
+# This Docker image doesn't need access to the Github workflow files
+main.workflow

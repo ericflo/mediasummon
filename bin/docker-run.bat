@@ -1,0 +1,1 @@
+docker container run -p 5000:5000 --mount type=bind,source=~\mediasummon,target=/mediasummon -it --rm ericflo/mediasummon:latest admin

@@ -17,5 +17,6 @@ mediasummon.config.json
 # Dotenv
 .env
 
-# Synced media data in default location
-media/*
+# Also exclude admin development chunks
+admin/out/_next/static/development/*
+admin/out/_next/static/webpack/static/development/*

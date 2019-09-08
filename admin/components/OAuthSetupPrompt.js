@@ -9,7 +9,7 @@ export default function OAuthSetupPrompt({name, kind, item, onConfigureClick}) {
           <p>Before you can {action} your photos, first you have to set up access. Please
           visit {name} and <a href={item.app_create_url} target="_blank">create an app</a>,
           then return here and enter the credentials in settings. Be sure to set the return url to:{' '}
-          <code>{document.location.protocol + '//' + document.location.host + '/auth/'+name+'/return'}</code></p>
+          <code>{document.location.protocol + '//' + document.location.host + '/auth/'+(item.id || item.kind)+'/return'}</code></p>
           <div className="uk-panel">
             <p className="uk-align-right">
               <a href={item.credential_redirect_url} className="uk-button uk-button-primary" onClick={onConfigureClick}>Configure {name}</a>

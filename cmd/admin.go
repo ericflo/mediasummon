@@ -63,7 +63,7 @@ func RunAdmin() {
 	serviceConfig := services.NewServiceConfig()
 	populateServiceMap(serviceConfig)
 
-	userConfigs, err := userconfig.LoadUserConfigs(configPath.Strings(), sortedServiceNames(), defaultTargets)
+	userConfigs, err := userconfig.LoadUserConfigs(configPath.Strings(), sortedServiceNames(), getDefaultTargets())
 	if err != nil {
 		log.Println("Error reading config", err)
 		return
