@@ -114,8 +114,8 @@ Credentials to access an S3, for used in syncing to a bucket.
 ## Per-user Configuration
 
 While environment-based configuration is the easiest way to get started,
-Mediasummon also supports a configuration file. The benefit of using
-configuration files is that you can supply several, and then multiple
+Mediasummon also supports a configuration file option. The benefit of using
+configuration files is that you can supply multiple, and then multiple
 users can log in and use the same Mediasummon instance. Make accounts for
 everyone in your family, and you can all share the same one!
 
