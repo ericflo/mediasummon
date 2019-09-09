@@ -17,7 +17,7 @@ jobs:
     - name: build binaries
       uses: sosedoff/actions/golang-build@master
       with:
-        args: github.com
+        args: "windows/amd64 windows/386 linux/amd64 linux/386 darwin/amd64 darwin/386"
     - name: upload windows/amd64 binary
       uses: JasonEtco/upload-to-release@master
       env:
