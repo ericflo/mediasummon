@@ -24,7 +24,7 @@ export default function Settings() {
     <div className="toplevel">
       <div className="content">
         <Navbar userConfig={userConfig} />
-        <div className="uk-container uk-margin uk-width-4-5@s uk-width-2-3@m">
+        <div className="content-inner uk-container uk-margin uk-width-4-5@s uk-width-2-3@m">
           <Header title="Mediasummon Settings" />
           {errorMessage ? 
             <div className="uk-alert-danger" uk-alert="true">

@@ -16,7 +16,7 @@ export default function Logout() {
     <div className="toplevel">
       <div className="content">
         <Navbar />
-        <div className="uk-container uk-margin">
+        <div className="content-inner uk-container uk-margin">
           <Header title="Logging out of Mediasummon" />
           <div className="uk-section uk-section-default uk-padding-remove-top">
             <h3>Logging you out...</h3>

@@ -83,7 +83,7 @@ export default function Home() {
     <div className="toplevel">
       <div className="content">
         <Navbar userConfig={userConfig} />
-        <div className="uk-container">
+        <div className="content-inner uk-container">
           <Header title="Mediasummon" />
           <AddTargetModal setIsAdding={setIsAdding} enabled={isAdding} />
           {errorMessage ? 

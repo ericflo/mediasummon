@@ -42,7 +42,7 @@ export default function Login() {
     <div className="toplevel">
       <div className="content">
         <Navbar userConfig={userConfig} />
-        <div className="uk-container uk-margin">
+        <div className="content-inner uk-container uk-margin">
           <Header title="Login to Mediasummon" />
           {errorMessage ? 
             <div className="uk-alert-danger" uk-alert="true">
