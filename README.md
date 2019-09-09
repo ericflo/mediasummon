@@ -92,6 +92,9 @@ current directory.
 service. Defaults to `6`, and unless you're running a large instance hosting
 many users, this should be fine.
 
+The following are especially optional, because they can be provided via the
+admin. However if you'd like to provide them using env vars, here they are:
+
 **GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET**: Client credentials to a
 Google Photos API client application.
 
