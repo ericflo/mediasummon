@@ -70,7 +70,8 @@ the env vars environmentally, or by updating the contents of `.env`.
 
 **DEFAULT_TARGET**: The target directory you want to save your photos to.
 Examples of this would be: `~/mediasummon`, `s3://bucketname`,
-`dropbox://Mediasummon`, `gdrive://Mediasummon`.
+`dropbox://Mediasummon`, `gdrive://Mediasummon`. The default default is
+`~/mediasummon`.
 
 **IS_DEBUG**: Set to `true` if you're just testing things out or working on
 Mediasummon itself, otherwise leave empty or set to `false`.
