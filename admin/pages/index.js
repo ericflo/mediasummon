@@ -1,4 +1,5 @@
 import '../node_modules/uikit/dist/css/uikit.min.css';
+import '../static/css/global.css';
 import { useState, useEffect, useCallback } from 'react';
 import { ensureInstalled, useRequiredUserConfig } from '../setup';
 import { fetchServices } from '../fetchers/services';
@@ -8,6 +9,7 @@ import TargetSummary from '../components/TargetSummary';
 import AddTargetModal from '../components/AddTargetModal';
 import Header from '../components/Header';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 async function handleTargetRemoveClick(target, targets, setTargets, setErrorMessage) {
   const UIKit = require('uikit');
@@ -74,42 +76,49 @@ export default function Home() {
   }, []);
 
   if (userConfig === undefined) {
-    return null;
+    return <div uk-spinner="ratio: 3" className="uk-flex uk-flex-center uk-margin-xxlarge" />;
   }
 
   return (
-    <div className="uk-container">
-      <Navbar userConfig={userConfig} />
-      <Header title="Mediasummon" />
-      <AddTargetModal setIsAdding={setIsAdding} enabled={isAdding} />
-      {errorMessage ? 
-        <div className="uk-alert-danger" uk-alert="true">
-          <a className="uk-alert-close" uk-close="true"></a>
-          <p><span uk-icon="warning" /> {errorMessage}</p>
-        </div> : null}
-      <div className="uk-section uk-section-default uk-padding-remove-top">
-        <h3>Summoning your media to these locations</h3>
-        {targets.map(target => {
-          return (
-            <TargetSummary
-              key={target.url}
-              target={target}
-              onRemoveClick={removeTargetClickCallback} />
-          );
-        })}
-        <div className="uk-flex uk-flex-center">
-          <a
-            href="#"
-            uk-icon="icon: plus-circle; ratio: 2" 
-            onClick={addTargetClickCallback} />
+    <div className="toplevel">
+      <div className="content">
+        <Navbar userConfig={userConfig} />
+        <div className="uk-container">
+          <Header title="Mediasummon" />
+          <AddTargetModal setIsAdding={setIsAdding} enabled={isAdding} />
+          {errorMessage ? 
+            <div className="uk-alert-danger" uk-alert="true">
+              <a className="uk-alert-close" uk-close="true"></a>
+              <p><span uk-icon="warning" /> {errorMessage}</p>
+            </div> : null}
+          <div className="">
+            <h3>Summoning your media to these locations</h3>
+            {targets.length === 0 ? <div uk-spinner="ratio: 3" className="uk-flex uk-flex-center uk-margin-xxlarge" /> : null}
+            {targets.map(target => {
+              return (
+                <TargetSummary
+                  key={target.url}
+                  target={target}
+                  onRemoveClick={removeTargetClickCallback} />
+              );
+            })}
+            <div className="uk-flex uk-flex-center">
+              <a
+                href="#"
+                uk-icon="icon: plus-circle; ratio: 2" 
+                onClick={addTargetClickCallback} />
+            </div>
+          </div>
+          <div className="uk-margin">
+            <h3>Summoning media from these services</h3>
+            {services.length === 0 ? <div uk-spinner="ratio: 3" className="uk-flex uk-flex-center uk-margin-xxlarge" /> : null}
+            {services.map(service => {
+              return <ServiceSummary key={service.metadata.id} service={service} />;
+            })}
+          </div>
         </div>
       </div>
-      <div className="uk-section uk-section-default uk-padding-remove">
-        <h3>Summoning media from these services</h3>
-        {services.map(service => {
-          return <ServiceSummary key={service.metadata.id} service={service} />;
-        })}
-      </div>
+      <Footer />
     </div>
   );
 }

@@ -7,7 +7,7 @@ export default function TargetSummary({target, onRemoveClick}) {
     onRemoveClick(target);
   }, [target, onRemoveClick]);
   return (
-    <div className="uk-card uk-card-default uk-card-hover uk-margin">
+    <div className="uk-card uk-card-default uk-card-hover uk-margin ts">
       <div className="uk-card-header">
         <div className="uk-grid-small uk-flex-middle" uk-grid="true">
           <div className="uk-width-auto">
