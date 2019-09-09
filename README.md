@@ -68,19 +68,9 @@ It also checks for a `.env` file in the current directory following
 [https://github.com/motdotla/dotenv](dotenv) syntax, so you can either provide
 the env vars environmentally, or by updating the contents of `.env`.
 
-`DEFAULT_TARGET`: The target directory you want to save your photos to.
-Examples of this would be:
-
-```console
-export DEFAULT_TARGET="~/mediasummon"
-export DEFAULT_TARGET="s3://bucketname"
-export DEFAULT_TARGET="dropbox://Mediasummon"
-export DEFAULT_TARGET="gdrive://Mediasummon"
-# Note file protocol has one extra slash before path, which in this case is absolute
-export DEFAULT_TARGET="file:////tmp"
-# But it can be relative to home dir
-export DEFAULT_TARGET="file:///~/mymedia"
-```
+**DEFAULT_TARGET**: The target directory you want to save your photos to.
+Examples of this would be: `~/mediasummon`, `s3://bucketname`,
+`dropbox://Mediasummon`, `gdrive://Mediasummon`.
 
 **IS_DEBUG**: Set to `true` if you're just testing things out or working on
 Mediasummon itself, otherwise leave empty or set to `false`.
