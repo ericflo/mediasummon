@@ -65,7 +65,7 @@ running the admin web interface at [http://localhost:5000](http://localhost:5000
 The easiest way to configure Mediasummon is using environment variables. If you
 set any of the following env vars, Mediasummon will use your provided setting.
 It also checks for a `.env` file in the current directory following
-[https://github.com/motdotla/dotenv](dotenv) syntax, so you can either provide
+[dotenv](https://github.com/motdotla/dotenv) syntax, so you can either provide
 the env vars environmentally, or by updating the contents of `.env`.
 
 **DEFAULT_TARGET**: The target directory you want to save your photos to.
