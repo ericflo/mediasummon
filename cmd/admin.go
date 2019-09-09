@@ -198,7 +198,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	// Setup static routes
 	mux.Handle("/", static)
 	for _, route := range adminPages {
-		mux.Handle(route, http.StripPrefix(route, static))
+		mux.Handle(route, static) // http.StripPrefix(route, static))
 	}
 
 	// Setup admin routes

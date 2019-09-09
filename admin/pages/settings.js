@@ -12,7 +12,7 @@ const kinds = [
 ];
 
 export default function Settings() {
-  const {userConfig, token} = useRequiredUserConfig(true);
+  const {userConfig, token} = useRequiredUserConfig();
   const [errorMessage, setErrorMessage] = useState(null);
   // Ensure that the main stuff is installed on load or if auth token changes
   useEffect(() => {

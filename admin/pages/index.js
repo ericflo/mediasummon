@@ -39,7 +39,7 @@ export default function Home() {
   const [targets, setTargets] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
-  const {userConfig, token} = useRequiredUserConfig(false);
+  const {userConfig, token} = useRequiredUserConfig();
 
   useEffect(() => {
     if (userConfig === undefined) {

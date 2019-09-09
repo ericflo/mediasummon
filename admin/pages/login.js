@@ -8,7 +8,7 @@ import Router from 'next/router';
 import Navbar from '../components/Navbar';
 
 export default function Login() {
-  const {userConfig, token} = useRequiredUserConfig(true);
+  const {userConfig, token} = useRequiredUserConfig();
   const [errorMessage, setErrorMessage] = useState(null);
   const [usernameField, setUsernameField] = useState(null);
   const [passwordField, setPasswordField] = useState(null);
