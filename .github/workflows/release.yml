@@ -53,8 +53,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        args: mediasummon_darwin_386 application/octet-stream
-    - name: upload binaries
-      uses: actions/bin/sh@master
-      with:
-        args: ls -ltr /github/workspace/.release/
+        args: /github/workspace/.release/mediasummon_darwin_386 application/octet-stream
