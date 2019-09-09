@@ -1,0 +1,60 @@
+on: release
+name: mediasummon release workflow
+jobs:
+  githubOfficialAction:
+    name: github official action
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: github official action
+      uses: actions/bin/sh@master
+      with:
+        args: ls
+    - name: docker action
+      uses: docker://node:6
+      with:
+        args: node --version
+    - name: build binaries
+      uses: sosedoff/actions/golang-build@master
+      with:
+        args: github.com
+    - name: upload windows/amd64 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_windows_amd64 application/octet-stream
+    - name: upload windows/386 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_windows_386 application/octet-stream
+    - name: upload linux/amd64 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_linux_amd64 application/octet-stream
+    - name: upload linux/386 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_linux_386 application/octet-stream
+    - name: upload darwin/amd64 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_darwin_amd64 application/octet-stream
+    - name: upload darwin/386 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: mediasummon_darwin_386 application/octet-stream
+    - name: upload binaries
+      uses: actions/bin/sh@master
+      with:
+        args: ls -ltr /github/workspace/.release/
