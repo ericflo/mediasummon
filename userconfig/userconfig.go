@@ -62,6 +62,10 @@ func NewUserConfig(serviceNames, targets []string) *UserConfig {
 	} else {
 		configPath = absPath
 	}
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort)
+	}
 	return &UserConfig{
 		Path:         configPath,
 		Username:     "mediasummon",
@@ -70,7 +74,7 @@ func NewUserConfig(serviceNames, targets []string) *UserConfig {
 		TimeCreated:  time.Now().UTC(),
 		Targets:      targets,
 		Format:       strings.ReplaceAll("2006/January/02-15_04_05", "/", string(os.PathSeparator)),
-		FrontendURL:  fmt.Sprintf("http://localhost:%s", constants.DefaultWebPort),
+		FrontendURL:  frontendURL,
 		HoursPerSync: hps,
 		Secrets:      secrets,
 	}

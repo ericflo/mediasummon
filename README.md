@@ -9,6 +9,7 @@ directory either on your computer or on a cloud storage provider.
   <img width="800" height="480" src="/admin/static/design/Figure.png?raw=true" />
 </p>
 
+
 ## Supported Media Services
 
 Mediasummon can connect to several online services to back up you media, and
@@ -19,6 +20,7 @@ supported:
 * Google Photos
 * Instagram
 * Facebook Photos
+
 
 ## Supported Cloud Storage
 
@@ -31,13 +33,99 @@ pick one, you can synchronize to several of these at once:
 * Google Drive
 * Amazon S3
 
+
 ## Installation
 
 Mediasummon is a single executable binary, so the easiest way to install it is
 to download it, make it executable, and run it:
 
-```shell
+```console
 curl -O https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
 chmod +x ./mediasummon_linux_amd64
 ./mediasummon_linux_amd64
 ```
+
+If you're a fan of Docker, there's an official image at `ericflo/mediasummon`.
+Running it via Docker looks like this:
+
+```console
+mkdir -p ~/mediasummon
+docker container run \
+  -it --rm -p 5000:5000 \
+  --mount type=bind,source=~/mediasummon,target=/mediasummon \
+  ericflo/mediasummon:latest admin
+```
+
+This example sets it up to sync file to a new `~/mediasummon` directory,
+running the admin web interface at [http://localhost:5000](http://localhost:5000).
+
+
+## Configuration
+
+The easiest way to configure Mediasummon is using environment variables. If you
+set any of the following env vars, Mediasummon will use your provided setting.
+It also checks for a `.env` file in the current directory following
+[https://github.com/motdotla/dotenv](dotenv) syntax, so you can either provide
+the env vars environmentally, or by updating the contents of `.env`.
+
+`DEFAULT_TARGET`: The target directory you want to save your photos to.
+Examples of this would be:
+
+```console
+export DEFAULT_TARGET="~/mediasummon"
+export DEFAULT_TARGET="s3://bucketname"
+export DEFAULT_TARGET="dropbox://Mediasummon"
+export DEFAULT_TARGET="gdrive://Mediasummon"
+# Note file protocol has one extra slash before path, which in this case is absolute
+export DEFAULT_TARGET="file:////tmp"
+# But it can be relative to home dir
+export DEFAULT_TARGET="file:///~/mymedia"
+```
+
+**IS_DEBUG**: Set to `true` if you're just testing things out or working on
+Mediasummon itself, otherwise leave empty or set to `false`.
+
+**IS_HTTPS**: Set to `true` if you're hosting the http service securely as HTTPS,
+otherwise leave empty or set to `false`.
+
+**FRONTEND_URL**: This is the URL to the admin frontend, which defaults to
+`http://localhost:5000`.
+
+**PORT**: The port to host the admin frontend on. Somewhat redundant to
+``FRONTEND_URL``, but split out for Reasons.
+
+**CSRF_SECRET**: A 32 byte secret used to protect against cross site request
+forgery. If not provided, one will be generated and saved in .env in the
+current directory.
+
+**NUM_FETCHERS**: The maximum number of concurrent fetchers to run per media
+service. Defaults to `6`, and unless you're running a large instance hosting
+many users, this should be fine.
+
+**GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET**: Client credentials to a
+Google Photos API client application.
+
+**INSTAGRAM_CLIENT_ID** and **INSTAGRAM_CLIENT_SECRET**: Client credentials to
+an Instagram API client application.
+
+**FACEBOOK_CLIENT_ID** and **FACEBOOK_CLIENT_SECRET**: Client credentials to
+a Facebook API client application.
+
+**DROPBOX_CLIENT_ID** and **DROPBOX_CLIENT_SECRET**: Client credentials to
+a Dropbox API client application.
+
+**GDRIVE_CLIENT_ID** and **GDRIVE_CLIENT_SECRET**: Client credentials to
+a Google Drive API client application.
+
+**S3_AWS_ACCESS_KEY_ID**, **S3_AWS_SECRET_ACCESS_KEY**, and **S3_REGION**:
+Credentials to access an S3, for used in syncing to a bucket.
+
+
+## Per-user Configuration
+
+While environment-based configuration is the easiest way to get started,
+Mediasummon also supports a configuration file. The benefit of using
+configuration files is that you can supply several, and then multiple
+users can log in and use the same Mediasummon instance. Make accounts for
+everyone in your family, and you can all share the same one!
+
