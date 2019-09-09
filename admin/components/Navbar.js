@@ -30,6 +30,11 @@ function LoggedInNavbar(userConfig) {
       <div className="uk-navbar-right">
         <ul className="uk-navbar-nav">
           <li>
+            <Link href="/settings">
+              <a>Settings</a>
+            </Link>
+          </li>
+          <li>
             <Link href="/logout">
               <a>Logout</a>
             </Link>

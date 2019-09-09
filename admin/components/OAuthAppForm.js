@@ -2,22 +2,40 @@ import React from 'react';
 import { useState, useCallback } from 'react';
 import { fetchUpdateSecrets } from '../fetchers/userconfig';
 
-async function handleSaveClick(secretName, params, setShowing) {
+async function handleSaveClick(secretName, params, setShowing, resetAll) {
   await fetchUpdateSecrets(secretName, params);
-  setShowing(false);
+  resetAll();
+  if (setShowing) {
+    setShowing(false);
+  }
 }
 
 export default function OAuthAppForm({secretName, setShowing}) {
   const [clientID, setClientID] = useState(undefined);
   const [clientSecret, setClientSecret] = useState(undefined);
   const [region, setRegion] = useState(undefined);
-  
+  const [saving, setSaving] = useState(false);
+  const resetAll = useCallback(() => {
+    if (clientID) {
+      clientID.value = '';
+    }
+    if (clientSecret) {
+      clientSecret.value = '';
+    }
+    if (region) {
+      region.value = '';
+    }
+    setSaving(false);
+  }, [clientID, clientSecret, region]);
   const handleCancelClicked = useCallback(ev => {
     ev.preventDefault();
-    setShowing(false);
+    if (setShowing) {
+      setShowing(false);
+    }
   }, []);
   const handleSaveClicked = useCallback(ev => {
     ev.preventDefault();
+    setSaving(true);
     const id = clientID ? clientID.value : null;
     const secret = clientSecret ? clientSecret.value : null;
     const reg = region ? region.value : null;
@@ -27,7 +45,7 @@ export default function OAuthAppForm({secretName, setShowing}) {
     } else {
       params = {client_id: id, client_secret: secret};
     }
-    handleSaveClick(secretName, params, setShowing);
+    handleSaveClick(secretName, params, setShowing, resetAll);
   }, [secretName, clientID, clientSecret]);
   const clientIDLoaded = useCallback(ref => {
     setClientID(ref);
@@ -76,8 +94,8 @@ export default function OAuthAppForm({secretName, setShowing}) {
           </div>
         </React.Fragment>}
       <div className="uk-flex uk-flex-right">
-        <a href="#" className="uk-button" onClick={handleCancelClicked}>Cancel</a>
-        <input type="submit" className="uk-button uk-button-primary" onSubmit={handleSaveClicked} value="Save" />
+        {setShowing ? <a href="#" className="uk-button" onClick={handleCancelClicked}>Cancel</a> : null}
+        <input type="submit" className="uk-button uk-button-primary" onSubmit={handleSaveClicked} value="Save" disabled={saving} />
       </div>
     </form>
   );

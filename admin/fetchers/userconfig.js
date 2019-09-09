@@ -37,6 +37,40 @@ export async function fetchUpdateSecrets(secretName, params) {
   return data;
 }
 
+export async function fetchUpdateUsername(username) {
+  const resp = await httpFetch(config.apiPrefix + '/resources/config/username.json', {
+    method: 'POST',
+    headers: withAuthHeaders({
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'X-CSRF-Token': getInstalledCSRF(),
+    }),
+    credentials: 'include',
+    body: encodeQuery({username}),
+  });
+  if (!resp.ok) {
+    await throwMessageFromJSONError(resp);
+  }
+  const data = await resp.json();
+  return data;
+}
+
+export async function fetchUpdatePassword(password) {
+  const resp = await httpFetch(config.apiPrefix + '/resources/config/password.json', {
+    method: 'POST',
+    headers: withAuthHeaders({
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'X-CSRF-Token': getInstalledCSRF(),
+    }),
+    credentials: 'include',
+    body: encodeQuery({password}),
+  });
+  if (!resp.ok) {
+    await throwMessageFromJSONError(resp);
+  }
+  const data = await resp.json();
+  return data;
+}
+
 export async function fetchAppAuth() {
   try {
     const result = await httpFetch(config.apiPrefix + '/resources/config/appauth.json', {

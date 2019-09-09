@@ -25,6 +25,12 @@ import (
 	"maxint.co/mediasummon/userconfig"
 )
 
+var adminPages = []string{
+	"/login",
+	"/logout",
+	"/settings",
+}
+
 type handlerFunc func(http.ResponseWriter, *http.Request, *userconfig.UserConfig, *services.ServiceConfig)
 
 // AdminAuthAppDescription is the struct that holds stuff related to oauth app auth
@@ -191,7 +197,7 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 
 	// Setup static routes
 	mux.Handle("/", static)
-	for _, route := range []string{"/login", "/logout"} {
+	for _, route := range adminPages {
 		mux.Handle(route, http.StripPrefix(route, static))
 	}
 
@@ -199,6 +205,8 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	mux.HandleFunc("/auth/login.json", makeLoginHandler(userConfigs))
 	mux.HandleFunc("/resources/config.json", wrapHandler(authRequired(handleAdminUserConfig), serviceConfig))
 	mux.HandleFunc("/resources/config/secrets.json", wrapHandler(authRequired(handleAdminUpdateSecrets), serviceConfig))
+	mux.HandleFunc("/resources/config/username.json", wrapHandler(authRequired(handleAdminUpdateUsername), serviceConfig))
+	mux.HandleFunc("/resources/config/password.json", wrapHandler(authRequired(handleAdminUpdatePassword), serviceConfig))
 	mux.HandleFunc("/resources/config/appauth.json", wrapHandler(authRequired(handleAdminAppAuth), serviceConfig))
 	mux.HandleFunc("/resources/services.json", wrapHandler(authRequired(handleAdminServices), serviceConfig))
 	mux.HandleFunc("/resources/service/sync.json", wrapHandler(authRequired(handleAdminServiceSync), serviceConfig))
@@ -230,12 +238,14 @@ func attachAdminHTTPHandlers(mux *http.ServeMux, adminPath string, userConfigs [
 	handler := corsMiddleware.Handler(mux)
 
 	// Setup CSRF
-	opts := []csrf.Option{csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure))}
-	if !serviceConfig.IsHTTPS {
-		opts = append(opts, csrf.Secure(false))
+	if !serviceConfig.IsDebug {
+		opts := []csrf.Option{csrf.ErrorHandler(http.HandlerFunc(renderCORSFailure))}
+		if !serviceConfig.IsHTTPS {
+			opts = append(opts, csrf.Secure(false))
+		}
+		csrfMiddleware := csrf.Protect(serviceConfig.CSRFSecret, opts...)
+		handler = csrfMiddleware(handler)
 	}
-	csrfMiddleware := csrf.Protect(serviceConfig.CSRFSecret, opts...)
-	handler = csrfMiddleware(handler)
 
 	return handler, nil
 }
@@ -302,6 +312,49 @@ func handleAdminUpdateSecrets(w http.ResponseWriter, r *http.Request, userConfig
 		return
 	}
 
+	renderJSON(w, userConfig)
+}
+
+func handleAdminUpdateUsername(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
+	}
+	username := r.FormValue("username")
+	if len(username) < 3 {
+		renderJSONErrorMessage(w, "Username must be at least 3 characters long", http.StatusBadRequest)
+		return
+	}
+	if len(username) > 20 {
+		renderJSONErrorMessage(w, "Username must be at most 20 characters long", http.StatusBadRequest)
+		return
+	}
+	userConfig.Username = username
+	if err := userConfig.Save(); err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
+	renderJSON(w, userConfig)
+}
+
+func handleAdminUpdatePassword(w http.ResponseWriter, r *http.Request, userConfig *userconfig.UserConfig, serviceConfig *services.ServiceConfig) {
+	if r.Method != "POST" {
+		renderJSONErrorMessage(w, "Must call POST on this method", http.StatusMethodNotAllowed)
+		return
+	}
+	password := r.FormValue("password")
+	if len(password) < 2 {
+		renderJSONErrorMessage(w, "Password must be at least 2 characters long", http.StatusBadRequest)
+		return
+	}
+	if err := userConfig.SetPassword(password); err != nil {
+		renderJSONError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := userConfig.Save(); err != nil {
+		renderJSONError(w, err, http.StatusInternalServerError)
+		return
+	}
 	renderJSON(w, userConfig)
 }
 
