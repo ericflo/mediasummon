@@ -1,7 +1,7 @@
 # Mediasummon
 
 [![Documentation](https://godoc.org/github.com/ericflo/mediasummon?status.svg)](https://godoc.org/github.com/ericflo/mediasummon)
-[![License](https://img.shields.io/github/license/ericflo/mediasummon.svg?maxAge=2592000)](https://github.com/ericflo/mediasummon/LICENSE.md)
+[![License](https://img.shields.io/github/license/ericflo/mediasummon.svg?maxAge=2592000)](https://github.com/ericflo/mediasummon/blob/master/LICENSE.md)
 
 ### Summon your photos and videos back to you
 
