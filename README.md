@@ -1,8 +1,9 @@
 # Mediasummon
-### Summon your photos and videos back to you
 
 [![Documentation](https://godoc.org/github.com/ericflo/mediasummon?status.svg)](https://godoc.org/github.com/ericflo/mediasummon)
 [![License](https://img.shields.io/github/license/ericflo/mediasummon.svg?maxAge=2592000)](https://github.com/ericflo/mediasummon/LICENSE.md)
+
+### Summon your photos and videos back to you
 
 Mediasummon is an open source application that fetches a copy of all your
 photos and videos, and keeps them continuously backed up into one organized
