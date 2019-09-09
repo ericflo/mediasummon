@@ -83,15 +83,14 @@ otherwise leave empty or set to `false`.
 `http://localhost:5000`.
 
 **PORT**: The port to host the admin frontend on. Somewhat redundant to
-``FRONTEND_URL``, but split out for Reasons.
+``FRONTEND_URL``, but split out for Reasons. Defaults to `5000`.
 
 **CSRF_SECRET**: A 32 byte secret used to protect against cross site request
 forgery. If not provided, one will be generated and saved in .env in the
 current directory.
 
 **NUM_FETCHERS**: The maximum number of concurrent fetchers to run per media
-service. Defaults to `6`, and unless you're running a large instance hosting
-many users, this should be fine.
+service. Defaults to `6`, which should be fine for most users.
 
 **The following are especially optional**, because they can be provided via the
 admin. However if you'd like to provide them using env vars, here they are:
