@@ -10,7 +10,7 @@ directory either on your computer or on a cloud storage provider.
 </p>
 
 
-## Supported Media Services
+## Supported media services
 
 Mediasummon can connect to several online services to back up you media, and
 once you have authorized it to do so, it will periodically connect to each
@@ -22,7 +22,7 @@ supported:
 * Facebook Photos
 
 
-## Supported Cloud Storage
+## Supported cloud storage
 
 You can store the downloaded files in a directory on your computer, or you can
 have Mediasummon synchronize the files to a directory on a cloud storage
@@ -105,7 +105,7 @@ the OAuth application to auth with for the given service.
 Credentials to access an S3, for used in syncing to a bucket.
 
 
-## Per-user Configuration
+## Per-user configuration
 
 While environment-based configuration is the easiest way to get started,
 Mediasummon also supports a configuration file option. The benefit of using
