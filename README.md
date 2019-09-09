@@ -30,3 +30,14 @@ pick one, you can synchronize to several of these at once:
 * Dropbox
 * Google Drive
 * Amazon S3
+
+## Installation
+
+Mediasummon is a single executable binary, so the easiest way to install it is
+to download it, make it executable, and run it:
+
+```bash
+curl -O https://github.com/ericflo/mediasummon/releases/download/mediasummon-0.0.1/mediasummon_linux_amd64
+chmod +x ./mediasummon_linux_amd64
+./mediasummon_linux_amd64
+```
