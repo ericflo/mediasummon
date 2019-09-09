@@ -1,0 +1,1 @@
+docker push ericflo/mediasummon:latest
