@@ -92,23 +92,14 @@ current directory.
 service. Defaults to `6`, and unless you're running a large instance hosting
 many users, this should be fine.
 
-The following are especially optional, because they can be provided via the
+**The following are especially optional**, because they can be provided via the
 admin. However if you'd like to provide them using env vars, here they are:
 
-**GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET**: Client credentials to a
-Google Photos API client application.
+**{GOOGLE,INSTAGRAM,FACEBOOK,DROPBOX,GDRIVE}_CLIENT_ID**: Client credentials to
+the OAuth application to auth with for the given service.
 
-**INSTAGRAM_CLIENT_ID** and **INSTAGRAM_CLIENT_SECRET**: Client credentials to
-an Instagram API client application.
-
-**FACEBOOK_CLIENT_ID** and **FACEBOOK_CLIENT_SECRET**: Client credentials to
-a Facebook API client application.
-
-**DROPBOX_CLIENT_ID** and **DROPBOX_CLIENT_SECRET**: Client credentials to
-a Dropbox API client application.
-
-**GDRIVE_CLIENT_ID** and **GDRIVE_CLIENT_SECRET**: Client credentials to
-a Google Drive API client application.
+**{GOOGLE,INSTAGRAM,FACEBOOK,DROPBOX,GDRIVE}_CLIENT_SECRET**: Client secret to
+the OAuth application to auth with for the given service.
 
 **S3_AWS_ACCESS_KEY_ID**, **S3_AWS_SECRET_ACCESS_KEY**, and **S3_REGION**:
 Credentials to access an S3, for used in syncing to a bucket.
