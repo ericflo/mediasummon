@@ -46,7 +46,7 @@ Mediasummon is a single executable binary, so the easiest way to install it is
 to download it, make it executable, and run it:
 
 ```console
-curl -O https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
+curl -LO https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
 chmod +x ./mediasummon_linux_amd64
 ./mediasummon_linux_amd64
 ```
