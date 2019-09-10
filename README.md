@@ -71,7 +71,7 @@ RestartSec=5s
 WorkingDirectory=/home/USERNAME
 User=USERNAME
 Group=USERNAME
-ExecStart=/home/USERNAME/mediasummon_linux_amd64
+ExecStart=/home/USERNAME/mediasummon_linux_amd64 admin
 
 [Install]
 WantedBy=multi-user.target
