@@ -57,7 +57,7 @@ func NewServiceConfig() *ServiceConfig {
 	} else {
 		sc.NumFetchers = int64(numFetchers)
 	}
-	sc.IsDebug = os.Getenv("IS_DEBUG") == "true"
+	sc.IsDebug = GetenvDefault("IS_DEBUG", "true") == "true"
 	sc.IsHTTPS = os.Getenv("IS_HTTPS") == "true"
 	sc.WebPort = GetenvDefault("PORT", constants.DefaultWebPort)
 	sc.CSRFSecret, _ = base64.StdEncoding.DecodeString(os.Getenv("CSRF_SECRET"))
@@ -75,8 +75,13 @@ func NewServiceConfig() *ServiceConfig {
 		if sc.IsDebug {
 			debugStr += "true"
 		}
+		httpsStr := ""
+		if sc.IsHTTPS {
+			httpsStr += "true"
+		}
 		encoded, err := godotenv.Marshal(map[string]string{
 			"IS_DEBUG":                debugStr,
+			"IS_HTTPS":                httpsStr,
 			"CSRF_SECRET":             base64.StdEncoding.EncodeToString(sc.CSRFSecret),
 			"NUM_FETCHERS":            fmt.Sprintf("%d", numFetchers),
 			"GOOGLE_CLIENT_ID":        "",
