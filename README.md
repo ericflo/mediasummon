@@ -18,7 +18,7 @@ directory either on your computer or on a cloud storage provider.
 
 ## Supported media services
 
-Mediasummon can connect to several online services to back up you media, and
+Mediasummon can connect to several online services to back up your media, and
 once you have authorized it to do so, it will periodically connect to each
 service and download any new photos or videos you have uploaded. Currently
 supported:
