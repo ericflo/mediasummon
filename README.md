@@ -48,9 +48,40 @@ Mediasummon is a single executable binary, so the easiest way to install it is
 to download it, make it executable, and run it:
 
 ```console
-curl -LO https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
-chmod +x ./mediasummon_linux_amd64
-./mediasummon_linux_amd64 admin
+curl -L https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64 -o ./mediasummon
+chmod +x ./mediasummon
+./mediasummon admin
+```
+
+To set it up to start when your system starts, set up a systemd configuration
+in `/lib/systemd/system/mediasummon.service` like so, making sure to edit the
+`ExecStart` to point to your downloaded binary, which in this case is set to
+`/home/USERNAME/mediasummon`:
+
+```ini
+[Unit]
+Description=mediasummon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/home/USERNAME/mediasummon
+
+[Install]
+WantedBy=multi-user.target
+```
+
+To set environment variables on startup, set them under the `Service` section
+like so:
+
+```ini
+[Service]
+...
+Environment=PORT=5050
+Environment=FRONTEND_URL=http://myhost.local:5050
 ```
 
 If you're a fan of Docker, there's an official image at `ericflo/mediasummon`.
