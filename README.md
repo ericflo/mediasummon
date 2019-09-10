@@ -111,6 +111,10 @@ running the admin web interface at [http://localhost:5000](http://localhost:5000
 ### The default username is `mediasummon` and the default password is `admin`
 
 
+## Raspberry Pi Installation Video Tutorial
+
+[![Instagram-to-Raspberry Pi backup in 8 minutes](https://img.youtube.com/vi/Dv5ovDaxK6U/0.jpg)](https://www.youtube.com/watch?v=Dv5ovDaxK6U)
+
 ## Configuration
 
 The easiest way to configure Mediasummon is using environment variables. If you
