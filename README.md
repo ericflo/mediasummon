@@ -55,8 +55,8 @@ chmod +x ./mediasummon_linux_amd64
 
 To set it up to start when your system starts, set up a systemd configuration
 in `/lib/systemd/system/mediasummon.service` like so, making sure to edit the
-`ExecStart` to point to your downloaded binary, which in this case is set to
-`/home/USERNAME/mediasummon`:
+instances of `USERNAME` to your actual username and change `mediasummon_linux_amd64`
+to the executable for your system:
 
 ```ini
 [Unit]
@@ -68,7 +68,10 @@ Wants=network-online.target
 Type=simple
 Restart=always
 RestartSec=5s
-ExecStart=/home/USERNAME/mediasummon
+WorkingDirectory=/home/USERNAME
+User=USERNAME
+Group=USERNAME
+ExecStart=/home/USERNAME/mediasummon_linux_amd64
 
 [Install]
 WantedBy=multi-user.target
@@ -82,6 +85,13 @@ like so:
 ...
 Environment=PORT=5050
 Environment=FRONTEND_URL=http://myhost.local:5050
+```
+
+Finally, run the following commands to start it up:
+
+```console
+sudo service mediasummon start
+sudo service mediasummon enable
 ```
 
 If you're a fan of Docker, there's an official image at `ericflo/mediasummon`.
