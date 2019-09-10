@@ -2,6 +2,7 @@
 
 [![Documentation](https://godoc.org/github.com/ericflo/mediasummon?status.svg)](https://godoc.org/github.com/ericflo/mediasummon)
 [![License](https://img.shields.io/github/license/ericflo/mediasummon.svg?maxAge=2592000)](https://github.com/ericflo/mediasummon/blob/master/LICENSE.md)
+[![Build Status](https://github.com/ericflo/mediasummon/workflows/mediasummon%20release%20workflow/badge.svg)](https://github.com/ericflo/mediasummon/releases)
 
 <img width="100" height="100" src="/admin/static/icons/apple-touch-icon.png?raw=true" />
 
