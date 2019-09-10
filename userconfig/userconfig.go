@@ -88,6 +88,13 @@ func LoadUserConfig(configPath string) (*UserConfig, error) {
 	}
 	var config *UserConfig
 	err = json.Unmarshal(encoded, &config)
+	// Override with env vars if provided
+	if err == nil && config != nil {
+		frontendURL := os.Getenv("FRONTEND_URL")
+		if frontendURL != "" {
+			config.FrontendURL = frontendURL
+		}
+	}
 	return config, err
 }
 
@@ -167,19 +174,19 @@ func (uc *UserConfig) GetHoursPerSync(serviceName string) float32 {
 
 // GetSecret returns a secret value, or attempts to get a default from the environment using a default env name
 func (uc *UserConfig) GetSecret(name, key string) (string, error) {
-	return uc.GetSecretOrEnv(name, key, strings.ToUpper(fmt.Sprintf("%s_%s", name, key)))
+	return uc.GetEnvOrSecret(name, key, strings.ToUpper(fmt.Sprintf("%s_%s", name, key)))
 }
 
-// GetSecretOrEnv returns a secret value, or attempts to get a default from the environment
-func (uc *UserConfig) GetSecretOrEnv(name, key, env string) (secret string, err error) {
-	secrets, _ := uc.Secrets[name]
-	if secrets != nil {
-		if sec, exists := secrets[key]; exists {
-			secret = sec
-		}
-	}
+// GetEnvOrSecret attempts to get a secret from the environment, or returns a secret value from this config
+func (uc *UserConfig) GetEnvOrSecret(name, key, env string) (secret string, err error) {
+	secret = os.Getenv(env)
 	if secret == "" {
-		secret = os.Getenv(env)
+		secrets, _ := uc.Secrets[name]
+		if secrets != nil {
+			if sec, exists := secrets[key]; exists {
+				secret = sec
+			}
+		}
 	}
 	if secret == "" {
 		err = ErrNeedSecrets

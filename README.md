@@ -152,7 +152,7 @@ the OAuth application to auth with for the given service.
 **{GOOGLE,INSTAGRAM,FACEBOOK,DROPBOX,GDRIVE}_CLIENT_SECRET**: Client secret to
 the OAuth application to auth with for the given service.
 
-**S3_AWS_ACCESS_KEY_ID**, **S3_AWS_SECRET_ACCESS_KEY**, and **S3_REGION**:
+**AWS_ACCESS_KEY_ID**, **AWS_SECRET_ACCESS_KEY**, and **AWS_DEFAULT_REGION**:
 Credentials to access an S3, for used in syncing to a bucket.
 
 

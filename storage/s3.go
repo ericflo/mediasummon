@@ -40,9 +40,9 @@ func NewS3Storage(userConfig *userconfig.UserConfig, fullPath string) (Storage, 
 	}
 	bucketName := splitPath[0]
 
-	cID, _ := userConfig.GetSecretOrEnv("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
-	cSecret, _ := userConfig.GetSecretOrEnv("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
-	cRegion, _ := userConfig.GetSecretOrEnv("s3", "region", "AWS_DEFAULT_REGION")
+	cID, _ := userConfig.GetEnvOrSecret("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
+	cSecret, _ := userConfig.GetEnvOrSecret("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
+	cRegion, _ := userConfig.GetEnvOrSecret("s3", "region", "AWS_DEFAULT_REGION")
 
 	svc := s3.New(session.New(&aws.Config{
 		Region:      aws.String(cRegion),
@@ -214,9 +214,9 @@ func (store *s3Storage) ListDirectoryFiles(path string) ([]string, error) {
 
 // NeedsCredentials returns an error if it needs secrets, nil if it does not
 func (store *s3Storage) NeedsCredentials() error {
-	cID, _ := store.userConfig.GetSecretOrEnv("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
-	cSecret, _ := store.userConfig.GetSecretOrEnv("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
-	cRegion, _ := store.userConfig.GetSecretOrEnv("s3", "region", "AWS_DEFAULT_REGION")
+	cID, _ := store.userConfig.GetEnvOrSecret("s3", "aws_access_key_id", "AWS_ACCESS_KEY_ID")
+	cSecret, _ := store.userConfig.GetEnvOrSecret("s3", "aws_secret_access_key", "AWS_SECRET_ACCESS_KEY")
+	cRegion, _ := store.userConfig.GetEnvOrSecret("s3", "region", "AWS_DEFAULT_REGION")
 	if cID == "" || cSecret == "" || cRegion == "" {
 		return userconfig.ErrNeedSecrets
 	}
