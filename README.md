@@ -67,6 +67,8 @@ docker container run \
 This example sets it up to sync file to a new `~/mediasummon` directory,
 running the admin web interface at [http://localhost:5000](http://localhost:5000).
 
+### The default username is `mediasummon` and the default password is `admin`
+
 
 ## Configuration
 
