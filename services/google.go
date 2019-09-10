@@ -88,7 +88,7 @@ func NewGoogleService(serviceConfig *ServiceConfig) (SyncService, error) {
 	return svc, nil
 }
 
-// Setup sets up the service and checks for credentials, configuring an authed client if possible
+// Setup sets up the service, concurrency limiting structs, and configures the service
 func (svc *googleService) Setup(serviceConfig *ServiceConfig) error {
 	svc.serviceConfig = serviceConfig
 	svc.fetchSem = semaphore.NewWeighted(serviceConfig.NumFetchers)

@@ -60,7 +60,7 @@ func NewInstagramService(serviceConfig *ServiceConfig) (SyncService, error) {
 	return svc, nil
 }
 
-// Setup sets up the service and checks for credentials, configuring an authed client if possible
+// Setup sets up the service, concurrency limiting structs, and configures the service
 func (svc *instagramService) Setup(serviceConfig *ServiceConfig) error {
 	svc.serviceConfig = serviceConfig
 	svc.fetchSem = semaphore.NewWeighted(serviceConfig.NumFetchers)
