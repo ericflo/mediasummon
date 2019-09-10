@@ -17,7 +17,7 @@ jobs:
     - name: build binaries
       uses: ericflo/actions/golang-build@master
       with:
-        args: "windows/amd64 windows/386 linux/amd64 linux/386 darwin/amd64 darwin/386"
+        args: "windows/amd64 windows/386 linux/amd64 linux/386 linux/arm/5 linux/arm/6 linux/arm/7 darwin/amd64 darwin/386"
     - name: upload windows/amd64 binary
       uses: JasonEtco/upload-to-release@master
       env:
@@ -54,3 +54,21 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         args: /github/workspace/.release/mediasummon_darwin_386 application/octet-stream
+    - name: upload linux/arm/5 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_linux_arm5 application/octet-stream
+    - name: upload linux/arm/6 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_linux_arm6 application/octet-stream
+    - name: upload linux/arm/7 binary
+      uses: JasonEtco/upload-to-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: /github/workspace/.release/mediasummon_linux_arm7 application/octet-stream
