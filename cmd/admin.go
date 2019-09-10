@@ -153,7 +153,7 @@ func downloadAdminSite(adminPath string) error {
 	log.Println("Ensuring that admin output directory exists...")
 	// Make sure the outDir exists
 	outDir := filepath.Join(adminPath, "out")
-	if err = os.MkdirAll(outDir, 0644); err != nil {
+	if err = os.MkdirAll(outDir, 0755); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func downloadAdminSite(adminPath string) error {
 		defer zipf.Close()
 
 		outpath := filepath.Join(outDir, strings.TrimPrefix(file.Name, "mediasummon-master/admin/out"))
-		if err = os.MkdirAll(filepath.Dir(outpath), 0644); err != nil {
+		if err = os.MkdirAll(filepath.Dir(outpath), 0755); err != nil {
 			return err
 		}
 		outfile, err := os.OpenFile(outpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

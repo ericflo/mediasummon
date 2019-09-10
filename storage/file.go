@@ -28,7 +28,7 @@ func NewFileStorage(userConfig *userconfig.UserConfig, directory string) (Storag
 	if err != nil {
 		return nil, err
 	}
-	if err = os.MkdirAll(fullDir, 0644); err != nil {
+	if err = os.MkdirAll(fullDir, 0755); err != nil {
 		log.Println("Could not create directory ("+fullDir+"): ", err)
 		return nil, fmt.Errorf("Could not create directory (%s): %v", fullDir, err)
 	}
@@ -73,7 +73,7 @@ func (store *fileStorage) EnsureDirectoryExists(path string) error {
 	}
 	defer store.sem.Release(1)
 	dir := filepath.Join(store.directory, path)
-	if err := os.MkdirAll(dir, 0644); err != nil {
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Println("Could not create directory ("+dir+"): ", err)
 		return fmt.Errorf("Could not create directory (%s): %v", dir, err)
 	}

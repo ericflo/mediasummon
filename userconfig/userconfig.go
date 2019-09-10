@@ -124,7 +124,7 @@ func (uc *UserConfig) Save() error {
 	if uc.Path == "" {
 		return fmt.Errorf("UserConfig cannot be saved: path is not set")
 	}
-	if err := os.MkdirAll(filepath.Dir(uc.Path), 0644); err != nil {
+	if err := os.MkdirAll(filepath.Dir(uc.Path), 0755); err != nil {
 		return err
 	}
 	encoded, err := json.MarshalIndent(uc, "", "  ")
