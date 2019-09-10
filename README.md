@@ -48,9 +48,9 @@ Mediasummon is a single executable binary, so the easiest way to install it is
 to download it, make it executable, and run it:
 
 ```console
-curl -L https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64 -o ./mediasummon
-chmod +x ./mediasummon
-./mediasummon admin
+curl -LO https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
+chmod +x ./mediasummon_linux_amd64
+./mediasummon_linux_amd64 admin
 ```
 
 To set it up to start when your system starts, set up a systemd configuration
