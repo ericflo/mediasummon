@@ -50,7 +50,7 @@ to download it, make it executable, and run it:
 ```console
 curl -LO https://github.com/ericflo/mediasummon/releases/latest/download/mediasummon_linux_amd64
 chmod +x ./mediasummon_linux_amd64
-./mediasummon_linux_amd64
+./mediasummon_linux_amd64 admin
 ```
 
 If you're a fan of Docker, there's an official image at `ericflo/mediasummon`.
