@@ -112,8 +112,7 @@ running the admin web interface at [http://localhost:5000](http://localhost:5000
 
 
 ## Raspberry Pi Installation Video Tutorial
-
-[![Instagram-to-Raspberry Pi backup in 8 minutes](https://img.youtube.com/vi/Dv5ovDaxK6U/0.jpg)](https://www.youtube.com/watch?v=Dv5ovDaxK6U)
+[![Instagram-to-Raspberry Pi backup in 8 minutes](https://img.youtube.com/vi/-UrIY5Se2f0/0.jpg)](https://www.youtube.com/watch?v=-UrIY5Se2f0)
 
 ## Configuration
 
