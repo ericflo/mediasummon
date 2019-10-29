@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 
 	"maxint.co/mediasummon/constants"
 	"maxint.co/mediasummon/services"
@@ -15,11 +16,14 @@ import (
 )
 
 const defaultDefaultTarget = "~/mediasummon" // lol, the default's default
+const disabledTarget = "disabled"
 
 func getDefaultTargets() []string {
 	defaultTarget := os.Getenv("DEFAULT_TARGET")
 	if defaultTarget == "" {
 		defaultTarget = defaultDefaultTarget
+	} else if strings.ToLower(defaultTarget) == disabledTarget {
+		return []string{}
 	}
 	return []string{storage.NormalizeStorageURL(defaultTarget)}
 }
