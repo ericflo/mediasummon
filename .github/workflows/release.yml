@@ -6,10 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: github official action
-      uses: actions/bin/sh@master
-      with:
-        args: ls
     - name: docker action
       uses: docker://node:6
       with:
