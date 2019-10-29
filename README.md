@@ -1,7 +1,7 @@
 # Mediasummon
 
 [![Documentation](https://godoc.org/github.com/ericflo/mediasummon?status.svg)](https://godoc.org/github.com/ericflo/mediasummon)
-[![License](https://img.shields.io/github/license/ericflo/mediasummon.svg?maxAge=2592000)](https://github.com/ericflo/mediasummon/blob/master/LICENSE.md)
+[![License](https://img.shields.io/github/license/ericflo/mediasummon.svg)](https://github.com/ericflo/mediasummon/blob/master/LICENSE.md)
 [![Build Status](https://github.com/ericflo/mediasummon/workflows/mediasummon%20release%20workflow/badge.svg)](https://github.com/ericflo/mediasummon/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/ericflo/mediasummon)](https://hub.docker.com/r/ericflo/mediasummon)
 
@@ -14,7 +14,7 @@ photos and videos, and keeps them continuously backed up into one organized
 directory either on your computer or on a cloud storage provider.
 
 <p align="center">
-  <img width="800" height="480" src="/admin/static/design/Figure.png?raw=true" />
+  <img height="480" src="/admin/static/design/Figure.png?raw=true" />
 </p>
 
 
@@ -110,6 +110,9 @@ running the admin web interface at [http://localhost:5000](http://localhost:5000
 
 ### The default username is `mediasummon` and the default password is `admin`
 
+
+## Raspberry Pi Installation Video Tutorial
+[![Instagram-to-Raspberry Pi backup in 8 minutes](https://img.youtube.com/vi/-UrIY5Se2f0/0.jpg)](https://www.youtube.com/watch?v=-UrIY5Se2f0)
 
 ## Configuration
 
