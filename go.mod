@@ -3,11 +3,9 @@ module maxint.co/mediasummon
 go 1.12
 
 require (
-	github.com/aws/aws-sdk-go v1.23.14
+	github.com/aws/aws-sdk-go v1.33.0
 	github.com/dropbox/dropbox-sdk-go-unofficial v5.4.0+incompatible
-	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gorilla/csrf v1.6.1
-	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
 	github.com/joho/godotenv v1.3.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
